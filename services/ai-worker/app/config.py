@@ -7,12 +7,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 def find_workspace_root() -> Path:
     """Find the workspace root directory by looking for characteristic markers."""
-    # Try traversing upwards from this file
     current = Path(__file__).resolve().parent
     for parent in [current] + list(current.parents):
-        if (parent / ".git").exists() or (parent / "next-app").exists() or (parent / "storage").exists():
+        if (parent / ".git").exists() and (parent / "next-app").exists():
             return parent
-    # Fallback to current working directory
+    for parent in [current] + list(current.parents):
+        if (parent / "next-app").exists():
+            return parent
     return Path(os.getcwd()).resolve()
 
 
@@ -36,12 +37,13 @@ class Settings(BaseSettings):
     CROP_PLANS_DIR: Path = WORKSPACE_ROOT / "storage" / "crop_plans"
     OVERLAYS_DIR: Path = WORKSPACE_ROOT / "storage" / "overlays"
     RENDERED_DIR: Path = WORKSPACE_ROOT / "storage" / "rendered"
+    SUBTITLES_DIR: Path = WORKSPACE_ROOT / "storage" / "subtitles"
     JOBS_DIR: Path = WORKSPACE_ROOT / "storage" / "jobs"
     TEST_SAMPLES_DIR: Path = WORKSPACE_ROOT / "storage" / "test_samples"
 
-    # Vocabulary Path
+    # Vocabulary Path (relative to ai-worker package root)
     VOCABULARY_FILE: Path = (
-        WORKSPACE_ROOT / "services" / "ai-worker" / "vocabulary" / "technical_terms.json"
+        Path(__file__).resolve().parent.parent / "vocabulary" / "technical_terms.json"
     )
 
     # Whisper Settings (CPU-optimized)
@@ -79,6 +81,7 @@ for path in [
     settings.CROP_PLANS_DIR,
     settings.OVERLAYS_DIR,
     settings.RENDERED_DIR,
+    settings.SUBTITLES_DIR,
     settings.JOBS_DIR,
     settings.TEST_SAMPLES_DIR,
     settings.VOCABULARY_FILE.parent,

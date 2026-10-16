@@ -5,6 +5,7 @@ import logging
 import sys
 import time
 from pathlib import Path
+from typing import Optional
 
 from app.config import settings
 from app.services.media_probe import MediaProbeService, NoAudioStreamError, MediaCorruptError
@@ -277,9 +278,352 @@ def run_highlight_selection(
         return 2
 
 
+def run_crop_planning(
+    video_path: str | Path,
+    highlight_path: str | Path,
+    target_aspect_ratio: str = "9:16",
+    analysis_interval_sec: float = 0.5,
+    output_path: str | Path | None = None
+) -> int:
+    """Runs computer vision analysis and intelligent 9:16 crop planning.
+    
+    Returns:
+        0 on success, non-zero on failure.
+    """
+    from app.services.crop_planner import CropPlannerService
+
+    start_time = time.time()
+    v_path = Path(video_path).resolve()
+    h_path = Path(highlight_path).resolve()
+
+    print("\n" + "=" * 70)
+    print("PS04 REEL STUDIO — PHASE 4 INTELLIGENT CROPPING ENGINE")
+    print("=" * 70)
+    print(f"Source Video:       {v_path}")
+    print(f"Highlight Result:   {h_path}")
+    print(f"Target Aspect Ratio:{target_aspect_ratio}")
+    print(f"Sample Interval:    {analysis_interval_sec:.2f}s")
+    print("=" * 70 + "\n")
+
+    if not v_path.exists():
+        logger.error("Source video file does not exist: %s", v_path)
+        print(f"\n[ERROR] Source video file not found: {v_path}", file=sys.stderr)
+        return 1
+
+    if not h_path.exists():
+        logger.error("Highlight JSON file does not exist: %s", h_path)
+        print(f"\n[ERROR] Highlight JSON file not found: {h_path}", file=sys.stderr)
+        return 1
+
+    try:
+        logger.info("Executing frame sampling, face detection, and crop planning...")
+        result = CropPlannerService.plan_from_file(
+            video_path=v_path,
+            highlight_path=h_path,
+            target_aspect_ratio=target_aspect_ratio,
+            analysis_interval_sec=analysis_interval_sec
+        )
+
+        saved_path = CropPlannerService.save_crop_plan(result, output_path=output_path)
+        elapsed = time.time() - start_time
+        diag = result.diagnostics
+
+        # Breakdown of tracking modes
+        mode_counts = {}
+        for kf in result.keyframes:
+            m = kf.tracking_mode.value if hasattr(kf.tracking_mode, "value") else str(kf.tracking_mode)
+            mode_counts[m] = mode_counts.get(m, 0) + 1
+
+        print("\n" + "=" * 70)
+        print("CROP PLANNING COMPLETED SUCCESSFULLY")
+        print("=" * 70)
+        print(f"Highlight Window:    [{result.highlight.start_sec:.2f}s - {result.highlight.end_sec:.2f}s] ({result.highlight.duration_sec:.2f}s)")
+        print(f"Source Dimensions:   {result.source_width}x{result.source_height} ({result.source.fps or 30.0:.2f} fps)")
+        print(f"Target Aspect Ratio: {result.target_aspect_ratio} ({result.target_aspect_ratio_float:.4f})")
+        print(f"Tracking Method:     {result.tracking_method}")
+        print(f"Keyframes Generated: {len(result.keyframes)}")
+        print(f"Tracking Breakdown:  {mode_counts}")
+        print(f"Visual Diagnostics:")
+        print(f"  * Frames Analyzed:          {diag.total_frames_analyzed}")
+        print(f"  * Face Detected Frames:     {diag.face_detected_frames_count} ({diag.face_detection_ratio * 100:.1f}%)")
+        print(f"  * Fallback Frames:          {diag.fallback_frames_count}")
+        print(f"  * Interpolated Hold Frames: {diag.interpolated_hold_frames_count}")
+        print(f"  * Scene Cuts Detected:      {diag.scene_changes_detected_count} (timestamps: {diag.scene_change_timestamps[:5]})")
+        print(f"  * Decode Errors:            {diag.decode_error_count}")
+        if result.warnings:
+            print(f"Warnings:            {'; '.join(result.warnings)}")
+        print(f"\nWall-Clock Time:     {elapsed:.3f}s")
+        print(f"Output Crop Plan:    {saved_path}")
+        print("=" * 70 + "\n")
+        return 0
+
+    except Exception as e:
+        logger.exception("Crop planning failed: %s", e)
+        print(f"\n[ERROR] Crop planning failed: {e}", file=sys.stderr)
+        return 2
+
+
+def run_video_rendering(
+    video_path: str | Path,
+    highlight_path: str | Path,
+    crop_plan_path: str | Path,
+    output_path: str | Path | None = None,
+    output_width: int = 720,
+    output_height: int = 1280,
+    video_bitrate: str = "4M",
+    audio_bitrate: str = "128k",
+    preset: str = "fast",
+    crf: int = 20,
+    overwrite: bool = False,
+    save_manifest: bool = False,
+    composition_mode: str = "adaptive_hybrid",
+    sustained_face_loss_sec: float = 1.0,
+    transition_duration_sec: float = 0.25,
+    bg_darken_factor: float = 0.55,
+    bg_blur_sigma: float = 10.0,
+    enable_content_tracking: bool = True,
+    content_min_score: float = 0.35,
+    content_max_width_ratio: float = 0.45,
+    content_smoothing_alpha: float = 0.3,
+    content_hold_sec: float = 1.0,
+    subtitles: bool = False,
+    transcript_path: Optional[str] = None,
+    caption_style: str = "karaoke",
+    subtitles_ass_path: Optional[str] = None,
+    caption_font_name: str = "Arial",
+    caption_font_size: int = 44,
+    caption_margin_v: int = 190,
+) -> int:
+    """Runs the Phase 5/5.1/5.2/6 video rendering pipeline to produce vertical 9:16 MP4.
+    
+    Returns:
+        0 on success, non-zero on failure.
+    """
+    from app.services.video_renderer import VideoRendererService, RenderValidationError, VideoRenderingError
+    from app.schemas import RenderOptions
+
+    start_time = time.time()
+    v_path = Path(video_path).resolve()
+    h_path = Path(highlight_path).resolve()
+    c_path = Path(crop_plan_path).resolve()
+
+    print("\n" + "=" * 70)
+    print("PS04 REEL STUDIO — PHASE 6 SYNCHRONIZED CAPTION RENDERING ENGINE")
+    print("=" * 70)
+    print(f"Source Video:       {v_path}")
+    print(f"Highlight Result:   {h_path}")
+    print(f"Crop Plan:          {c_path}")
+    print(f"Composition Mode:   {composition_mode}")
+    print(f"Content Tracking:   {enable_content_tracking}")
+    print(f"Subtitles:          {'Enabled (' + caption_style + ')' if subtitles else 'Disabled'}")
+    print(f"Target Resolution:  {output_width}x{output_height} (9:16)")
+    print(f"Overwrite Existing: {overwrite}")
+    print("=" * 70 + "\n")
+
+    if not v_path.exists():
+        logger.error("Source video file does not exist: %s", v_path)
+        print(f"\n[ERROR] Source video file not found: {v_path}", file=sys.stderr)
+        return 1
+
+    if not h_path.exists():
+        logger.error("Highlight JSON file does not exist: %s", h_path)
+        print(f"\n[ERROR] Highlight JSON file not found: {h_path}", file=sys.stderr)
+        return 1
+
+    if not c_path.exists():
+        logger.error("Crop plan JSON file does not exist: %s", c_path)
+        print(f"\n[ERROR] Crop plan JSON file not found: {c_path}", file=sys.stderr)
+        return 1
+
+    options = RenderOptions(
+        output_width=output_width,
+        output_height=output_height,
+        video_bitrate=video_bitrate,
+        audio_bitrate=audio_bitrate,
+        preset=preset,
+        crf=crf,
+        overwrite=overwrite,
+        composition_mode=composition_mode,
+        sustained_face_loss_sec=sustained_face_loss_sec,
+        transition_duration_sec=transition_duration_sec,
+        bg_darken_factor=bg_darken_factor,
+        bg_blur_sigma=bg_blur_sigma,
+        enable_content_tracking=enable_content_tracking,
+        content_min_score=content_min_score,
+        content_max_width_ratio=content_max_width_ratio,
+        content_smoothing_alpha=content_smoothing_alpha,
+        content_hold_sec=content_hold_sec,
+        subtitles_enabled=subtitles,
+        caption_style=caption_style,
+        transcript_path=transcript_path,
+        subtitles_ass_path=subtitles_ass_path,
+        caption_font_name=caption_font_name,
+        caption_font_size=caption_font_size,
+        caption_margin_v=caption_margin_v,
+    )
+
+    try:
+        logger.info("Executing video rendering with adaptive composition, audio muxing, and captions...")
+        result = VideoRendererService.render_video(
+            video_path=v_path,
+            highlight_input=h_path,
+            crop_plan_input=c_path,
+            output_path=output_path,
+            options=options,
+            transcript_input=transcript_path,
+            subtitles_ass_input=subtitles_ass_path,
+        )
+
+        manifest_path = None
+        if save_manifest:
+            manifest_path = VideoRendererService.save_manifest(result)
+
+        elapsed = time.time() - start_time
+
+        print("\n" + "=" * 70)
+        print("VIDEO RENDERING COMPLETED SUCCESSFULLY")
+        print("=" * 70)
+        print(f"Highlight Window:    [{result.highlight_start_sec:.2f}s - {result.highlight_end_sec:.2f}s] ({result.requested_duration_sec:.2f}s)")
+        print(f"Rendered Output:     {result.output_path}")
+        print(f"Composition Mode:    {result.composition_mode}")
+        pct_presenter = (result.presenter_frames_count / result.rendered_frame_count * 100) if result.rendered_frame_count > 0 else 0
+        pct_content = (result.content_frames_count / result.rendered_frame_count * 100) if result.rendered_frame_count > 0 else 0
+        pct_presentation = (result.presentation_frames_count / result.rendered_frame_count * 100) if result.rendered_frame_count > 0 else 0
+        print(f"Presenter Frames:    {result.presenter_frames_count} ({pct_presenter:.1f}%)")
+        print(f"Content Frames:      {result.content_frames_count} ({pct_content:.1f}%)")
+        print(f"Presentation Frames: {result.presentation_frames_count} ({pct_presentation:.1f}%)")
+        print(f"Transitions:         {result.composition_transitions_count} (Scene Cuts: {result.scene_cut_transitions_count}, Sustained Face Loss: {result.sustained_loss_transitions_count}, Content: {result.content_transitions_count})")
+        print(f"Resolution & FPS:    {result.output_width}x{result.output_height} @ {result.output_fps:.2f} fps")
+        print(f"Video Codec:         {result.output_video_codec}")
+        print(f"Audio Codec:         {result.output_audio_codec or 'None (Silent)'}")
+        print(f"Audio Included:      {result.audio_included}")
+        print(f"Frames Rendered:     {result.rendered_frame_count}")
+        print(f"Video Duration:      {result.actual_video_duration_sec:.3f}s")
+        if result.actual_audio_duration_sec is not None:
+            print(f"Audio Duration:      {result.actual_audio_duration_sec:.3f}s")
+        if result.subtitles_enabled:
+            print(f"Subtitles:           Burned-in ({result.caption_style})")
+            print(f"Subtitle File:       {result.subtitles_ass_path}")
+            print(f"Caption Groups:      {result.caption_groups_count}")
+        if manifest_path:
+            print(f"Render Manifest:     {manifest_path}")
+        if result.warnings:
+            print(f"Warnings:            {'; '.join(result.warnings)}")
+        print(f"\nWall-Clock Time:     {elapsed:.3f}s")
+        print("=" * 70 + "\n")
+        return 0
+
+    except FileExistsError as e:
+        logger.error("Output file already exists: %s", e)
+        print(f"\n[ERROR] {e}", file=sys.stderr)
+        return 3
+    except RenderValidationError as e:
+        logger.error("Validation error: %s", e)
+        print(f"\n[ERROR] Validation failed: {e}", file=sys.stderr)
+        return 2
+    except Exception as e:
+        logger.exception("Video rendering failed: %s", e)
+        print(f"\n[ERROR] Video rendering failed: {e}", file=sys.stderr)
+        return 2
+
+
+def run_generate_captions(
+    transcript_path: str | Path,
+    highlight_path: str | Path,
+    output_path: str | Path | None = None,
+    caption_style: str = "karaoke",
+    font_name: str = "Arial",
+    font_size: int = 44,
+    margin_v: int = 190,
+) -> int:
+    """Generates synchronized ASS subtitle file from transcript and highlight JSON (Phase 6).
+    
+    Returns:
+        0 on success, non-zero on failure.
+    """
+    from app.services.video_renderer import VideoRendererService
+    from app.services.caption_generator import CaptionGeneratorService
+    from app.schemas import CaptionStyle, CaptionOptions
+
+    t_path = Path(transcript_path).resolve()
+    h_path = Path(highlight_path).resolve()
+
+    print("\n" + "=" * 70)
+    print("PS04 REEL STUDIO — PHASE 6 SYNCHRONIZED CAPTION GENERATOR")
+    print("=" * 70)
+    print(f"Transcript JSON:    {t_path}")
+    print(f"Highlight JSON:     {h_path}")
+    print(f"Caption Style:      {caption_style}")
+    print(f"Font / Size:        {font_name} / {font_size}pt")
+    print(f"Vertical Margin:    {margin_v}px")
+    print("=" * 70 + "\n")
+
+    if not t_path.exists():
+        logger.error("Transcript file does not exist: %s", t_path)
+        print(f"\n[ERROR] Transcript file not found: {t_path}", file=sys.stderr)
+        return 1
+    if not h_path.exists():
+        logger.error("Highlight file does not exist: %s", h_path)
+        print(f"\n[ERROR] Highlight file not found: {h_path}", file=sys.stderr)
+        return 1
+
+    try:
+        transcript = VideoRendererService.load_transcript(t_path)
+        highlight = VideoRendererService.load_highlight(h_path)
+
+        words_source = transcript.display_words or transcript.raw_words
+        rel_words, stats = CaptionGeneratorService.filter_and_convert_words(
+            transcript_words=words_source,
+            highlight_start_sec=highlight.start_sec,
+            highlight_end_sec=highlight.end_sec,
+        )
+
+        cap_opts = CaptionOptions(
+            enabled=True,
+            style=CaptionStyle(caption_style),
+            font_name=font_name,
+            font_size=font_size,
+            margin_v=margin_v,
+        )
+
+        groups = CaptionGeneratorService.group_words_into_captions(
+            words=rel_words,
+            clip_duration=highlight.duration_sec,
+            options=cap_opts,
+        )
+
+        if output_path:
+            out_file = Path(output_path).resolve()
+        else:
+            settings.SUBTITLES_DIR.mkdir(parents=True, exist_ok=True)
+            out_file = settings.SUBTITLES_DIR / f"{h_path.stem}.ass"
+
+        saved_path = CaptionGeneratorService.save_ass_file(
+            caption_groups=groups,
+            output_path=out_file,
+            options=cap_opts,
+        )
+
+        print("\n" + "=" * 70)
+        print("CAPTION GENERATION COMPLETED SUCCESSFULLY")
+        print("=" * 70)
+        print(f"Highlight Interval:  [{highlight.start_sec:.2f}s - {highlight.end_sec:.2f}s] ({highlight.duration_sec:.2f}s)")
+        print(f"Words in Highlight:  {stats['filtered_words_count']} (Clamped: {stats['clamped_count']}, Zero Duration: {stats['zero_duration_count']})")
+        print(f"Caption Groups:      {len(groups)}")
+        print(f"Caption Style:       {caption_style}")
+        print(f"Output ASS Subtitle: {saved_path}")
+        print("=" * 70 + "\n")
+        return 0
+
+    except Exception as e:
+        logger.exception("Caption generation failed: %s", e)
+        print(f"\n[ERROR] Caption generation failed: {e}", file=sys.stderr)
+        return 2
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Reel Studio AI Worker CLI — Transcription & Highlight Selection",
+        description="Reel Studio AI Worker CLI — Transcription, Highlights, Crop Planning & Rendering",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
@@ -362,6 +706,262 @@ def main():
         help="Custom output file path for highlight result JSON"
     )
 
+    # 'plan-crop' command
+    crop_parser = subparsers.add_parser("plan-crop", help="Generate intelligent 9:16 crop plan for selected highlight")
+    crop_parser.add_argument(
+        "-v", "--input-video",
+        required=True,
+        type=str,
+        help="Path to source video file (e.g. path/to/lecture.mp4)"
+    )
+    crop_parser.add_argument(
+        "-H", "--highlight-json",
+        required=True,
+        type=str,
+        help="Path to Phase 3 highlight result JSON (e.g. storage/highlights/lecture_highlight.json)"
+    )
+    crop_parser.add_argument(
+        "-a", "--target-aspect-ratio",
+        type=str,
+        default="9:16",
+        help="Target aspect ratio (e.g. '9:16', '1:1', '4:5', '16:9')"
+    )
+    crop_parser.add_argument(
+        "--analysis-interval-sec",
+        type=float,
+        default=0.5,
+        help="Frame sampling interval in seconds (default: 0.5s)"
+    )
+    crop_parser.add_argument(
+        "-o", "--output",
+        type=str,
+        default=None,
+        help="Custom output file path for crop plan JSON"
+    )
+
+    # 'render-video' command
+    render_parser = subparsers.add_parser("render-video", help="Render vertical video clip from highlight and crop plan")
+    render_parser.add_argument(
+        "-v", "--input-video",
+        required=True,
+        type=str,
+        help="Path to source video file (e.g. path/to/lecture.mp4)"
+    )
+    render_parser.add_argument(
+        "-H", "--highlight-json",
+        required=True,
+        type=str,
+        help="Path to Phase 3 highlight result JSON (e.g. storage/highlights/lecture_highlight.json)"
+    )
+    render_parser.add_argument(
+        "-C", "--crop-plan-json",
+        required=True,
+        type=str,
+        help="Path to Phase 4 crop plan JSON (e.g. storage/crop_plans/lecture_crop_plan.json)"
+    )
+    render_parser.add_argument(
+        "-o", "--output",
+        type=str,
+        default=None,
+        help="Custom destination path for rendered MP4 (default: storage/rendered/<stem>_reel.mp4)"
+    )
+    render_parser.add_argument(
+        "-W", "--output-width",
+        type=int,
+        default=720,
+        help="Target output width in pixels (default: 720)"
+    )
+    render_parser.add_argument(
+        "--output-height",
+        type=int,
+        default=1280,
+        help="Target output height in pixels (default: 1280)"
+    )
+    render_parser.add_argument(
+        "--video-bitrate",
+        type=str,
+        default="4M",
+        help="Target video encoding bitrate (default: 4M)"
+    )
+    render_parser.add_argument(
+        "--audio-bitrate",
+        type=str,
+        default="128k",
+        help="Target audio encoding bitrate (default: 128k)"
+    )
+    render_parser.add_argument(
+        "--preset",
+        type=str,
+        default="fast",
+        help="FFmpeg x264 preset (ultrafast, fast, medium, slow)"
+    )
+    render_parser.add_argument(
+        "--crf",
+        type=int,
+        default=20,
+        help="Constant Rate Factor for x264 (default: 20)"
+    )
+    render_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Overwrite destination MP4 if it already exists"
+    )
+    render_parser.add_argument(
+        "--save-manifest",
+        action="store_true",
+        help="Save render manifest JSON alongside the output video"
+    )
+    render_parser.add_argument(
+        "--composition-mode",
+        type=str,
+        default="adaptive_hybrid",
+        choices=["adaptive_hybrid", "crop_only", "presentation_fit_blur", "content_only"],
+        help="Composition rendering mode (default: adaptive_hybrid)"
+    )
+    render_parser.add_argument(
+        "--sustained-face-loss-sec",
+        type=float,
+        default=1.0,
+        help="Duration of consecutive face absence before switching to presentation mode (default: 1.0s)"
+    )
+    render_parser.add_argument(
+        "--transition-duration-sec",
+        type=float,
+        default=0.25,
+        help="Crossfade transition duration for non-cut layout changes (default: 0.25s)"
+    )
+    render_parser.add_argument(
+        "--bg-darken-factor",
+        type=float,
+        default=0.55,
+        help="Darkening intensity factor for blurred background (default: 0.55)"
+    )
+    render_parser.add_argument(
+        "--bg-blur-sigma",
+        type=float,
+        default=10.0,
+        help="Gaussian blur sigma for portrait background (default: 10.0)"
+    )
+    render_parser.add_argument(
+        "--enable-content-tracking",
+        action="store_true",
+        default=True,
+        help="Enable intelligent screen content detection and tracking (default: True)"
+    )
+    render_parser.add_argument(
+        "--no-content-tracking",
+        action="store_false",
+        dest="enable_content_tracking",
+        help="Disable intelligent screen content detection and tracking"
+    )
+    render_parser.add_argument(
+        "--content-min-score",
+        type=float,
+        default=0.35,
+        help="Minimum heuristic score threshold for screen content candidates (default: 0.35)"
+    )
+    render_parser.add_argument(
+        "--content-max-width-ratio",
+        type=float,
+        default=0.45,
+        help="Maximum candidate width ratio before falling back to presentation mode (default: 0.45)"
+    )
+    render_parser.add_argument(
+        "--content-smoothing-alpha",
+        type=float,
+        default=0.3,
+        help="Exponential moving average alpha for content tracking smoothing (default: 0.3)"
+    )
+    render_parser.add_argument(
+        "--content-hold-sec",
+        type=float,
+        default=1.0,
+        help="Maximum hold duration in seconds during temporary content occlusion (default: 1.0s)"
+    )
+    render_parser.add_argument(
+        "--subtitles",
+        action="store_true",
+        default=False,
+        help="Burn synchronized subtitles into the output video (Phase 6)"
+    )
+    render_parser.add_argument(
+        "-T", "--transcript-json",
+        type=str,
+        default=None,
+        help="Path to validated transcript JSON (default: storage/transcripts/<stem>.json)"
+    )
+    render_parser.add_argument(
+        "--caption-style",
+        type=str,
+        default="karaoke",
+        choices=["standard", "karaoke"],
+        help="Caption display style (default: karaoke)"
+    )
+    render_parser.add_argument(
+        "--subtitles-ass",
+        type=str,
+        default=None,
+        help="Path to pre-generated ASS subtitle file"
+    )
+    render_parser.add_argument(
+        "--caption-font-size",
+        type=int,
+        default=44,
+        help="Caption font size in points (default: 44)"
+    )
+    render_parser.add_argument(
+        "--caption-margin-v",
+        type=int,
+        default=190,
+        help="Vertical margin from bottom in pixels (default: 190)"
+    )
+
+    # 'generate-captions' command
+    captions_parser = subparsers.add_parser("generate-captions", help="Generate synchronized ASS subtitles from transcript and highlight JSON (Phase 6)")
+    captions_parser.add_argument(
+        "-T", "--transcript-json",
+        required=True,
+        type=str,
+        help="Path to validated transcript JSON (e.g. storage/transcripts/lecture.json)"
+    )
+    captions_parser.add_argument(
+        "-H", "--highlight-json",
+        required=True,
+        type=str,
+        help="Path to Phase 3 highlight result JSON (e.g. storage/highlights/lecture_highlight.json)"
+    )
+    captions_parser.add_argument(
+        "-o", "--output",
+        type=str,
+        default=None,
+        help="Custom output file path for generated ASS subtitles (default: storage/subtitles/<stem>.ass)"
+    )
+    captions_parser.add_argument(
+        "--caption-style",
+        type=str,
+        default="karaoke",
+        choices=["standard", "karaoke"],
+        help="Caption display style: standard or karaoke (default: karaoke)"
+    )
+    captions_parser.add_argument(
+        "--font-name",
+        type=str,
+        default="Arial",
+        help="Font family name for subtitles (default: Arial)"
+    )
+    captions_parser.add_argument(
+        "--caption-font-size",
+        type=int,
+        default=44,
+        help="Font size in points (default: 44)"
+    )
+    captions_parser.add_argument(
+        "--caption-margin-v",
+        type=int,
+        default=190,
+        help="Vertical margin from bottom in pixels (default: 190)"
+    )
+
     args = parser.parse_args()
 
     if args.command == "transcribe":
@@ -382,6 +982,58 @@ def main():
             min_duration_sec=args.min_duration_sec,
             max_duration_sec=args.max_duration_sec,
             output_path=args.output
+        )
+        sys.exit(code)
+    elif args.command == "plan-crop":
+        code = run_crop_planning(
+            video_path=args.input_video,
+            highlight_path=args.highlight_json,
+            target_aspect_ratio=args.target_aspect_ratio,
+            analysis_interval_sec=args.analysis_interval_sec,
+            output_path=args.output
+        )
+        sys.exit(code)
+    elif args.command == "render-video":
+        code = run_video_rendering(
+            video_path=args.input_video,
+            highlight_path=args.highlight_json,
+            crop_plan_path=args.crop_plan_json,
+            output_path=args.output,
+            output_width=args.output_width,
+            output_height=args.output_height,
+            video_bitrate=args.video_bitrate,
+            audio_bitrate=args.audio_bitrate,
+            preset=args.preset,
+            crf=args.crf,
+            overwrite=args.overwrite,
+            save_manifest=args.save_manifest,
+            composition_mode=args.composition_mode,
+            sustained_face_loss_sec=args.sustained_face_loss_sec,
+            transition_duration_sec=args.transition_duration_sec,
+            bg_darken_factor=args.bg_darken_factor,
+            bg_blur_sigma=args.bg_blur_sigma,
+            enable_content_tracking=args.enable_content_tracking,
+            content_min_score=args.content_min_score,
+            content_max_width_ratio=args.content_max_width_ratio,
+            content_smoothing_alpha=args.content_smoothing_alpha,
+            content_hold_sec=args.content_hold_sec,
+            subtitles=args.subtitles,
+            transcript_path=args.transcript_json,
+            caption_style=args.caption_style,
+            subtitles_ass_path=args.subtitles_ass,
+            caption_font_size=args.caption_font_size,
+            caption_margin_v=args.caption_margin_v,
+        )
+        sys.exit(code)
+    elif args.command == "generate-captions":
+        code = run_generate_captions(
+            transcript_path=args.transcript_json,
+            highlight_path=args.highlight_json,
+            output_path=args.output,
+            caption_style=args.caption_style,
+            font_name=args.font_name,
+            font_size=args.caption_font_size,
+            margin_v=args.caption_margin_v,
         )
         sys.exit(code)
 

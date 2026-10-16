@@ -238,6 +238,31 @@ class SelectedHighlight(BaseModel):
 # Framing & Crop Plan Schemas (Phase 4 contract)
 # ---------------------------------------------------------------------------
 
+class CropBoxPixels(BaseModel):
+    """Integer pixel bounding box for crop cut [x, y, width, height]."""
+    x: int = Field(..., ge=0)
+    y: int = Field(..., ge=0)
+    width: int = Field(..., gt=0)
+    height: int = Field(..., gt=0)
+
+
+class FaceBoundingBox(BaseModel):
+    """Detected face bounding box in pixel coordinates."""
+    x: int
+    y: int
+    width: int
+    height: int
+    confidence: Optional[float] = None
+
+
+class CropTrackingMode(str, Enum):
+    FACE_FOLLOWING = "face_following"
+    CENTER_FALLBACK = "center_fallback"
+    INTERPOLATED_HOLD = "interpolated_hold"
+    CONTENT_FOLLOWING = "content_following"
+    CONTENT_HOLD = "content_hold"
+
+
 class NormalizedCropBox(BaseModel):
     x_min: float = Field(..., ge=0.0, le=1.0)
     y_min: float = Field(..., ge=0.0, le=1.0)
@@ -265,6 +290,53 @@ class CropKeyframe(BaseModel):
     transition: str = "smooth_pan"  # "smooth_pan" | "cut"
 
 
+class CropKeyframeResult(BaseModel):
+    """Detailed crop keyframe at a sampled analysis timestamp."""
+    timestamp_abs_sec: float = Field(..., ge=0.0, description="Absolute source video timestamp")
+    timestamp_rel_sec: float = Field(..., ge=0.0, description="Relative timestamp from start of highlight clip")
+    crop_box_pixels: CropBoxPixels
+    crop_box_norm: NormalizedCropBox
+    tracking_mode: CropTrackingMode = CropTrackingMode.CENTER_FALLBACK
+    detected_faces_count: int = 0
+    primary_face_box: Optional[FaceBoundingBox] = None
+    content_candidate: Optional[Any] = None
+    content_tracking_mode: Optional[str] = None
+    scene_change_detected: bool = False
+    transition: str = "smooth_pan"  # "smooth_pan" | "cut"
+
+
+class VisualDiagnostics(BaseModel):
+    """Visual inspection diagnostics collected across analyzed video frames."""
+    total_frames_analyzed: int = 0
+    face_detected_frames_count: int = 0
+    fallback_frames_count: int = 0
+    interpolated_hold_frames_count: int = 0
+    scene_changes_detected_count: int = 0
+    scene_change_timestamps: List[float] = Field(default_factory=list)
+    decode_error_count: int = 0
+    face_detection_ratio: float = 0.0
+    fallback_used: bool = False
+
+
+class CropPlanResult(BaseModel):
+    """Master Phase 4 Output Contract: Validated 9:16 Crop Plan Timeline."""
+    schema_version: str = "1.0"
+    source: SourceMetadata
+    highlight: HighlightResult
+    target_aspect_ratio: str = "9:16"
+    target_aspect_ratio_float: float = 0.5625
+    source_width: int
+    source_height: int
+    crop_width: Optional[int] = None
+    crop_height: Optional[int] = None
+    analysis_interval_sec: float = 0.5
+    tracking_method: str = "opencv_haar_tracker_v1"
+    fallback_used: bool = False
+    keyframes: List[CropKeyframeResult] = Field(default_factory=list)
+    diagnostics: VisualDiagnostics = Field(default_factory=VisualDiagnostics)
+    warnings: List[str] = Field(default_factory=list)
+
+
 class CropPlan(BaseModel):
     clip_id: str
     aspect_ratio: str = "9:16"
@@ -275,8 +347,162 @@ class CropPlan(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Subtitle & Code Overlay Schemas (Phase 5 contract)
+# Video Rendering Schemas (Phase 5, 5.1 & 5.2 contract)
 # ---------------------------------------------------------------------------
+
+class CompositionMode(str, Enum):
+    ADAPTIVE_HYBRID = "adaptive_hybrid"
+    CROP_ONLY = "crop_only"
+    PRESENTATION_FIT_BLUR = "presentation_fit_blur"
+    CONTENT_ONLY = "content_only"
+
+
+class RenderOptions(BaseModel):
+    """Configuration options for final video rendering."""
+    output_width: int = 720
+    output_height: int = 1280
+    video_bitrate: str = "4M"
+    audio_bitrate: str = "128k"
+    preset: str = "fast"
+    crf: int = 20
+    overwrite: bool = False
+    composition_mode: str = "adaptive_hybrid"
+    sustained_face_loss_sec: float = 1.0
+    transition_duration_sec: float = 0.25
+    bg_darken_factor: float = 0.55
+    bg_blur_sigma: float = 10.0
+    tiny_face_ratio_threshold: float = 0.015
+    enable_content_tracking: bool = True
+    content_min_score: float = 0.35
+    content_max_width_ratio: float = 0.45
+    content_smoothing_alpha: float = 0.3
+    content_hold_sec: float = 1.0
+    subtitles_enabled: bool = False
+    caption_style: str = "karaoke"
+    subtitles_ass_path: Optional[str] = None
+    transcript_path: Optional[str] = None
+    caption_font_name: str = "Arial"
+    caption_font_size: int = 44
+    caption_margin_v: int = 190
+
+
+class SceneType(str, Enum):
+    """Categorization of video scenes for intelligent layout framing (Phase 5.3)."""
+    PRESENTER_ONLY = "presenter_only"
+    PRECOMPOSITED_PIP = "precomposited_pip"
+    PRESENTATION_SCREEN = "presentation_screen"
+    TRANSITION_OR_UNCERTAIN = "transition_or_uncertain"
+
+
+class RenderResult(BaseModel):
+    """Master Phase 5/5.1/5.2/5.3/6 Output Contract: Validated Rendered Video Result."""
+    schema_version: str = "1.3"
+    source_video: str
+    highlight_start_sec: float
+    highlight_end_sec: float
+    requested_duration_sec: float
+    output_path: str
+    output_width: int
+    output_height: int
+    output_fps: float
+    output_video_codec: str = "h264"
+    output_audio_codec: Optional[str] = None
+    audio_included: bool = True
+    rendered_frame_count: int
+    actual_video_duration_sec: float
+    actual_audio_duration_sec: Optional[float] = None
+    render_duration_sec: float
+    crop_plan_reference: Optional[str] = None
+    highlight_reference: Optional[str] = None
+    composition_mode: str = "adaptive_hybrid"
+    presenter_frames_count: int = 0
+    presentation_frames_count: int = 0
+    content_frames_count: int = 0
+    content_detections_count: int = 0
+    composition_transitions_count: int = 0
+    scene_cut_transitions_count: int = 0
+    sustained_loss_transitions_count: int = 0
+    content_transitions_count: int = 0
+    scene_type_distribution: Dict[str, int] = Field(default_factory=dict)
+    fallback_events_count: int = 0
+    frame_diagnostics_sample: List[Dict[str, Any]] = Field(default_factory=list)
+    background_style: Dict[str, Any] = Field(default_factory=dict)
+    content_tracking_diagnostics: Dict[str, Any] = Field(default_factory=dict)
+    subtitles_enabled: bool = False
+    caption_style: Optional[str] = None
+    subtitles_ass_path: Optional[str] = None
+    caption_groups_count: Optional[int] = None
+    caption_diagnostics: Optional[Dict[str, Any]] = None
+    warnings: List[str] = Field(default_factory=list)
+    success: bool = True
+
+
+# ---------------------------------------------------------------------------
+# Subtitle & Code Overlay Schemas (Phase 6 contract)
+# ---------------------------------------------------------------------------
+
+class CaptionStyle(str, Enum):
+    STANDARD = "standard"
+    KARAOKE = "karaoke"
+
+
+class CaptionOptions(BaseModel):
+    """Configuration options for subtitle formatting, styling, and grouping."""
+    enabled: bool = True
+    style: CaptionStyle = CaptionStyle.KARAOKE
+    font_name: str = "Arial"
+    font_size: int = 44
+    primary_color: str = "&H00FFFFFF"    # Crisp White
+    highlight_color: str = "&H0000FFFF"  # Vibrant Yellow in BGR format
+    outline_color: str = "&H00141414"    # Dark Charcoal
+    back_color: str = "&H80000000"       # 50% Translucent Shadow
+    outline_width: float = 3.2
+    shadow_depth: float = 1.2
+    margin_v: int = 190
+    margin_lr: int = 40
+    max_words_per_group: int = 5
+    min_words_per_group: int = 2
+    max_chars_per_line: int = 28
+    speech_pause_threshold_sec: float = 0.38
+    tail_hold_sec: float = 0.28
+
+
+class CaptionWord(BaseModel):
+    """Highlight-relative word timing token for caption rendering and highlighting."""
+    id: Optional[int] = None
+    text: str
+    start_sec: float
+    end_sec: float
+    source_word_ids: List[int] = Field(default_factory=list)
+    confidence: Optional[float] = None
+    correction: Optional[CorrectionMetadata] = None
+
+
+class CaptionGroup(BaseModel):
+    """A coherent 1-2 line subtitle block with timing boundaries and constituent words."""
+    id: int
+    start_sec: float
+    end_sec: float
+    text: str
+    lines: List[str] = Field(default_factory=list)
+    words: List[CaptionWord] = Field(default_factory=list)
+    is_karaoke: bool = False
+
+
+class CaptionDiagnostics(BaseModel):
+    """Audit diagnostics for caption filtering, grouping, and ASS generation."""
+    total_source_words: int = 0
+    highlight_words_count: int = 0
+    caption_groups_count: int = 0
+    total_ass_events: int = 0
+    style: str = "karaoke"
+    first_caption_start_sec: Optional[float] = None
+    last_caption_end_sec: Optional[float] = None
+    zero_duration_words_count: int = 0
+    clamped_words_count: int = 0
+    time_conversion_convention: str = "relative_to_highlight_start"
+    ass_file_path: Optional[str] = None
+
 
 class CodeOverlay(BaseModel):
     overlay_id: str
