@@ -422,13 +422,61 @@ Test coverage breakdown:
   - Subtitle timestamp formatting (`H:MM:SS.cs`) with centisecond rounding.
   - Custom font size, margin, color, and outline options.
   - End-to-end ASS generation with diagnostics reconciliation.
+* **Phase 7 Branding Kit, Reusable Brand Profiles & Watermark Rendering (24 tests):**
+  - Hex color normalization and conversion to ASS BGR format (`&HAABBGGRR&`) and OpenCV BGR integer tuples.
+  - Loading and validation of built-in starter presets (`educational_default`, `creator_tech`, `minimal_clean`).
+  - Custom JSON brand profile loading and validation.
+  - Rejection of unsupported SVG logo assets with actionable error guidance.
+  - 4-channel BGRA logo preparation with aspect-ratio preservation, max height clamping, and opacity scaling.
+  - Vectorized alpha blending for frame compositing with boundary clamping.
+  - Heuristic safe-placement collision avoidance against presenter face boxes, PiP webcam insets, and caption regions.
+  - Temporal stability via `BrandSceneTracker`, locking logo anchors per scene and preventing frame-to-frame jumping.
+  - Application of brand typography and palette colors to standard and karaoke subtitle generation.
+  - CLI override precedence (CLI flags > Profile settings > System defaults).
 
 ---
 
-## 7. Known Limitations & Teammate Boundaries
+## 7. Phase 7: Reusable Brand Profiles & Video Rendering
 
-1. **Lightweight Detector Limitations:** The scene classification relies on OpenCV edge/gradient heuristics, morphological groupings, and Haar cascade face detection. It does not perform full deep semantic segmentation or OCR, does not require a GPU, and runs locally with zero API costs.
-2. **Subtitle Safe Placement:** Subtitles are placed in the lower third margin ($y \approx 1050\text{--}1090\text{ px}$, `margin_v=190`), cleanly outside the presentation viewport ($y = 438\text{--}842\text{ px}$) on 9:16 vertical canvases.
-3. **Upscaling Limitation:** Upscaling from an $854 \times 480$ landscape video with a $270 \times 480$ crop to $720 \times 1280$ utilizes Lanczos-4 interpolation, which produces a clean upscale but cannot synthesize optical detail missing in the original camera capture.
-4. **Teammate Boundary Preservation:** Teammate-owned routes (`next-app/app/api/upload/route.ts` and `next-app/app/api/video_gen/route.ts`) remain completely untouched.
+Phase 7 adds a reusable visual branding kit allowing educational creators to configure consistent visual identity across vertical reels:
+
+### Starter Presets (`services/ai-worker/config/brands/`)
+1. **`educational_default` (EduReel Classic):** High-contrast educational styling optimized for mobile computer science lectures. Primary royal blue (`#2563EB`), vibrant golden yellow accent (`#FACC15`), top-left logo, 0.22 width scale, 90% opacity.
+2. **`creator_tech` (CodeCraft Creator):** Tech-influencer styling with electric cyan accents (`#00F0FF`), purple brand primary (`#8B5CF6`), and top-right branding.
+3. **`minimal_clean` (Minimal Clean):** Minimalist low-contrast branding suitable for formal technical presentations, slate primary (`#475569`), sky blue accent (`#38BDF8`), and 70% opacity.
+
+### CLI Usage
+
+```powershell
+# Validate a brand profile preset or custom JSON file
+python -m app.cli validate-brand -p educational_default
+
+# Render a branded 9:16 vertical reel with karaoke captions
+python -m app.cli render-video `
+  -v "C:\Users\adiit\Desktop\lecture.mp4" `
+  -H "storage/highlights/lecture_highlight.json" `
+  -C "storage/crop_plans/lecture_crop_plan.json" `
+  -T "storage/transcripts/lecture.json" `
+  -o "storage/rendered/lecture_reel_branded.mp4" `
+  --subtitles `
+  --caption-style karaoke `
+  --brand-profile educational_default `
+  --composition-mode adaptive_hybrid `
+  --overwrite `
+  --save-manifest
+
+# Render without branding (preserves unbranded behavior)
+python -m app.cli render-video ... --no-branding -o "storage/rendered/output.mp4"
+```
+
+---
+
+## 8. Known Limitations & Teammate Boundaries
+
+1. **Lightweight Heuristic Detector Limitations:** Safe-placement collision avoidance uses bounding boxes from OpenCV face detection, PiP quadrant heuristic rules ($x \ge 60\%, y \le 25\%$), and the caption safe zone ($y \in [1030, 1150]$). It is conservative and deterministic, but does not perform full deep semantic segmentation.
+2. **Logo Format Support:** High-resolution transparent PNG (4-channel BGRA) and standard JPEG/WebP formats are supported. SVG files are rejected with an actionable error because OpenCV does not include a native vector renderer.
+3. **Temporal Stability Anchor Locking:** To eliminate visual flicker, logo anchors are locked during a scene and only re-evaluated at deliberate scene cuts detected by the pipeline.
+4. **Subtitle Safe Placement:** Subtitles are placed in the lower third margin ($y \approx 1050\text{--}1090\text{ px}$, `margin_v=190`), cleanly outside the presentation viewport ($y = 438\text{--}842\text{ px}$) on 9:16 vertical canvases.
+5. **Teammate Boundary Preservation:** Teammate-owned routes (`next-app/app/api/upload/route.ts` and `next-app/app/api/video_gen/route.ts`) remain completely untouched.
+
 

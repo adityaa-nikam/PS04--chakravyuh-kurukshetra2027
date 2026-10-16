@@ -434,7 +434,7 @@ PlayResY: {play_res_y}
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: CaptionStandard,{opts.font_name},{opts.font_size},{pri_col},&H00000000,{out_col},{back_col},-1,0,0,0,100,100,0,0,1,{opts.outline_width},{opts.shadow_depth},2,{opts.margin_lr},{opts.margin_lr},{opts.margin_v},1
+Style: CaptionStandard,{opts.font_name},{opts.font_size},{pri_col},&H00000000,{out_col},{back_col},{-1 if getattr(opts, 'bold', True) else 0},0,0,0,100,100,0,0,1,{opts.outline_width},{opts.shadow_depth},2,{opts.margin_lr},{opts.margin_lr},{opts.margin_v},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -587,3 +587,6 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             raise RuntimeError(f"Captioned video output file was not created or is empty: {out_p}")
 
         return out_p
+
+    # Alias for ASS content builder
+    build_ass_content = generate_ass_script

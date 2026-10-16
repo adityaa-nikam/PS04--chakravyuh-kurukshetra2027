@@ -542,6 +542,7 @@ class CaptionOptions(BaseModel):
     style: CaptionStyle = CaptionStyle.KARAOKE
     font_name: str = "Arial"
     font_size: int = 44
+    bold: bool = True
     primary_color: str = "&H00FFFFFF"    # Crisp White
     highlight_color: str = "&H0000FFFF"  # Vibrant Yellow in BGR format
     outline_color: str = "&H00141414"    # Dark Charcoal
@@ -565,6 +566,8 @@ class CaptionOptions(BaseModel):
             self.font_name = t.font_family
         if t.font_size:
             self.font_size = t.font_size
+        if t.bold is not None:
+            self.bold = t.bold
         if t.text_color:
             self.primary_color = hex_to_ass_color(t.text_color).rstrip("&")
         elif p.text:

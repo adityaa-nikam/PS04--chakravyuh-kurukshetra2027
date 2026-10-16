@@ -436,7 +436,7 @@ class BrandManager:
             30,
             int(canvas_width * 0.38),
             int(canvas_height * 0.25),
-        ) if scene_type == "precomposited_pip" else None
+        ) if scene_type in ("pip", "precomposited_pip") else None
 
         best_anchor = preferred_anchor
         best_coords = cls.calculate_anchor_coordinates(
@@ -476,9 +476,42 @@ class BrandManager:
                 best_anchor = cand
                 best_coords = (cx, cy)
 
-        # If even the best anchor has an extreme collision penalty (>600), hide the logo
         is_hidden = (best_penalty >= 650.0)
         return (best_coords[0], best_coords[1], best_anchor.value, is_hidden)
+
+    def compute_safe_logo_placement(
+        self,
+        canvas_w: int,
+        canvas_h: int,
+        logo_w: int,
+        logo_h: int,
+        padding_x: int = 32,
+        padding_y: int = 36,
+        scene_type: Optional[str] = None,
+        face_box_pixels: Optional[Tuple[int, int, int, int]] = None,
+        caption_margin_v: int = 190,
+    ) -> Tuple[int, int, str, bool, str]:
+        """Calculates safe placement and returns (x, y, anchor_name, is_hidden, reason)."""
+        pref = self.profile.logo.anchor if self.profile else LogoAnchor.TOP_LEFT
+        x, y, anchor_name, is_hidden = self.evaluate_safe_placement(
+            preferred_anchor=pref,
+            canvas_width=canvas_w,
+            canvas_height=canvas_h,
+            logo_w=logo_w,
+            logo_h=logo_h,
+            padding_x=padding_x,
+            padding_y=padding_y,
+            scene_type=scene_type,
+            face_box_pixels=face_box_pixels,
+            caption_margin_v=caption_margin_v,
+        )
+        if is_hidden:
+            reason = "Logo hidden due to collisions with all candidate regions"
+        elif anchor_name != pref.value:
+            reason = f"Switched from {pref.value} to {anchor_name} to avoid occlusion"
+        else:
+            reason = f"Placement clear at {anchor_name}"
+        return (x, y, anchor_name, is_hidden, reason)
 
     @staticmethod
     def _rects_intersect(
@@ -600,13 +633,25 @@ class BrandSceneTracker:
             self.current_anchor = anchor_name
             self.is_hidden = hidden
 
+    def update_for_frame(
+        self,
+        frame_idx: int,
+        time_sec: float,
+        is_cut_frame: bool,
+        scene_type: Optional[str] = None,
+        face_box_pixels: Optional[Tuple[int, int, int, int]] = None,
+    ) -> None:
+        """Updates tracker state for the current frame, re-evaluating placement only at cuts."""
+        if is_cut_frame:
+            self.on_scene_cut(scene_type=scene_type, face_box_pixels=face_box_pixels)
+
     def on_scene_cut(
         self,
         scene_type: Optional[str] = None,
         face_box_pixels: Optional[Tuple[int, int, int, int]] = None,
     ) -> None:
         """Re-evaluates safe placement at a deliberate scene cut boundary."""
-        if not self.logo_bgra or not self.manager.profile:
+        if self.logo_bgra is None or self.manager.profile is None:
             return
 
         lw, lh = self.logo_bgra.shape[1], self.logo_bgra.shape[0]
