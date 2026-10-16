@@ -1,0 +1,39 @@
+{
+  "brand_id": "creator_tech",
+  "brand_name": "CodeCraft Creator",
+  "description": "Vibrant tech-influencer styling with electric cyan accents and top-right branding.",
+  "version": "1.0",
+  "palette": {
+    "primary": "#8B5CF6",
+    "secondary": "#0F172A",
+    "accent": "#00F0FF",
+    "text": "#F8FAFC",
+    "background": "#020617"
+  },
+  "typography": {
+    "font_family": "Arial",
+    "bold": true,
+    "font_size": 36,
+    "text_color": "#F8FAFC",
+    "highlight_color": "#00F0FF",
+    "outline_color": "#09090B",
+    "outline_width": 2.8,
+    "shadow_color": "#000000A0",
+    "shadow_offset": 1.6,
+    "margin_v": 190,
+    "margin_lr": 36,
+    "alignment": 2,
+    "box_backing": false
+  },
+  "logo": {
+    "enabled": true,
+    "asset_path": "app/assets/brand_logo_sample.png",
+    "anchor": "top_right",
+    "scale": 0.20,
+    "max_height": 55,
+    "opacity": 0.85,
+    "padding_x": 32,
+    "padding_y": 36,
+    "safe_placement": true
+  }
+}

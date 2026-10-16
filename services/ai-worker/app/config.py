@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     JOBS_DIR: Path = WORKSPACE_ROOT / "storage" / "jobs"
     TEST_SAMPLES_DIR: Path = WORKSPACE_ROOT / "storage" / "test_samples"
 
+    # Brand Profiles Directory (Phase 7)
+    BRANDS_DIR: Path = Path(__file__).resolve().parent.parent / "config" / "brands"
+
     # Vocabulary Path (relative to ai-worker package root)
     VOCABULARY_FILE: Path = (
         Path(__file__).resolve().parent.parent / "vocabulary" / "technical_terms.json"
@@ -84,6 +87,7 @@ for path in [
     settings.SUBTITLES_DIR,
     settings.JOBS_DIR,
     settings.TEST_SAMPLES_DIR,
+    settings.BRANDS_DIR,
     settings.VOCABULARY_FILE.parent,
 ]:
     path.mkdir(parents=True, exist_ok=True)

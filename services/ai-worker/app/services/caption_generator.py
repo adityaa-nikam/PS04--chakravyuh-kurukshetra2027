@@ -412,6 +412,17 @@ class CaptionGeneratorService:
         # PrimaryColour: base text color
         # OutlineColour: outline color
         # BackColour: shadow color
+        def _clean_ass_col(c: str) -> str:
+            s = str(c).strip()
+            if not s.endswith("&"):
+                s += "&"
+            return s
+
+        pri_col = _clean_ass_col(opts.primary_color)
+        hl_col = _clean_ass_col(opts.highlight_color)
+        out_col = _clean_ass_col(opts.outline_color)
+        back_col = _clean_ass_col(opts.back_color)
+
         header = f"""[Script Info]
 Title: PS04 Reel Studio Subtitles
 ScriptType: v4.00+
@@ -423,7 +434,7 @@ PlayResY: {play_res_y}
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: CaptionStandard,{opts.font_name},{opts.font_size},{opts.primary_color},&H00000000,{opts.outline_color},{opts.back_color},-1,0,0,0,100,100,0,0,1,{opts.outline_width},{opts.shadow_depth},2,{opts.margin_lr},{opts.margin_lr},{opts.margin_v},1
+Style: CaptionStandard,{opts.font_name},{opts.font_size},{pri_col},&H00000000,{out_col},{back_col},-1,0,0,0,100,100,0,0,1,{opts.outline_width},{opts.shadow_depth},2,{opts.margin_lr},{opts.margin_lr},{opts.margin_v},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -470,7 +481,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                         for t in tokens:
                             escaped_t = escape_ass_text(t)
                             if w_counter == i:
-                                out_tokens.append(f"{{\\c{opts.highlight_color}&}}{escaped_t}{{\\c{opts.primary_color}&}}")
+                                out_tokens.append(f"{{\\c{hl_col}}}{escaped_t}{{\\c{pri_col}}}")
                             else:
                                 out_tokens.append(escaped_t)
                             w_counter += 1

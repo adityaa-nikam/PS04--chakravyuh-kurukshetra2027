@@ -357,6 +357,88 @@ class CompositionMode(str, Enum):
     CONTENT_ONLY = "content_only"
 
 
+# ---------------------------------------------------------------------------
+# Brand Profile & Watermark Schemas (Phase 7 contract)
+# ---------------------------------------------------------------------------
+
+class LogoAnchor(str, Enum):
+    TOP_LEFT = "top_left"
+    TOP_RIGHT = "top_right"
+    BOTTOM_LEFT = "bottom_left"
+    BOTTOM_RIGHT = "bottom_right"
+    DYNAMIC_SAFE = "dynamic_safe"
+
+
+class BrandPalette(BaseModel):
+    primary: str = "#2563EB"
+    secondary: str = "#1E293B"
+    accent: str = "#FACC15"
+    text: str = "#FFFFFF"
+    background: Optional[str] = None
+
+
+class BrandTypography(BaseModel):
+    font_family: str = "Arial"
+    bold: bool = True
+    font_size: int = 36
+    text_color: Optional[str] = None
+    highlight_color: Optional[str] = None
+    outline_color: str = "#000000"
+    outline_width: float = 2.5
+    shadow_color: str = "#00000080"
+    shadow_offset: float = 1.5
+    margin_v: int = 190
+    margin_lr: int = 40
+    alignment: int = 2
+    box_backing: bool = False
+    backing_color: Optional[str] = "#00000066"
+
+
+class BrandLogoConfig(BaseModel):
+    enabled: bool = False
+    asset_path: Optional[str] = None
+    anchor: LogoAnchor = LogoAnchor.TOP_LEFT
+    scale: float = Field(0.18, ge=0.04, le=0.60)
+    max_height: Optional[int] = Field(100, ge=10, le=500)
+    opacity: float = Field(0.85, ge=0.0, le=1.0)
+    padding_x: int = Field(32, ge=0, le=250)
+    padding_y: int = Field(32, ge=0, le=250)
+    start_sec: Optional[float] = None
+    end_sec: Optional[float] = None
+    safe_placement: bool = True
+
+
+class BrandProfile(BaseModel):
+    brand_id: str
+    brand_name: str
+    description: Optional[str] = None
+    version: str = "1.0"
+    palette: BrandPalette = Field(default_factory=BrandPalette)
+    typography: BrandTypography = Field(default_factory=BrandTypography)
+    logo: BrandLogoConfig = Field(default_factory=BrandLogoConfig)
+
+
+class BrandDiagnostics(BaseModel):
+    enabled: bool = False
+    brand_id: Optional[str] = None
+    brand_name: Optional[str] = None
+    profile_version: Optional[str] = None
+    profile_path: Optional[str] = None
+    logo_enabled: bool = False
+    logo_asset_path: Optional[str] = None
+    effective_anchor: Optional[str] = None
+    effective_logo_width: Optional[int] = None
+    effective_logo_height: Optional[int] = None
+    effective_opacity: Optional[float] = None
+    safe_placement_applied: bool = False
+    anchor_switches_count: int = 0
+    logo_hidden_scenes_count: int = 0
+    caption_font_family: Optional[str] = None
+    caption_text_color_ass: Optional[str] = None
+    caption_highlight_color_ass: Optional[str] = None
+    warnings: List[str] = Field(default_factory=list)
+
+
 class RenderOptions(BaseModel):
     """Configuration options for final video rendering."""
     output_width: int = 720
@@ -384,6 +466,13 @@ class RenderOptions(BaseModel):
     caption_font_name: str = "Arial"
     caption_font_size: int = 44
     caption_margin_v: int = 190
+    # Phase 7 Branding Options
+    brand_profile_path: Optional[str] = None
+    branding_enabled: bool = True
+    logo_path_override: Optional[str] = None
+    logo_anchor_override: Optional[str] = None
+    logo_opacity_override: Optional[float] = None
+    logo_scale_override: Optional[float] = None
 
 
 class SceneType(str, Enum):
@@ -395,8 +484,8 @@ class SceneType(str, Enum):
 
 
 class RenderResult(BaseModel):
-    """Master Phase 5/5.1/5.2/5.3/6 Output Contract: Validated Rendered Video Result."""
-    schema_version: str = "1.3"
+    """Master Phase 5/5.1/5.2/5.3/6/7 Output Contract: Validated Rendered Video Result."""
+    schema_version: str = "1.5"
     source_video: str
     highlight_start_sec: float
     highlight_end_sec: float
@@ -433,6 +522,7 @@ class RenderResult(BaseModel):
     subtitles_ass_path: Optional[str] = None
     caption_groups_count: Optional[int] = None
     caption_diagnostics: Optional[Dict[str, Any]] = None
+    branding: Optional[Dict[str, Any]] = None
     warnings: List[str] = Field(default_factory=list)
     success: bool = True
 
@@ -465,6 +555,36 @@ class CaptionOptions(BaseModel):
     max_chars_per_line: int = 28
     speech_pause_threshold_sec: float = 0.38
     tail_hold_sec: float = 0.28
+
+    def apply_brand_profile(self, profile: "BrandProfile") -> None:
+        """Applies typography, text color, and karaoke highlight styling from a BrandProfile."""
+        from app.services.brand_manager import hex_to_ass_color
+        t = profile.typography
+        p = profile.palette
+        if t.font_family:
+            self.font_name = t.font_family
+        if t.font_size:
+            self.font_size = t.font_size
+        if t.text_color:
+            self.primary_color = hex_to_ass_color(t.text_color).rstrip("&")
+        elif p.text:
+            self.primary_color = hex_to_ass_color(p.text).rstrip("&")
+        if t.highlight_color:
+            self.highlight_color = hex_to_ass_color(t.highlight_color).rstrip("&")
+        elif p.accent:
+            self.highlight_color = hex_to_ass_color(p.accent).rstrip("&")
+        if t.outline_color:
+            self.outline_color = hex_to_ass_color(t.outline_color).rstrip("&")
+        if t.shadow_color:
+            self.back_color = hex_to_ass_color(t.shadow_color, default_alpha=128).rstrip("&")
+        if t.outline_width is not None:
+            self.outline_width = t.outline_width
+        if t.shadow_offset is not None:
+            self.shadow_depth = t.shadow_offset
+        if t.margin_v is not None:
+            self.margin_v = t.margin_v
+        if t.margin_lr is not None:
+            self.margin_lr = t.margin_lr
 
 
 class CaptionWord(BaseModel):

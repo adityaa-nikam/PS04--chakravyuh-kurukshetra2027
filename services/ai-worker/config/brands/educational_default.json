@@ -1,0 +1,39 @@
+{
+  "brand_id": "educational_default",
+  "brand_name": "EduReel Classic",
+  "description": "Standard high-contrast educational styling optimized for mobile computer science lectures.",
+  "version": "1.0",
+  "palette": {
+    "primary": "#2563EB",
+    "secondary": "#1E293B",
+    "accent": "#FACC15",
+    "text": "#FFFFFF",
+    "background": "#0F172A"
+  },
+  "typography": {
+    "font_family": "Arial",
+    "bold": true,
+    "font_size": 36,
+    "text_color": "#FFFFFF",
+    "highlight_color": "#FACC15",
+    "outline_color": "#000000",
+    "outline_width": 2.5,
+    "shadow_color": "#00000080",
+    "shadow_offset": 1.5,
+    "margin_v": 190,
+    "margin_lr": 40,
+    "alignment": 2,
+    "box_backing": false
+  },
+  "logo": {
+    "enabled": true,
+    "asset_path": "app/assets/brand_logo_sample.png",
+    "anchor": "top_left",
+    "scale": 0.22,
+    "max_height": 60,
+    "opacity": 0.90,
+    "padding_x": 32,
+    "padding_y": 36,
+    "safe_placement": true
+  }
+}

@@ -180,6 +180,17 @@ python -m app.cli generate-captions `
   --margin-v 190
 ```
 
+### F. FastAPI Server for Next.js Frontend Bridge
+Runs the REST API daemon on port 8000 for web UI integration:
+```powershell
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+Endpoints:
+* `POST /api/v1/pipeline/start`: Triggers end-to-end background processing (`video_path`, `job_id`).
+* `GET /api/v1/pipeline/status/{job_id}`: Real-time progress monitoring (0% to 100%) and stage artifacts.
+* `GET /api/v1/pipeline/video/{job_id}`: Streams the final rendered vertical reel MP4.
+* `GET /api/v1/pipeline/jobs`: Lists all active and completed jobs.
+
 ---
 
 ## 4. Phase 5.2 Intelligent Screen-Content Tracking & Three-Way Composition

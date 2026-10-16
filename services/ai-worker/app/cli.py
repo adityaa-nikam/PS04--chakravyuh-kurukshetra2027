@@ -393,8 +393,14 @@ def run_video_rendering(
     caption_font_name: str = "Arial",
     caption_font_size: int = 44,
     caption_margin_v: int = 190,
+    brand_profile: Optional[str] = None,
+    no_branding: bool = False,
+    logo_path: Optional[str] = None,
+    logo_anchor: Optional[str] = None,
+    logo_scale: Optional[float] = None,
+    logo_opacity: Optional[float] = None,
 ) -> int:
-    """Runs the Phase 5/5.1/5.2/6 video rendering pipeline to produce vertical 9:16 MP4.
+    """Runs the Phase 5/5.1/5.2/6/7 video rendering pipeline to produce vertical 9:16 MP4.
     
     Returns:
         0 on success, non-zero on failure.
@@ -408,7 +414,7 @@ def run_video_rendering(
     c_path = Path(crop_plan_path).resolve()
 
     print("\n" + "=" * 70)
-    print("PS04 REEL STUDIO — PHASE 6 SYNCHRONIZED CAPTION RENDERING ENGINE")
+    print("PS04 REEL STUDIO — PHASE 7 BRAND-AWARE VIDEO RENDERING ENGINE")
     print("=" * 70)
     print(f"Source Video:       {v_path}")
     print(f"Highlight Result:   {h_path}")
@@ -416,6 +422,10 @@ def run_video_rendering(
     print(f"Composition Mode:   {composition_mode}")
     print(f"Content Tracking:   {enable_content_tracking}")
     print(f"Subtitles:          {'Enabled (' + caption_style + ')' if subtitles else 'Disabled'}")
+    if not no_branding and brand_profile:
+        print(f"Brand Profile:      {brand_profile}")
+    else:
+        print(f"Branding:           {'Disabled (--no-branding)' if no_branding else 'Default / Unbranded'}")
     print(f"Target Resolution:  {output_width}x{output_height} (9:16)")
     print(f"Overwrite Existing: {overwrite}")
     print("=" * 70 + "\n")
@@ -460,10 +470,16 @@ def run_video_rendering(
         caption_font_name=caption_font_name,
         caption_font_size=caption_font_size,
         caption_margin_v=caption_margin_v,
+        brand_profile_path=brand_profile,
+        branding_enabled=not no_branding,
+        logo_path_override=logo_path,
+        logo_anchor_override=logo_anchor,
+        logo_scale_override=logo_scale,
+        logo_opacity_override=logo_opacity,
     )
 
     try:
-        logger.info("Executing video rendering with adaptive composition, audio muxing, and captions...")
+        logger.info("Executing video rendering with adaptive composition, audio muxing, captions, and branding...")
         result = VideoRendererService.render_video(
             video_path=v_path,
             highlight_input=h_path,
@@ -472,6 +488,7 @@ def run_video_rendering(
             options=options,
             transcript_input=transcript_path,
             subtitles_ass_input=subtitles_ass_path,
+            brand_profile_input=brand_profile,
         )
 
         manifest_path = None
@@ -505,6 +522,10 @@ def run_video_rendering(
             print(f"Subtitles:           Burned-in ({result.caption_style})")
             print(f"Subtitle File:       {result.subtitles_ass_path}")
             print(f"Caption Groups:      {result.caption_groups_count}")
+        if result.branding and result.branding.get("branding_enabled"):
+            b_info = result.branding
+            print(f"Brand Identity:      {b_info.get('brand_name')} (ID: {b_info.get('brand_id')})")
+            print(f"Logo Watermark:      {'Rendered' if b_info.get('logo_rendered') else 'Hidden / Suppressed'} (Anchor: {b_info.get('logo_anchor')}, Opacity: {b_info.get('logo_opacity')})")
         if manifest_path:
             print(f"Render Manifest:     {manifest_path}")
         if result.warnings:
@@ -618,6 +639,65 @@ def run_generate_captions(
     except Exception as e:
         logger.exception("Caption generation failed: %s", e)
         print(f"\n[ERROR] Caption generation failed: {e}", file=sys.stderr)
+        return 2
+
+
+def run_brand_validation(
+    profile_path: str,
+    no_asset_check: bool = False
+) -> int:
+    """Validates a brand profile JSON or preset and displays resolved settings (Phase 7).
+    
+    Returns:
+        0 on success, non-zero on failure.
+    """
+    from app.services.brand_manager import BrandManagerService
+
+    print("\n" + "=" * 70)
+    print("PS04 REEL STUDIO — PHASE 7 BRAND PROFILE VALIDATOR")
+    print("=" * 70)
+    print(f"Profile / Preset:    {profile_path}")
+    print(f"Verify Asset Files:  {not no_asset_check}")
+    print("=" * 70 + "\n")
+
+    try:
+        profile = BrandManagerService.load_profile(
+            profile_input=profile_path,
+            resolve_assets=not no_asset_check,
+        )
+        print("BRAND PROFILE VALIDATION SUCCESSFUL")
+        print("=" * 70)
+        print(f"Brand ID:            {profile.brand_id}")
+        print(f"Brand Name:          {profile.brand_name}")
+        print(f"Description:         {profile.description or 'N/A'}")
+        print(f"Version:             {profile.version}")
+        print("\nBrand Palette:")
+        print(f"  * Primary:         {profile.palette.primary}")
+        print(f"  * Secondary:       {profile.palette.secondary}")
+        print(f"  * Accent:          {profile.palette.accent}")
+        print(f"  * Text:            {profile.palette.text}")
+        if profile.palette.background:
+            print(f"  * Background:      {profile.palette.background}")
+        print("\nTypography & Captions:")
+        print(f"  * Font Family:     {profile.typography.font_family} (Bold: {profile.typography.bold})")
+        print(f"  * Font Size:       {profile.typography.font_size}pt")
+        print(f"  * Caption Color:   {profile.typography.text_color or profile.palette.text}")
+        print(f"  * Karaoke Color:   {profile.typography.highlight_color or profile.palette.accent}")
+        print(f"  * Outline:         {profile.typography.outline_color} ({profile.typography.outline_width}px)")
+        print(f"  * Margin Bottom:   {profile.typography.margin_v}px")
+        print("\nLogo & Watermark:")
+        print(f"  * Enabled:         {profile.logo.enabled}")
+        print(f"  * Anchor:          {profile.logo.anchor.value}")
+        print(f"  * Max Width Scale: {profile.logo.scale:.2f}")
+        print(f"  * Opacity:         {profile.logo.opacity:.2f}")
+        print(f"  * Padding (H / V): {profile.logo.padding_x}px / {profile.logo.padding_y}px")
+        if profile.logo.asset_path:
+            print(f"  * Asset Path:      {profile.logo.asset_path}")
+        print("=" * 70 + "\n")
+        return 0
+    except Exception as e:
+        logger.exception("Brand profile validation failed: %s", e)
+        print(f"\n[ERROR] Brand validation failed: {e}", file=sys.stderr)
         return 2
 
 
@@ -915,6 +995,43 @@ def main():
         default=190,
         help="Vertical margin from bottom in pixels (default: 190)"
     )
+    render_parser.add_argument(
+        "--brand-profile",
+        type=str,
+        default=None,
+        help="Name of built-in preset (educational_default, creator_tech, minimal_clean) or path to brand profile JSON (Phase 7)"
+    )
+    render_parser.add_argument(
+        "--no-branding",
+        action="store_true",
+        default=False,
+        help="Explicitly disable branding kit and logo overlay"
+    )
+    render_parser.add_argument(
+        "--logo-path",
+        type=str,
+        default=None,
+        help="Path to override logo image asset (PNG, JPG, WebP)"
+    )
+    render_parser.add_argument(
+        "--logo-anchor",
+        type=str,
+        default=None,
+        choices=["top_left", "top_right", "bottom_left", "bottom_right"],
+        help="Override logo placement anchor position"
+    )
+    render_parser.add_argument(
+        "--logo-scale",
+        type=float,
+        default=None,
+        help="Override logo width scale relative to canvas width (0.05 to 0.50)"
+    )
+    render_parser.add_argument(
+        "--logo-opacity",
+        type=float,
+        default=None,
+        help="Override logo opacity (0.0 to 1.0)"
+    )
 
     # 'generate-captions' command
     captions_parser = subparsers.add_parser("generate-captions", help="Generate synchronized ASS subtitles from transcript and highlight JSON (Phase 6)")
@@ -960,6 +1077,21 @@ def main():
         type=int,
         default=190,
         help="Vertical margin from bottom in pixels (default: 190)"
+    )
+
+    # 'validate-brand' command
+    brand_parser = subparsers.add_parser("validate-brand", help="Validate a brand profile JSON or preset and its visual assets (Phase 7)")
+    brand_parser.add_argument(
+        "-p", "--profile",
+        required=True,
+        type=str,
+        help="Brand profile preset name (educational_default, creator_tech, minimal_clean) or path to JSON"
+    )
+    brand_parser.add_argument(
+        "--no-asset-check",
+        action="store_true",
+        default=False,
+        help="Skip verifying presence of logo asset files"
     )
 
     args = parser.parse_args()
@@ -1023,6 +1155,12 @@ def main():
             subtitles_ass_path=args.subtitles_ass,
             caption_font_size=args.caption_font_size,
             caption_margin_v=args.caption_margin_v,
+            brand_profile=args.brand_profile,
+            no_branding=args.no_branding,
+            logo_path=args.logo_path,
+            logo_anchor=args.logo_anchor,
+            logo_scale=args.logo_scale,
+            logo_opacity=args.logo_opacity,
         )
         sys.exit(code)
     elif args.command == "generate-captions":
@@ -1034,6 +1172,12 @@ def main():
             font_name=args.font_name,
             font_size=args.caption_font_size,
             margin_v=args.caption_margin_v,
+        )
+        sys.exit(code)
+    elif args.command == "validate-brand":
+        code = run_brand_validation(
+            profile_path=args.profile,
+            no_asset_check=args.no_asset_check,
         )
         sys.exit(code)
 

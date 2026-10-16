@@ -34,7 +34,11 @@ from app.schemas import (
     CaptionStyle,
     CaptionOptions,
     CaptionDiagnostics,
+    BrandProfile,
+    BrandDiagnostics,
+    LogoAnchor,
 )
+from app.services.brand_manager import BrandManager, BrandSceneTracker, hex_to_ass_color
 from app.services.caption_generator import CaptionGeneratorService, format_ffmpeg_ass_filter
 from app.services.media_probe import MediaProbeService
 from app.services.screen_content_detector import (
@@ -942,6 +946,8 @@ class VideoRendererService:
         options: Optional[RenderOptions] = None,
         transcript_input: Optional[Union[str, Path, ValidatedTranscript]] = None,
         subtitles_ass_input: Optional[Union[str, Path]] = None,
+        brand_profile_input: Optional[Union[str, Path, BrandProfile]] = None,
+        manifest_path_input: Optional[Union[str, Path]] = None,
     ) -> RenderResult:
         """Executes full video rendering pipeline, producing a verified vertical MP4 video.
         
@@ -1005,6 +1011,30 @@ class VideoRendererService:
         fps = probe_meta.fps or 29.97
         total_frames = int(round(clip_duration * fps))
 
+        # Phase 7: Brand Profile Loading and Configuration
+        brand_manager: Optional[BrandManager] = None
+        brand_profile: Optional[BrandProfile] = None
+        if options.branding_enabled:
+            profile_target = brand_profile_input or options.brand_profile_path
+            if profile_target:
+                if isinstance(profile_target, BrandProfile):
+                    brand_profile = profile_target
+                else:
+                    brand_profile = BrandManager.load_profile(profile_target)
+
+                # Apply CLI overrides if present
+                if options.logo_path_override:
+                    brand_profile.logo.asset_path = str(options.logo_path_override)
+                    brand_profile.logo.enabled = True
+                if options.logo_anchor_override:
+                    brand_profile.logo.anchor = LogoAnchor(options.logo_anchor_override)
+                if options.logo_scale_override is not None:
+                    brand_profile.logo.scale = options.logo_scale_override
+                if options.logo_opacity_override is not None:
+                    brand_profile.logo.opacity = options.logo_opacity_override
+
+                brand_manager = BrandManager(brand_profile)
+
         # Phase 6: Subtitle generation and verification
         subtitles_enabled = (
             options.subtitles_enabled
@@ -1048,6 +1078,8 @@ class VideoRendererService:
                     font_size=options.caption_font_size,
                     margin_v=options.caption_margin_v,
                 )
+                if brand_profile:
+                    cap_opts.apply_brand_profile(brand_profile)
 
                 caption_groups = CaptionGeneratorService.group_words_into_captions(
                     words=rel_words,
@@ -1151,6 +1183,22 @@ class VideoRendererService:
                 str(temp_video)
             ]
 
+            # Phase 7: Prepare Brand Logo and Scene Tracker
+            logo_bgra = None
+            scene_tracker = None
+            if brand_manager and brand_profile and brand_profile.logo.enabled:
+                logo_bgra = brand_manager.prepare_logo(
+                    canvas_width=options.output_width,
+                    canvas_height=options.output_height,
+                )
+                scene_tracker = BrandSceneTracker(
+                    manager=brand_manager,
+                    canvas_width=options.output_width,
+                    canvas_height=options.output_height,
+                    logo_bgra=logo_bgra,
+                    caption_margin_v=options.caption_margin_v,
+                )
+
             logger.debug("Starting FFmpeg video encode pipe: %s", " ".join(encode_cmd))
             proc = subprocess.Popen(
                 encode_cmd,
@@ -1207,6 +1255,18 @@ class VideoRendererService:
                     crop_box = interpolator.get_crop_box(t_abs, exact_cut_passed=exact_cut_detected)
                     dominant_mode, alpha = classifier.get_composition_state(t_abs)
 
+                    # Phase 7: Re-evaluate brand logo safe placement at scene cuts
+                    if is_cut_frame and scene_tracker:
+                        face_box = None
+                        if kf_curr and kf_curr.primary_face_box:
+                            face_box = (
+                                kf_curr.primary_face_box.x,
+                                kf_curr.primary_face_box.y,
+                                kf_curr.primary_face_box.width,
+                                kf_curr.primary_face_box.height,
+                            )
+                        scene_tracker.on_scene_cut(scene_type=dominant_mode, face_box_pixels=face_box)
+
                     alt_box = (
                         kf_next.crop_box_pixels.x,
                         kf_next.crop_box_pixels.y,
@@ -1243,6 +1303,10 @@ class VideoRendererService:
                         darken_factor=options.bg_darken_factor,
                         alt_crop_box=alt_box,
                     )
+
+                    # Phase 7: Apply brand watermark/logo overlay
+                    if scene_tracker:
+                        composite_frame = scene_tracker.apply_to_frame(composite_frame)
 
                     # Diagnostic sample capture
                     if (k % sample_interval == 0) or is_cut_frame or fallback_triggered or k == total_frames - 1:
@@ -1368,8 +1432,36 @@ class VideoRendererService:
             "canvas_aspect": f"{options.output_width}:{options.output_height}",
         }
 
+        # Phase 7: Brand Diagnostics
+        brand_diagnostics = None
+        if brand_profile:
+            logo_w = brand_manager._cached_logo_dims[0] if (brand_manager and brand_manager._cached_logo_dims) else None
+            logo_h = brand_manager._cached_logo_dims[1] if (brand_manager and brand_manager._cached_logo_dims) else None
+            brand_diagnostics = {
+                "enabled": True,
+                "brand_id": brand_profile.brand_id,
+                "brand_name": brand_profile.brand_name,
+                "profile_version": brand_profile.version,
+                "profile_path": str(options.brand_profile_path) if options.brand_profile_path else None,
+                "logo_enabled": brand_profile.logo.enabled,
+                "logo_asset_path": brand_profile.logo.asset_path,
+                "effective_anchor": scene_tracker.current_anchor if scene_tracker else None,
+                "effective_logo_width": logo_w,
+                "effective_logo_height": logo_h,
+                "effective_opacity": brand_profile.logo.opacity,
+                "safe_placement_applied": brand_profile.logo.safe_placement,
+                "anchor_switches_count": scene_tracker.anchor_switches_count if scene_tracker else 0,
+                "logo_hidden_scenes_count": scene_tracker.logo_hidden_scenes_count if scene_tracker else 0,
+                "caption_font_family": brand_profile.typography.font_family,
+                "caption_text_color_ass": hex_to_ass_color(brand_profile.typography.text_color or brand_profile.palette.text),
+                "caption_highlight_color_ass": hex_to_ass_color(brand_profile.typography.highlight_color or brand_profile.palette.accent),
+                "warnings": [],
+            }
+
+        schema_ver = "1.5" if (brand_profile is not None) else ("1.4" if subtitles_enabled else "1.3")
+
         result = RenderResult(
-            schema_version="1.4" if subtitles_enabled else "1.3",
+            schema_version=schema_ver,
             source_video=v_path.name,
             highlight_start_sec=round(start_sec, 3),
             highlight_end_sec=round(end_sec, 3),
@@ -1406,9 +1498,13 @@ class VideoRendererService:
             subtitles_ass_path=str(ass_file_path) if (subtitles_enabled and ass_file_path) else None,
             caption_groups_count=caption_groups_count if subtitles_enabled else None,
             caption_diagnostics=caption_diagnostics.model_dump() if caption_diagnostics else None,
+            branding=brand_diagnostics,
             warnings=warnings,
             success=True
         )
+
+        if manifest_path_input:
+            cls.save_manifest(result, manifest_path_input)
 
         logger.info(
             "Video rendering complete: %s (%dx%d, %.2fs, %d frames in %.2fs)",

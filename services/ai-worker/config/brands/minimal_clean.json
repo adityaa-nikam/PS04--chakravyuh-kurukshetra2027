@@ -1,0 +1,39 @@
+{
+  "brand_id": "minimal_clean",
+  "brand_name": "Minimal Clean",
+  "description": "Minimalist low-contrast branding suitable for formal technical presentations.",
+  "version": "1.0",
+  "palette": {
+    "primary": "#475569",
+    "secondary": "#0F172A",
+    "accent": "#38BDF8",
+    "text": "#FFFFFF",
+    "background": "#000000"
+  },
+  "typography": {
+    "font_family": "Arial",
+    "bold": true,
+    "font_size": 34,
+    "text_color": "#FFFFFF",
+    "highlight_color": "#38BDF8",
+    "outline_color": "#18181B",
+    "outline_width": 2.0,
+    "shadow_color": "#00000060",
+    "shadow_offset": 1.2,
+    "margin_v": 190,
+    "margin_lr": 44,
+    "alignment": 2,
+    "box_backing": false
+  },
+  "logo": {
+    "enabled": true,
+    "asset_path": "app/assets/brand_logo_sample.png",
+    "anchor": "top_left",
+    "scale": 0.16,
+    "max_height": 45,
+    "opacity": 0.70,
+    "padding_x": 32,
+    "padding_y": 36,
+    "safe_placement": true
+  }
+}
