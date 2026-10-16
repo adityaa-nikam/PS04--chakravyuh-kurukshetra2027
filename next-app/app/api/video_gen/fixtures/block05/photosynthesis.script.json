@@ -1,0 +1,36 @@
+
+{
+  "title": "How Photosynthesis Works: A Beginner's Guide",
+  "targetAudience": "Beginners",
+  "estimatedDurationSeconds": 45,
+  "scenes": [
+    {
+      "narration": "Photosynthesis is the process plants use to make their own food. Let's start by understanding what we need to make this happen.",
+      "visualDirection": "Show a simple diagram of a plant with sunlight, water, carbon dioxide, and oxygen labeled."
+    },
+    {
+      "narration": "First, we need sunlight. Sunlight is the energy input. Plants use chlorophyll, a green pigment, to capture sunlight.",
+      "visualDirection": "Highlight the chlorophyll in the plant diagram and point out the sunlight source."
+    },
+    {
+      "narration": "Next, we need water. Water is a material input. Plants absorb water from the soil through their roots.",
+      "visualDirection": "Show a plant with roots and soil, and a water droplet."
+    },
+    {
+      "narration": "Finally, we need carbon dioxide. Carbon dioxide is also a material input. Plants take in carbon dioxide from the air through tiny openings in their leaves called stomata.",
+      "visualDirection": "Show a plant with stomata and air bubbles."
+    },
+    {
+      "narration": "Now, let's see how these inputs work together. Plants use sunlight energy to power a chemical reaction that converts water and carbon dioxide into glucose, a type of sugar, and oxygen.",
+      "visualDirection": "Show a simplified chemical equation: 6CO2 + 6H2O + light energy -> C6H12O6 + 6O2. Highlight each component."
+    },
+    {
+      "narration": "The glucose produced is used by the plant for energy and growth. The oxygen is released into the air as a byproduct.",
+      "visualDirection": "Show a plant with glucose and oxygen bubbles."
+    },
+    {
+      "narration": "Remember, energy input (sunlight) powers the process, while material inputs (water and carbon dioxide) are used to make glucose and oxygen.",
+      "visualDirection": "Review the diagram with energy and material inputs and outputs labeled."
+    }
+  ]
+}

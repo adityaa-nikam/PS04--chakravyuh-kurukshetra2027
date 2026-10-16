@@ -1,0 +1,35 @@
+{
+  "title": "How Does a CPU Execute Instructions?",
+  "targetAudience": "Beginners",
+  "estimatedDurationSeconds": 45,
+  "scenes": [
+    {
+      "narration": "Let's dive into how a CPU, the brain of a computer, executes instructions. Imagine a CPU as a conductor in an orchestra, orchestrating the actions of the computer.",
+      "visualDirection": "Show a conductor leading a group of musicians."
+    },
+    {
+      "narration": "The CPU reads instructions from memory, which are like musical scores. It starts with the instruction register, where the first instruction is loaded.",
+      "visualDirection": "Display a CPU with an instruction register highlighted."
+    },
+    {
+      "narration": "The CPU decodes the instruction, understanding what it needs to do. It's like understanding the first measure of a piece of music before playing it.",
+      "visualDirection": "Illustrate the CPU decoding an instruction, highlighting the different parts of the instruction."
+    },
+    {
+      "narration": "Based on the instruction, the CPU fetches the data it needs from memory. It's like the conductor passing the baton to the musicians who need the next piece of music.",
+      "visualDirection": "Show the CPU fetching data from memory, with arrows pointing from the instruction to the data."
+    },
+    {
+      "narration": "The CPU performs the operation, which could be anything from adding numbers to moving data around. It's the actual playing of the music.",
+      "visualDirection": "Illustrate the CPU performing the operation, with the musicians playing the next measure."
+    },
+    {
+      "narration": "Finally, the CPU updates the result in memory, which is like the conductor signaling the end of the piece and the musicians finishing their performance.",
+      "visualDirection": "Show the CPU updating memory with the result, with an arrow pointing from the CPU to memory."
+    },
+    {
+      "narration": "This cycle repeats for every instruction the CPU needs to execute. It's a continuous process, much like a symphony orchestra playing a piece of music.",
+      "visualDirection": "Show a loop of the CPU executing instructions, with the musicians playing the next measure."
+    }
+  ]
+}
