@@ -12,7 +12,7 @@ import math
 import os
 import re
 from pathlib import Path
-from typing import List, Optional, Tuple, Dict, Any
+from typing import List, Optional, Tuple, Dict, Any, Callable
 
 import cv2
 import numpy as np
@@ -418,12 +418,14 @@ class CropPlannerService:
         self,
         video_path: str | Path,
         highlight: HighlightResult,
+        progress_callback: Optional[Callable[[int, int, float], None]] = None,
     ) -> CropPlanResult:
         """Analyzes video frames across highlight interval and produces a complete CropPlanResult.
         
         Args:
             video_path: Path to source video file.
             highlight: Validated Phase 3 HighlightResult providing interval start_sec & end_sec.
+            progress_callback: Optional callback(current_idx, total_samples, pct) for live progress updates.
             
         Returns:
             CropPlanResult adhering to Phase 4 master contract.
@@ -477,16 +479,17 @@ class CropPlannerService:
         self.scene_detector.reset()
         self.smoother.reset()
 
+        total_samples = len(sample_timestamps)
         logger.info(
-            "Analyzing %d frame samples in [%.2fs - %.2fs] (step=%.2fs) for 9:16 crop plan...",
-            len(sample_timestamps),
+            "[ONGOING] [PLANNING_CROPS] Analyzing %d frame samples in [%.2fs - %.2fs] (step=%.2fs) for 9:16 crop plan...",
+            total_samples,
             start_sec,
             end_sec,
             self.analysis_interval_sec
         )
 
         try:
-            for t_abs in sample_timestamps:
+            for idx, t_abs in enumerate(sample_timestamps):
                 t_rel = round(max(0.0, t_abs - start_sec), 3)
 
                 # Seek video to target timestamp in milliseconds
@@ -585,6 +588,21 @@ class CropPlannerService:
                         transition=transition_type
                     )
                 )
+
+                # Progress reporting
+                pct = round(((idx + 1) / max(1, total_samples)) * 100.0, 1)
+                log_step = max(1, total_samples // 10)
+                if (idx + 1) % log_step == 0 or (idx + 1) == total_samples:
+                    mode_str = mode.value if hasattr(mode, "value") else str(mode)
+                    logger.info(
+                        "[ONGOING] [PLANNING_CROPS] %5.1f%% (%d/%d frames analyzed) | Subject Mode: %s",
+                        pct, idx + 1, total_samples, mode_str
+                    )
+                if progress_callback:
+                    try:
+                        progress_callback(idx + 1, total_samples, pct)
+                    except Exception:
+                        pass
 
         finally:
             cap.release()

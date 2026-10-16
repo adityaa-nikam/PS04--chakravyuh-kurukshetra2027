@@ -1,0 +1,166 @@
+[Script Info]
+Title: PS04 Reel Studio Subtitles
+ScriptType: v4.00+
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+YCbCr Matrix: TV.601
+PlayResX: 720
+PlayResY: 1280
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: CaptionStandard,Arial,44,&H00FFFFFF&,&H00000000,&H00141414&,&H80000000&,-1,0,0,0,100,100,0,0,1,3.2,1.2,2,40,40,190,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:00.36,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}Why?{\c&H00FFFFFF&}
+Dialogue: 0,0:00:00.36,0:00:00.64,CaptionStandard,,0,0,0,,Why?
+Dialogue: 0,0:00:00.74,0:00:00.76,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}Because,{\c&H00FFFFFF&} shuru, shuru,
+Dialogue: 0,0:00:00.76,0:00:00.88,CaptionStandard,,0,0,0,,Because, shuru, shuru,
+Dialogue: 0,0:00:00.88,0:00:00.98,CaptionStandard,,0,0,0,,Because, {\c&H0000FFFF&}shuru,{\c&H00FFFFFF&} shuru,
+Dialogue: 0,0:00:00.98,0:00:01.14,CaptionStandard,,0,0,0,,Because, shuru, shuru,
+Dialogue: 0,0:00:01.14,0:00:01.20,CaptionStandard,,0,0,0,,Because, shuru, {\c&H0000FFFF&}shuru,{\c&H00FFFFFF&}
+Dialogue: 0,0:00:01.20,0:00:01.30,CaptionStandard,,0,0,0,,Because, shuru, shuru,
+Dialogue: 0,0:00:01.34,0:00:01.36,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}me,{\c&H00FFFFFF&} chise, asan,
+Dialogue: 0,0:00:01.36,0:00:01.40,CaptionStandard,,0,0,0,,me, chise, asan,
+Dialogue: 0,0:00:01.40,0:00:01.50,CaptionStandard,,0,0,0,,me, {\c&H0000FFFF&}chise,{\c&H00FFFFFF&} asan,
+Dialogue: 0,0:00:01.50,0:00:01.88,CaptionStandard,,0,0,0,,me, chise, asan,
+Dialogue: 0,0:00:01.88,0:00:02.08,CaptionStandard,,0,0,0,,me, chise, {\c&H0000FFFF&}asan,{\c&H00FFFFFF&}
+Dialogue: 0,0:00:02.08,0:00:02.18,CaptionStandard,,0,0,0,,me, chise, asan,
+Dialogue: 0,0:00:02.22,0:00:02.38,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}lakti,{\c&H00FFFFFF&} shuru, \N shuru, me,
+Dialogue: 0,0:00:02.38,0:00:02.48,CaptionStandard,,0,0,0,,lakti, shuru, \N shuru, me,
+Dialogue: 0,0:00:02.48,0:00:02.70,CaptionStandard,,0,0,0,,lakti, {\c&H0000FFFF&}shuru,{\c&H00FFFFFF&} \N shuru, me,
+Dialogue: 0,0:00:02.70,0:00:02.96,CaptionStandard,,0,0,0,,lakti, shuru, \N shuru, me,
+Dialogue: 0,0:00:02.96,0:00:03.01,CaptionStandard,,0,0,0,,lakti, shuru, \N {\c&H0000FFFF&}shuru,{\c&H00FFFFFF&} me,
+Dialogue: 0,0:00:03.01,0:00:03.06,CaptionStandard,,0,0,0,,lakti, shuru, \N shuru, me,
+Dialogue: 0,0:00:03.06,0:00:03.08,CaptionStandard,,0,0,0,,lakti, shuru, \N shuru, {\c&H0000FFFF&}me,{\c&H00FFFFFF&}
+Dialogue: 0,0:00:03.08,0:00:03.12,CaptionStandard,,0,0,0,,lakti, shuru, \N shuru, me,
+Dialogue: 0,0:00:03.16,0:00:03.42,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}kele,{\c&H00FFFFFF&} koi, be \N programming language,
+Dialogue: 0,0:00:03.42,0:00:03.48,CaptionStandard,,0,0,0,,kele, {\c&H0000FFFF&}koi,{\c&H00FFFFFF&} be \N programming language,
+Dialogue: 0,0:00:03.48,0:00:03.56,CaptionStandard,,0,0,0,,kele, koi, be \N programming language,
+Dialogue: 0,0:00:03.56,0:00:03.58,CaptionStandard,,0,0,0,,kele, koi, {\c&H0000FFFF&}be{\c&H00FFFFFF&} \N programming language,
+Dialogue: 0,0:00:03.58,0:00:03.78,CaptionStandard,,0,0,0,,kele, koi, be \N {\c&H0000FFFF&}programming{\c&H00FFFFFF&} language,
+Dialogue: 0,0:00:03.78,0:00:04.18,CaptionStandard,,0,0,0,,kele, koi, be \N programming {\c&H0000FFFF&}language,{\c&H00FFFFFF&}
+Dialogue: 0,0:00:04.18,0:00:04.34,CaptionStandard,,0,0,0,,kele, koi, be \N programming language,
+Dialogue: 0,0:00:04.38,0:00:04.42,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}seeking{\c&H00FFFFFF&} it.
+Dialogue: 0,0:00:04.42,0:00:04.64,CaptionStandard,,0,0,0,,seeking {\c&H0000FFFF&}it.{\c&H00FFFFFF&}
+Dialogue: 0,0:00:04.64,0:00:04.98,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}AVI{\c&H00FFFFFF&} series, \N sikna, jithna,
+Dialogue: 0,0:00:04.98,0:00:05.14,CaptionStandard,,0,0,0,,AVI {\c&H0000FFFF&}series,{\c&H00FFFFFF&} \N sikna, jithna,
+Dialogue: 0,0:00:05.14,0:00:05.34,CaptionStandard,,0,0,0,,AVI series, \N sikna, jithna,
+Dialogue: 0,0:00:05.34,0:00:05.50,CaptionStandard,,0,0,0,,AVI series, \N {\c&H0000FFFF&}sikna,{\c&H00FFFFFF&} jithna,
+Dialogue: 0,0:00:05.50,0:00:05.56,CaptionStandard,,0,0,0,,AVI series, \N sikna, jithna,
+Dialogue: 0,0:00:05.56,0:00:05.72,CaptionStandard,,0,0,0,,AVI series, \N sikna, {\c&H0000FFFF&}jithna,{\c&H00FFFFFF&}
+Dialogue: 0,0:00:05.72,0:00:05.80,CaptionStandard,,0,0,0,,AVI series, \N sikna, jithna,
+Dialogue: 0,0:00:05.84,0:00:05.92,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}hai,{\c&H00FFFFFF&} asan, lakti, hai,
+Dialogue: 0,0:00:05.92,0:00:06.08,CaptionStandard,,0,0,0,,hai, asan, lakti, hai,
+Dialogue: 0,0:00:06.08,0:00:06.18,CaptionStandard,,0,0,0,,hai, {\c&H0000FFFF&}asan,{\c&H00FFFFFF&} lakti, hai,
+Dialogue: 0,0:00:06.18,0:00:06.34,CaptionStandard,,0,0,0,,hai, asan, lakti, hai,
+Dialogue: 0,0:00:06.34,0:00:06.50,CaptionStandard,,0,0,0,,hai, asan, {\c&H0000FFFF&}lakti,{\c&H00FFFFFF&} hai,
+Dialogue: 0,0:00:06.50,0:00:06.68,CaptionStandard,,0,0,0,,hai, asan, lakti, hai,
+Dialogue: 0,0:00:06.68,0:00:06.72,CaptionStandard,,0,0,0,,hai, asan, lakti, {\c&H0000FFFF&}hai,{\c&H00FFFFFF&}
+Dialogue: 0,0:00:06.72,0:00:06.88,CaptionStandard,,0,0,0,,hai, asan, lakti, hai,
+Dialogue: 0,0:00:06.92,0:00:07.12,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}interest,{\c&H00FFFFFF&} vy, \N ata, shuru,
+Dialogue: 0,0:00:07.12,0:00:07.32,CaptionStandard,,0,0,0,,interest, vy, \N ata, shuru,
+Dialogue: 0,0:00:07.32,0:00:07.44,CaptionStandard,,0,0,0,,interest, {\c&H0000FFFF&}vy,{\c&H00FFFFFF&} \N ata, shuru,
+Dialogue: 0,0:00:07.44,0:00:07.48,CaptionStandard,,0,0,0,,interest, vy, \N ata, shuru,
+Dialogue: 0,0:00:07.48,0:00:07.60,CaptionStandard,,0,0,0,,interest, vy, \N {\c&H0000FFFF&}ata,{\c&H00FFFFFF&} shuru,
+Dialogue: 0,0:00:07.60,0:00:07.70,CaptionStandard,,0,0,0,,interest, vy, \N ata, shuru,
+Dialogue: 0,0:00:07.70,0:00:07.78,CaptionStandard,,0,0,0,,interest, vy, \N ata, {\c&H0000FFFF&}shuru,{\c&H00FFFFFF&}
+Dialogue: 0,0:00:07.78,0:00:07.84,CaptionStandard,,0,0,0,,interest, vy, \N ata, shuru,
+Dialogue: 0,0:00:07.88,0:00:07.93,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}shuru,{\c&H00FFFFFF&} me, hai,
+Dialogue: 0,0:00:07.93,0:00:08.12,CaptionStandard,,0,0,0,,shuru, me, hai,
+Dialogue: 0,0:00:08.12,0:00:08.17,CaptionStandard,,0,0,0,,shuru, {\c&H0000FFFF&}me,{\c&H00FFFFFF&} hai,
+Dialogue: 0,0:00:08.16,0:00:08.21,CaptionStandard,,0,0,0,,shuru, me, {\c&H0000FFFF&}hai,{\c&H00FFFFFF&}
+Dialogue: 0,0:00:08.21,0:00:08.32,CaptionStandard,,0,0,0,,shuru, me, hai,
+Dialogue: 0,0:00:08.36,0:00:08.41,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}amara,{\c&H00FFFFFF&} motivation, vkavizadha,
+Dialogue: 0,0:00:08.41,0:00:08.48,CaptionStandard,,0,0,0,,amara, motivation, vkavizadha,
+Dialogue: 0,0:00:08.48,0:00:08.70,CaptionStandard,,0,0,0,,amara, {\c&H0000FFFF&}motivation,{\c&H00FFFFFF&} vkavizadha,
+Dialogue: 0,0:00:08.70,0:00:08.90,CaptionStandard,,0,0,0,,amara, motivation, vkavizadha,
+Dialogue: 0,0:00:08.90,0:00:09.26,CaptionStandard,,0,0,0,,amara, motivation, {\c&H0000FFFF&}vkavizadha,{\c&H00FFFFFF&}
+Dialogue: 0,0:00:09.26,0:00:09.42,CaptionStandard,,0,0,0,,amara, motivation, vkavizadha,
+Dialogue: 0,0:00:09.46,0:00:09.54,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}hai,{\c&H00FFFFFF&} hai, eutai.
+Dialogue: 0,0:00:09.54,0:00:09.59,CaptionStandard,,0,0,0,,hai, {\c&H0000FFFF&}hai,{\c&H00FFFFFF&} eutai.
+Dialogue: 0,0:00:09.59,0:00:09.64,CaptionStandard,,0,0,0,,hai, hai, eutai.
+Dialogue: 0,0:00:09.64,0:00:09.76,CaptionStandard,,0,0,0,,hai, hai, {\c&H0000FFFF&}eutai.{\c&H00FFFFFF&}
+Dialogue: 0,0:00:09.76,0:00:10.04,CaptionStandard,,0,0,0,,hai, hai, eutai.
+Dialogue: 0,0:00:10.18,0:00:10.32,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}But,{\c&H00FFFFFF&} uscibat \N jesse, jesse,
+Dialogue: 0,0:00:10.32,0:00:10.42,CaptionStandard,,0,0,0,,But, uscibat \N jesse, jesse,
+Dialogue: 0,0:00:10.42,0:00:10.78,CaptionStandard,,0,0,0,,But, {\c&H0000FFFF&}uscibat{\c&H00FFFFFF&} \N jesse, jesse,
+Dialogue: 0,0:00:10.78,0:00:11.06,CaptionStandard,,0,0,0,,But, uscibat \N {\c&H0000FFFF&}jesse,{\c&H00FFFFFF&} jesse,
+Dialogue: 0,0:00:11.06,0:00:11.22,CaptionStandard,,0,0,0,,But, uscibat \N jesse, {\c&H0000FFFF&}jesse,{\c&H00FFFFFF&}
+Dialogue: 0,0:00:11.22,0:00:11.48,CaptionStandard,,0,0,0,,But, uscibat \N jesse, jesse,
+Dialogue: 0,0:00:11.52,0:00:11.57,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}second,{\c&H00FFFFFF&} weak, \N me, ndarke,
+Dialogue: 0,0:00:11.57,0:00:11.74,CaptionStandard,,0,0,0,,second, weak, \N me, ndarke,
+Dialogue: 0,0:00:11.74,0:00:11.76,CaptionStandard,,0,0,0,,second, {\c&H0000FFFF&}weak,{\c&H00FFFFFF&} \N me, ndarke,
+Dialogue: 0,0:00:11.76,0:00:11.90,CaptionStandard,,0,0,0,,second, weak, \N me, ndarke,
+Dialogue: 0,0:00:11.90,0:00:11.96,CaptionStandard,,0,0,0,,second, weak, \N {\c&H0000FFFF&}me,{\c&H00FFFFFF&} ndarke,
+Dialogue: 0,0:00:11.96,0:00:12.24,CaptionStandard,,0,0,0,,second, weak, \N me, {\c&H0000FFFF&}ndarke,{\c&H00FFFFFF&}
+Dialogue: 0,0:00:12.24,0:00:12.28,CaptionStandard,,0,0,0,,second, weak, \N me, ndarke,
+Dialogue: 0,0:00:12.32,0:00:12.52,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}tenh,{\c&H00FFFFFF&} third, \N weak, ndarke,
+Dialogue: 0,0:00:12.52,0:00:12.66,CaptionStandard,,0,0,0,,tenh, third, \N weak, ndarke,
+Dialogue: 0,0:00:12.66,0:00:12.71,CaptionStandard,,0,0,0,,tenh, {\c&H0000FFFF&}third,{\c&H00FFFFFF&} \N weak, ndarke,
+Dialogue: 0,0:00:12.71,0:00:12.76,CaptionStandard,,0,0,0,,tenh, third, \N weak, ndarke,
+Dialogue: 0,0:00:12.76,0:00:12.80,CaptionStandard,,0,0,0,,tenh, third, \N {\c&H0000FFFF&}weak,{\c&H00FFFFFF&} ndarke,
+Dialogue: 0,0:00:12.80,0:00:13.26,CaptionStandard,,0,0,0,,tenh, third, \N weak, {\c&H0000FFFF&}ndarke,{\c&H00FFFFFF&}
+Dialogue: 0,0:00:13.26,0:00:13.34,CaptionStandard,,0,0,0,,tenh, third, \N weak, ndarke,
+Dialogue: 0,0:00:13.38,0:00:13.50,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}tenh,{\c&H00FFFFFF&} what is a
+Dialogue: 0,0:00:13.50,0:00:13.60,CaptionStandard,,0,0,0,,tenh, what is a
+Dialogue: 0,0:00:13.60,0:00:13.65,CaptionStandard,,0,0,0,,tenh, {\c&H0000FFFF&}what{\c&H00FFFFFF&} is a
+Dialogue: 0,0:00:13.60,0:00:13.68,CaptionStandard,,0,0,0,,tenh, what {\c&H0000FFFF&}is{\c&H00FFFFFF&} a
+Dialogue: 0,0:00:13.68,0:00:13.76,CaptionStandard,,0,0,0,,tenh, what is {\c&H0000FFFF&}a{\c&H00FFFFFF&}
+Dialogue: 0,0:00:13.76,0:00:14.06,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}difficult{\c&H00FFFFFF&} concept, \N start, otay?
+Dialogue: 0,0:00:14.06,0:00:14.48,CaptionStandard,,0,0,0,,difficult {\c&H0000FFFF&}concept,{\c&H00FFFFFF&} \N start, otay?
+Dialogue: 0,0:00:14.48,0:00:14.72,CaptionStandard,,0,0,0,,difficult concept, \N start, otay?
+Dialogue: 0,0:00:14.72,0:00:14.74,CaptionStandard,,0,0,0,,difficult concept, \N {\c&H0000FFFF&}start,{\c&H00FFFFFF&} otay?
+Dialogue: 0,0:00:14.74,0:00:15.06,CaptionStandard,,0,0,0,,difficult concept, \N start, {\c&H0000FFFF&}otay?{\c&H00FFFFFF&}
+Dialogue: 0,0:00:15.06,0:00:15.24,CaptionStandard,,0,0,0,,difficult concept, \N start, otay?
+Dialogue: 0,0:00:15.28,0:00:15.60,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}Mahapayame,{\c&H00FFFFFF&} ndar,
+Dialogue: 0,0:00:15.60,0:00:15.64,CaptionStandard,,0,0,0,,Mahapayame, ndar,
+Dialogue: 0,0:00:15.64,0:00:16.04,CaptionStandard,,0,0,0,,Mahapayame, {\c&H0000FFFF&}ndar,{\c&H00FFFFFF&}
+Dialogue: 0,0:00:16.04,0:00:16.09,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}the{\c&H00FFFFFF&} bhahd \N difficult jesse,
+Dialogue: 0,0:00:16.04,0:00:16.26,CaptionStandard,,0,0,0,,the {\c&H0000FFFF&}bhahd{\c&H00FFFFFF&} \N difficult jesse,
+Dialogue: 0,0:00:16.26,0:00:16.40,CaptionStandard,,0,0,0,,the bhahd \N {\c&H0000FFFF&}difficult{\c&H00FFFFFF&} jesse,
+Dialogue: 0,0:00:16.40,0:00:16.82,CaptionStandard,,0,0,0,,the bhahd \N difficult {\c&H0000FFFF&}jesse,{\c&H00FFFFFF&}
+Dialogue: 0,0:00:16.82,0:00:16.94,CaptionStandard,,0,0,0,,the bhahd \N difficult jesse,
+Dialogue: 0,0:00:16.98,0:00:17.02,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}ham,{\c&H00FFFFFF&} distracted, \N ham, distracted,
+Dialogue: 0,0:00:17.02,0:00:17.18,CaptionStandard,,0,0,0,,ham, distracted, \N ham, distracted,
+Dialogue: 0,0:00:17.18,0:00:17.32,CaptionStandard,,0,0,0,,ham, {\c&H0000FFFF&}distracted,{\c&H00FFFFFF&} \N ham, distracted,
+Dialogue: 0,0:00:17.32,0:00:17.64,CaptionStandard,,0,0,0,,ham, distracted, \N ham, distracted,
+Dialogue: 0,0:00:17.64,0:00:17.72,CaptionStandard,,0,0,0,,ham, distracted, \N {\c&H0000FFFF&}ham,{\c&H00FFFFFF&} distracted,
+Dialogue: 0,0:00:17.72,0:00:17.90,CaptionStandard,,0,0,0,,ham, distracted, \N ham, {\c&H0000FFFF&}distracted,{\c&H00FFFFFF&}
+Dialogue: 0,0:00:17.90,0:00:18.14,CaptionStandard,,0,0,0,,ham, distracted, \N ham, distracted,
+Dialogue: 0,0:00:18.18,0:00:18.32,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}jatthar,{\c&H00FFFFFF&} bhahapiyam, quit,
+Dialogue: 0,0:00:18.32,0:00:18.52,CaptionStandard,,0,0,0,,jatthar, bhahapiyam, quit,
+Dialogue: 0,0:00:18.52,0:00:18.80,CaptionStandard,,0,0,0,,jatthar, {\c&H0000FFFF&}bhahapiyam,{\c&H00FFFFFF&} quit,
+Dialogue: 0,0:00:18.80,0:00:18.92,CaptionStandard,,0,0,0,,jatthar, bhahapiyam, quit,
+Dialogue: 0,0:00:18.92,0:00:18.96,CaptionStandard,,0,0,0,,jatthar, bhahapiyam, {\c&H0000FFFF&}quit,{\c&H00FFFFFF&}
+Dialogue: 0,0:00:18.96,0:00:19.10,CaptionStandard,,0,0,0,,jatthar, bhahapiyam, quit,
+Dialogue: 0,0:00:19.14,0:00:19.28,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}karti,{\c&H00FFFFFF&} And the problem
+Dialogue: 0,0:00:19.28,0:00:19.90,CaptionStandard,,0,0,0,,karti, {\c&H0000FFFF&}And{\c&H00FFFFFF&} the problem
+Dialogue: 0,0:00:19.90,0:00:20.00,CaptionStandard,,0,0,0,,karti, And {\c&H0000FFFF&}the{\c&H00FFFFFF&} problem
+Dialogue: 0,0:00:20.00,0:00:20.28,CaptionStandard,,0,0,0,,karti, And the {\c&H0000FFFF&}problem{\c&H00FFFFFF&}
+Dialogue: 0,0:00:20.28,0:00:20.46,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}with{\c&H00FFFFFF&} quitting \N is His bad
+Dialogue: 0,0:00:20.46,0:00:20.60,CaptionStandard,,0,0,0,,with {\c&H0000FFFF&}quitting{\c&H00FFFFFF&} \N is His bad
+Dialogue: 0,0:00:20.60,0:00:20.92,CaptionStandard,,0,0,0,,with quitting \N {\c&H0000FFFF&}is{\c&H00FFFFFF&} His bad
+Dialogue: 0,0:00:20.92,0:00:21.10,CaptionStandard,,0,0,0,,with quitting \N is {\c&H0000FFFF&}His{\c&H00FFFFFF&} bad
+Dialogue: 0,0:00:21.10,0:00:21.86,CaptionStandard,,0,0,0,,with quitting \N is His {\c&H0000FFFF&}bad{\c&H00FFFFFF&}
+Dialogue: 0,0:00:21.86,0:00:22.14,CaptionStandard,,0,0,0,,with quitting \N is His bad
+Dialogue: 0,0:00:26.64,0:00:27.82,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}You{\c&H00FFFFFF&} can take the
+Dialogue: 0,0:00:27.82,0:00:28.22,CaptionStandard,,0,0,0,,You {\c&H0000FFFF&}can{\c&H00FFFFFF&} take the
+Dialogue: 0,0:00:28.22,0:00:34.70,CaptionStandard,,0,0,0,,You can {\c&H0000FFFF&}take{\c&H00FFFFFF&} the
+Dialogue: 0,0:00:34.70,0:00:34.96,CaptionStandard,,0,0,0,,You can take {\c&H0000FFFF&}the{\c&H00FFFFFF&}
+Dialogue: 0,0:00:34.96,0:00:35.46,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}100{\c&H00FFFFFF&} days challenge.
+Dialogue: 0,0:00:35.46,0:00:36.14,CaptionStandard,,0,0,0,,100 {\c&H0000FFFF&}days{\c&H00FFFFFF&} challenge.
+Dialogue: 0,0:00:36.14,0:00:37.32,CaptionStandard,,0,0,0,,100 days {\c&H0000FFFF&}challenge.{\c&H00FFFFFF&}
+Dialogue: 0,0:00:37.32,0:00:38.02,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}Up{\c&H00FFFFFF&} company is 100
+Dialogue: 0,0:00:38.02,0:00:38.18,CaptionStandard,,0,0,0,,Up {\c&H0000FFFF&}company{\c&H00FFFFFF&} is 100
+Dialogue: 0,0:00:38.18,0:00:38.40,CaptionStandard,,0,0,0,,Up company {\c&H0000FFFF&}is{\c&H00FFFFFF&} 100
+Dialogue: 0,0:00:38.40,0:00:38.94,CaptionStandard,,0,0,0,,Up company is {\c&H0000FFFF&}100{\c&H00FFFFFF&}
+Dialogue: 0,0:00:38.94,0:00:39.26,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}days{\c&H00FFFFFF&} challenge,
+Dialogue: 0,0:00:39.26,0:00:39.58,CaptionStandard,,0,0,0,,days {\c&H0000FFFF&}challenge,{\c&H00FFFFFF&}
+Dialogue: 0,0:00:39.58,0:00:39.82,CaptionStandard,,0,0,0,,days challenge,
+Dialogue: 0,0:00:39.86,0:00:40.08,CaptionStandard,,0,0,0,,{\c&H0000FFFF&}our{\c&H00FFFFFF&} initial 100 days.
+Dialogue: 0,0:00:40.08,0:00:40.48,CaptionStandard,,0,0,0,,our {\c&H0000FFFF&}initial{\c&H00FFFFFF&} 100 days.
+Dialogue: 0,0:00:40.48,0:00:41.58,CaptionStandard,,0,0,0,,our initial {\c&H0000FFFF&}100{\c&H00FFFFFF&} days.
+Dialogue: 0,0:00:41.58,0:00:42.00,CaptionStandard,,0,0,0,,our initial 100 {\c&H0000FFFF&}days.{\c&H00FFFFFF&}
+Dialogue: 0,0:00:42.00,0:00:42.26,CaptionStandard,,0,0,0,,our initial 100 days.

@@ -173,10 +173,10 @@ def execute_pipeline_worker(
         media_meta = MediaProbeService.validate_for_transcription(video_path)
         
         audio_output_path = settings.AUDIO_DIR / f"{stem}.wav"
-        audio_meta = AudioExtractorService.extract_audio(
-            source_video_path=video_path,
-            output_audio_path=audio_output_path,
-            force_extract=False
+        audio_output_path = AudioExtractorService.extract_audio(
+            video_path=video_path,
+            output_wav_path=audio_output_path,
+            force_reextract=False,
         )
 
         media_meta_dict = {
@@ -208,18 +208,33 @@ def execute_pipeline_worker(
             update_job_status(job_id, "TRANSCRIBING", 20, "Transcribing speech with faster-whisper...", {
                 "media_metadata": media_meta_dict
             })
-            raw_transcript = TranscriberService.transcribe_audio(
-                audio_path=audio_output_path,
-                source_video_path=video_path,
+            normalizer = TermNormalizerService()
+            transcriber = TranscriberService(
                 model_size=model_size,
-                device="cpu",
-                compute_type="int8",
+                device=settings.WHISPER_DEVICE,
+                compute_type=settings.WHISPER_COMPUTE_TYPE,
+                term_normalizer=normalizer,
             )
 
-            update_job_status(job_id, "NORMALIZING_TERMS", 35, "Normalizing technical terminology...")
-            validated_transcript = TermNormalizerService.normalize_transcript(raw_transcript)
-            with open(transcript_path, "w", encoding="utf-8") as f:
-                f.write(validated_transcript.model_dump_json(indent=2))
+            def _transcription_progress(cur_sec, total_sec, text):
+                sub_pct = min(100.0, (cur_sec / max(1.0, total_sec)) * 100.0)
+                overall = int(20 + (sub_pct / 100.0) * 20)  # 20% to 40%
+                update_job_status(
+                    job_id,
+                    "TRANSCRIBING",
+                    overall,
+                    f"Transcribing audio: {sub_pct:.1f}% ({int(cur_sec//60):02d}:{int(cur_sec%60):02d} / {int(total_sec//60):02d}:{int(total_sec%60):02d})"
+                )
+
+            validated_transcript = transcriber.transcribe(
+                audio_path=audio_output_path,
+                source_media_path=video_path,
+                cache_transcript=True,
+                force_retranscribe=False,
+                progress_callback=_transcription_progress,
+            )
+
+            update_job_status(job_id, "NORMALIZING_TERMS", 45, "Technical terminology normalized.")
 
         # Format transcript words for handoff contract
         transcript_words_summary = [
@@ -247,20 +262,27 @@ def execute_pipeline_worker(
             max_duration_sec=settings.HIGHLIGHT_MAX_DURATION_SEC,
             target_duration_sec=settings.HIGHLIGHT_TARGET_DURATION_SEC,
         )
-        highlight_result = highlight_selector.select_highlight(validated_transcript)
-        with open(highlight_path, "w", encoding="utf-8") as f:
-            f.write(highlight_result.model_dump_json(indent=2))
+        highlight_result = highlight_selector.select_best_highlight(validated_transcript)
+        HighlightSelectorService.save_highlight(highlight_result, output_path=highlight_path)
 
-        selected_hl = highlight_result.selected_highlight
         highlight_dict = {
             "clip_id": f"{stem}_hl",
-            "start_time_sec": selected_hl.start_sec,
-            "end_time_sec": selected_hl.end_sec,
-            "duration_sec": selected_hl.duration_sec,
-            "pedagogical_score": selected_hl.total_score,
-            "topic_summary": selected_hl.text_snippet[:120],
-            "boundary_reasoning": selected_hl.selection_reason,
+            "start_time_sec": highlight_result.start_sec,
+            "end_time_sec": highlight_result.end_sec,
+            "duration_sec": highlight_result.duration_sec,
+            "pedagogical_score": highlight_result.score,
+            "topic_summary": highlight_result.transcript_excerpt[:120],
+            "boundary_reasoning": highlight_result.reason,
         }
+
+        logger.info(
+            "[ONGOING] [SELECTING_MOMENT] Highlight selected: [%.2fs -> %.2fs] (%.1fs) | Score: %.1f | Reason: %s",
+            highlight_result.start_sec,
+            highlight_result.end_sec,
+            highlight_result.duration_sec,
+            highlight_result.score,
+            highlight_result.reason
+        )
 
         # --------------------------------------------------------------------
         # Stage 4: Computer Vision Crop Planning (9:16)
@@ -271,17 +293,27 @@ def execute_pipeline_worker(
         
         crop_plan_path = settings.CROP_PLANS_DIR / f"{stem}_crop_plan.json"
         crop_planner = CropPlannerService(
-            target_aspect_ratio=settings.CV_TARGET_ASPECT_RATIO,
-            sample_interval_sec=1.0 / settings.CV_SAMPLE_FPS,
-            deadband_threshold=settings.CV_DEADBAND_THRESHOLD,
-            smoothing_alpha=settings.CV_SMOOTHING_ALPHA,
+            target_aspect_ratio="9:16",
+            analysis_interval_sec=1.0 / settings.CV_SAMPLE_FPS,
+            smoother_alpha=settings.CV_SMOOTHING_ALPHA,
         )
-        crop_plan = crop_planner.plan_crops(
+
+        def _crop_progress(idx, total, pct):
+            overall = int(65 + (pct / 100.0) * 12)  # 65% to 77%
+            if idx % max(1, total // 5) == 0 or idx == total:
+                update_job_status(
+                    job_id,
+                    "PLANNING_CROPS",
+                    overall,
+                    f"Tracking subject & planning 9:16 crops: {pct:.0f}% ({idx}/{total} frames)"
+                )
+
+        crop_plan = crop_planner.plan_crop(
             video_path=video_path,
-            highlight_result=highlight_result,
+            highlight=highlight_result,
+            progress_callback=_crop_progress,
         )
-        with open(crop_plan_path, "w", encoding="utf-8") as f:
-            f.write(crop_plan.model_dump_json(indent=2))
+        CropPlannerService.save_crop_plan(crop_plan, output_path=crop_plan_path)
 
         crop_plan_dict = {
             "clip_id": f"{stem}_crop",
@@ -297,49 +329,29 @@ def execute_pipeline_worker(
         # Stage 5: Subtitles & Video Rendering
         # --------------------------------------------------------------------
         if render_video:
-            # Subtitle Generation Pass
-            if subtitles:
-                update_job_status(job_id, "GENERATING_CAPTIONS", 80, "Generating synchronized karaoke captions...")
-                subtitles_ass_path = settings.SUBTITLES_DIR / f"{stem}_captioned.ass"
-                caption_service = CaptionGeneratorService(
-                    options=CaptionOptions(
-                        style=caption_style,
-                        font_size=36,
-                        margin_v=190,
-                    )
-                )
-                caption_service.generate_ass_file(
-                    transcript=validated_transcript,
-                    highlight=highlight_result,
-                    output_path=subtitles_ass_path,
-                )
-
-            # Adaptive Hybrid Rendering Pass
-            update_job_status(job_id, "RENDERING_VIDEO", 85, "Rendering vertical reel with FFmpeg...")
+            update_job_status(job_id, "RENDERING_VIDEO", 80, "Rendering vertical reel with adaptive composition & captions...")
             rendered_mp4_path = settings.RENDERED_DIR / f"{stem}_reel_captioned.mp4"
             manifest_path = settings.RENDERED_DIR / f"{stem}_reel_captioned_manifest.json"
 
-            renderer = VideoRendererService(
-                options=RenderOptions(
-                    output_width=720,
-                    output_height=1280,
-                    composition_mode=composition_mode,
-                    subtitles=subtitles,
-                    caption_style=caption_style,
-                    subtitles_ass_path=subtitles_ass_path,
-                    overwrite=True,
-                )
+            render_options = RenderOptions(
+                output_width=720,
+                output_height=1280,
+                composition_mode=composition_mode,
+                subtitles_enabled=subtitles,
+                caption_style=caption_style,
+                overwrite=True,
             )
 
-            render_res = renderer.render_video(
-                source_video_input=video_path,
+            render_res = VideoRendererService.render_video(
+                video_path=video_path,
                 highlight_input=highlight_result,
                 crop_plan_input=crop_plan,
                 transcript_input=validated_transcript,
-                subtitles_ass_input=subtitles_ass_path,
-                output_path_input=rendered_mp4_path,
+                output_path=rendered_mp4_path,
+                options=render_options,
                 manifest_path_input=manifest_path,
             )
+            subtitles_ass_path = render_res.subtitles_ass_path
 
         # --------------------------------------------------------------------
         # Stage 6: Completed Successfully

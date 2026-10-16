@@ -9,7 +9,7 @@ import logging
 import os
 import tempfile
 from pathlib import Path
-from typing import List, Optional, Tuple, Dict, Any
+from typing import List, Optional, Tuple, Dict, Any, Callable
 
 from app.config import settings
 from app.schemas import (
@@ -31,6 +31,40 @@ logger = logging.getLogger(__name__)
 _MODEL_CACHE: Dict[Tuple[str, str, str], Any] = {}
 
 
+def _ensure_windows_cuda_dlls() -> None:
+    """Adds nvidia pip package DLL directories (cublas, cudnn) to Windows DLL search path."""
+    import sys
+    if sys.platform != "win32":
+        return
+
+    import site
+    search_dirs = []
+    try:
+        search_dirs.extend(site.getsitepackages())
+    except Exception:
+        pass
+    try:
+        user_site = site.getusersitepackages()
+        if user_site:
+            search_dirs.append(user_site)
+    except Exception:
+        pass
+
+    for p in search_dirs:
+        nvidia_path = Path(p) / "nvidia"
+        if nvidia_path.exists():
+            for sub in nvidia_path.iterdir():
+                bin_dir = sub / "bin"
+                if bin_dir.exists():
+                    bin_str = str(bin_dir)
+                    try:
+                        os.add_dll_directory(bin_str)
+                    except Exception:
+                        pass
+                    if bin_str not in os.environ.get("PATH", ""):
+                        os.environ["PATH"] = bin_str + os.pathsep + os.environ.get("PATH", "")
+
+
 def get_whisper_model(
     model_size: str = "small",
     device: str = "cpu",
@@ -41,6 +75,8 @@ def get_whisper_model(
     key = (model_size, device, compute_type)
     if key in _MODEL_CACHE:
         return _MODEL_CACHE[key]
+
+    _ensure_windows_cuda_dlls()
 
     try:
         from faster_whisper import WhisperModel
@@ -59,12 +95,20 @@ def get_whisper_model(
                 cpu_threads=cpu_threads
             )
         except Exception as e:
-            if compute_type != "float32":
+            if compute_type != "float32" and device != "cpu":
                 logger.warning("Failed loading with compute_type='%s' (%s). Retrying with 'float32'...", compute_type, e)
                 model = WhisperModel(
                     model_size_or_path=model_size,
                     device=device,
                     compute_type="float32",
+                    cpu_threads=cpu_threads
+                )
+            elif device == "cuda":
+                logger.warning("Failed loading on CUDA (%s). Falling back to CPU int8...", e)
+                model = WhisperModel(
+                    model_size_or_path=model_size,
+                    device="cpu",
+                    compute_type="int8",
                     cpu_threads=cpu_threads
                 )
             else:
@@ -123,7 +167,8 @@ class TranscriberService:
         source_media_path: Optional[str | Path] = None,
         cache_transcript: bool = True,
         force_retranscribe: bool = False,
-        limit_sec: Optional[float] = None
+        limit_sec: Optional[float] = None,
+        progress_callback: Optional[Callable[[float, float, str], None]] = None,
     ) -> ValidatedTranscript:
         """Transcribes a 16kHz WAV file into a ValidatedTranscript.
         
@@ -133,6 +178,7 @@ class TranscriberService:
             cache_transcript: If True, writes validated transcript to storage/transcripts/.
             force_retranscribe: If False, reuses existing cached JSON transcript if valid.
             limit_sec: Optional duration cap in seconds for short smoke tests.
+            progress_callback: Optional callback(current_sec, total_sec, latest_text) for live progress updates.
             
         Returns:
             ValidatedTranscript conforming strictly to the Master Contract.
@@ -160,6 +206,10 @@ class TranscriberService:
         ref_path = Path(source_media_path).resolve() if source_media_path else wav_path
         media_meta = MediaProbeService.inspect(ref_path)
 
+        total_audio_duration = float(media_meta.duration_sec or 1.0)
+        if limit_sec and limit_sec < total_audio_duration:
+            total_audio_duration = float(limit_sec)
+
         model = get_whisper_model(
             model_size=self.model_size,
             device=self.device,
@@ -172,33 +222,80 @@ class TranscriberService:
             "functions, APIs, Docker, Kubernetes, React, TypeScript, and database configuration."
         )
 
+        dur_min, dur_sec = int(total_audio_duration // 60), int(total_audio_duration % 60)
         logger.info(
-            "Transcribing '%s' with model='%s' (limit_sec=%s)...",
-            wav_path.name,
+            "[ONGOING] [TRANSCRIBING] Initializing faster-whisper (model='%s', device='%s', duration=%02d:%02d)...",
             self.model_size,
-            limit_sec
+            self.device,
+            dur_min,
+            dur_sec
         )
 
         # Load waveform safely via wave module
         audio_array = load_audio_waveform(wav_path)
 
         # Execute transcription with word-level timestamps and VAD
-        segments, info = model.transcribe(
-            audio_array,
-            beam_size=settings.WHISPER_BEAM_SIZE,
-            word_timestamps=True,
-            vad_filter=True,
-            vad_parameters=dict(min_silence_duration_ms=500),
-            language=self.language,
-            initial_prompt=initial_prompt
-        )
+        def _run_transcription(m):
+            return m.transcribe(
+                audio_array,
+                beam_size=settings.WHISPER_BEAM_SIZE,
+                word_timestamps=True,
+                vad_filter=True,
+                vad_parameters=dict(min_silence_duration_ms=500),
+                language=self.language,
+                initial_prompt=initial_prompt
+            )
+
+        def _collect_segments(seg_generator) -> List[Any]:
+            collected = []
+            import time
+            last_log_time = 0.0
+            for s in seg_generator:
+                collected.append(s)
+                c_sec = min(float(s.end), total_audio_duration)
+                pct = min(100.0, (c_sec / total_audio_duration) * 100.0)
+                now = time.time()
+                # Log on every segment if >=1.5s passed or at completion
+                if (now - last_log_time >= 1.5) or c_sec >= total_audio_duration or len(collected) == 1:
+                    last_log_time = now
+                    snippet = s.text.strip().replace("\n", " ")[:60]
+                    logger.info(
+                        "[ONGOING] [TRANSCRIBING] %5.1f%% (Audio %02d:%02d / %02d:%02d) | \"%s\"",
+                        pct,
+                        int(c_sec // 60), int(c_sec % 60),
+                        dur_min, dur_sec,
+                        snippet
+                    )
+                if progress_callback:
+                    try:
+                        progress_callback(c_sec, total_audio_duration, s.text.strip())
+                    except Exception:
+                        pass
+            return collected
+
+        try:
+            segments, info = _run_transcription(model)
+            all_segments = _collect_segments(segments)
+        except Exception as e:
+            if self.device == "cuda" or "cublas" in str(e).lower() or "cuda" in str(e).lower():
+                logger.warning("[NOTICE] CUDA execution failed (%s). Falling back gracefully to CPU int8... Job is continuing!", e)
+                cpu_model = get_whisper_model(
+                    model_size=self.model_size,
+                    device="cpu",
+                    compute_type="int8",
+                )
+                segments, info = _run_transcription(cpu_model)
+                all_segments = _collect_segments(segments)
+            else:
+                logger.error("[ERROR] Transcription failed: %s", e)
+                raise e
 
         detected_lang = getattr(info, "language", self.language or "en")
 
         raw_words: List[RawWord] = []
         raw_word_id = 0
 
-        for segment in segments:
+        for segment in all_segments:
             if limit_sec is not None and segment.start >= limit_sec:
                 break
 
