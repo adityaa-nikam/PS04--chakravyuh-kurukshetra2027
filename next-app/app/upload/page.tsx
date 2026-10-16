@@ -4,23 +4,80 @@
 import { useState } from "react";
 import * as tus from "tus-js-client";
 
+type PublishStatus =
+  | "idle"
+  | "uploading"
+  | "publishing"
+  | "success"
+  | "error";
+
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
+  const [caption, setCaption] = useState("");
   const [progress, setProgress] = useState(0);
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState<PublishStatus>("idle");
+  const [message, setMessage] = useState("");
   const [videoKey, setVideoKey] = useState("");
+  const [publishedId, setPublishedId] = useState("");
 
-  async function uploadVideo() {
-    if (!file) return;
+  const busy = status === "uploading" || status === "publishing";
 
-    setStatus("Uploading...");
-    setProgress(0);
-    setVideoKey("");
+  async function publishToInstagram(objectName: string) {
+    setStatus("publishing");
+    setMessage("Video uploaded. Publishing your Instagram Reel...");
+    setVideoKey(objectName);
 
     try {
-      // Add Supabase Auth before using this in production.
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+      const response = await fetch("/api/publish/instagram", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          videoKey: objectName,
+          caption,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.error ||
+            result.message ||
+            "Instagram publishing failed."
+        );
+      }
+
+      setPublishedId(result.publishedId ?? "");
+      setStatus("success");
+      setMessage("Your Instagram Reel was published successfully!");
+    } catch (error) {
+      setStatus("error");
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "An unexpected publishing error occurred."
+      );
+    }
+  }
+
+  async function uploadVideo() {
+    if (!file || busy) return;
+
+    setStatus("uploading");
+    setMessage("Uploading video to Supabase...");
+    setProgress(0);
+    setVideoKey("");
+    setPublishedId("");
+
+    try {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+      if (!url || !key) {
+        throw new Error("Supabase environment variables are missing.");
+      }
 
       const objectName = `demo/${crypto.randomUUID()}-${file.name}`;
 
@@ -38,7 +95,8 @@ export default function UploadPage() {
           cacheControl: "3600",
         },
         onError(error) {
-          setStatus(`Upload failed: ${error.message}`);
+          setStatus("error");
+          setMessage(`Upload failed: ${error.message}`);
         },
         onProgress(bytesUploaded, bytesTotal) {
           setProgress(
@@ -46,37 +104,45 @@ export default function UploadPage() {
           );
         },
         onSuccess() {
-          setVideoKey(objectName);
-          setStatus("Upload complete!");
+          // Only publish after TUS confirms upload completion.
+          void publishToInstagram(objectName);
         },
       });
 
-      // Resume an unfinished upload when a matching upload exists.
-      const previousUploads = await upload.findPreviousUploads();
-
-      if (previousUploads.length > 0) {
-        upload.resumeFromPreviousUpload(previousUploads[0]);
-      }
-
       upload.start();
     } catch (error) {
-      setStatus(
-        error instanceof Error ? error.message : "Upload failed"
+      setStatus("error");
+      setMessage(
+        error instanceof Error ? error.message : "Upload failed."
       );
     }
   }
 
   return (
     <main className="mx-auto max-w-xl space-y-5 p-8">
-      <h1 className="text-2xl font-bold">Video Upload</h1>
+      <h1 className="text-2xl font-bold">
+        Publish Instagram Reel
+      </h1>
 
-      <input
-        type="file"
-        accept="video/*"
-        onChange={(event) =>
-          setFile(event.target.files?.[0] ?? null)
-        }
-      />
+      <div className="space-y-2">
+        <label htmlFor="video" className="block font-medium">
+          Select video
+        </label>
+        <input
+          id="video"
+          type="file"
+          accept="video/*"
+          disabled={busy}
+          onChange={(event) => {
+            setFile(event.target.files?.[0] ?? null);
+            setStatus("idle");
+            setMessage("");
+            setProgress(0);
+            setVideoKey("");
+            setPublishedId("");
+          }}
+        />
+      </div>
 
       {file && (
         <p className="text-sm text-gray-500">
@@ -84,21 +150,69 @@ export default function UploadPage() {
         </p>
       )}
 
+      <div className="space-y-2">
+        <label htmlFor="caption" className="block font-medium">
+          Instagram caption
+        </label>
+        <textarea
+          id="caption"
+          value={caption}
+          onChange={(event) => setCaption(event.target.value)}
+          disabled={busy}
+          placeholder="Write your Reel caption..."
+          maxLength={2200}
+          rows={4}
+          className="w-full rounded-lg border p-3 text-black"
+        />
+      </div>
+
       <button
         onClick={uploadVideo}
-        disabled={!file || status === "Uploading..."}
+        disabled={!file || busy}
         className="rounded-lg bg-blue-600 px-5 py-2 text-white disabled:opacity-50"
       >
-        Upload video
+        {status === "uploading"
+          ? "Uploading..."
+          : status === "publishing"
+            ? "Publishing..."
+            : "Upload and publish Reel"}
       </button>
 
-      <progress value={progress} max={100} className="w-full" />
+      {(busy || progress > 0) && (
+        <div className="space-y-2">
+          <progress
+            value={progress}
+            max={100}
+            className="w-full"
+          />
+          <p className="text-sm">Upload progress: {progress}%</p>
+        </div>
+      )}
 
-      <p>{status} {progress}%</p>
+      {message && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`rounded-lg p-3 ${
+            status === "success"
+              ? "bg-green-100 text-green-800"
+              : status === "error"
+                ? "bg-red-100 text-red-800"
+                : "bg-blue-50 text-blue-800"
+          }`}
+        >
+          {message}
+          {publishedId && (
+            <p className="mt-1 break-all text-sm">
+              Published media ID: {publishedId}
+            </p>
+          )}
+        </div>
+      )}
 
       {videoKey && (
         <div className="break-all rounded bg-gray-100 p-3 text-sm text-black">
-          <strong>Storage key:</strong>
+          <strong>Supabase storage path:</strong>
           <p>{videoKey}</p>
         </div>
       )}
