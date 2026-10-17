@@ -1,0 +1,23 @@
+{
+  "title": "Why do bridges vibrate? An Explainer",
+  "targetAudience": "Beginners",
+  "estimatedDurationSeconds": 45,
+  "scenes": [
+    {
+      "narration": "Imagine you're walking on a bridge. Sometimes you hear it creaking or even shaking. Why does this happen? Let's dive in.",
+      "visualDirection": "Show a bridge with a person walking on it."
+    },
+    {
+      "narration": "When a bridge is hit by wind or a car, it moves. This movement causes the bridge to vibrate. It's like when you hit a drum with a stick.",
+      "visualDirection": "Demonstrate hitting a drum with a stick to show vibration."
+    },
+    {
+      "narration": "The bridge's vibration is like a wave. It starts at the point where the force hits and moves along the bridge. This is why you might hear it creak or shake.",
+      "visualDirection": "Show a diagram of a bridge with arrows indicating the wave-like movement of vibration."
+    },
+    {
+      "narration": "To prevent this, engineers design bridges with special materials and shapes. They also add damping systems to absorb the vibrations. It's like adding a shock absorber to a car.",
+      "visualDirection": "Show a diagram of a bridge with added damping systems."
+    }
+  ]
+}

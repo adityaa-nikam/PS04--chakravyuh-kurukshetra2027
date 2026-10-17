@@ -1,0 +1,600 @@
+{
+  "schema_version": "1.4",
+  "source_video": "videoplayback.mp4",
+  "highlight_start_sec": 901.6,
+  "highlight_end_sec": 943.86,
+  "requested_duration_sec": 42.26,
+  "output_path": "C:\\Users\\Aditya Bhise\\Desktop\\PS04--chakravyuh-kurukshetra2027\\storage\\rendered\\videoplayback_reel_captioned.mp4",
+  "output_width": 720,
+  "output_height": 1280,
+  "output_fps": 25.0,
+  "output_video_codec": "h264",
+  "output_audio_codec": "aac",
+  "audio_included": true,
+  "rendered_frame_count": 1056,
+  "actual_video_duration_sec": 42.26,
+  "actual_audio_duration_sec": 42.26,
+  "render_duration_sec": 83.673,
+  "crop_plan_reference": null,
+  "highlight_reference": null,
+  "composition_mode": "adaptive_hybrid",
+  "presenter_frames_count": 0,
+  "presentation_frames_count": 1031,
+  "content_frames_count": 25,
+  "content_detections_count": 4,
+  "composition_transitions_count": 6,
+  "scene_cut_transitions_count": 0,
+  "sustained_loss_transitions_count": 0,
+  "content_transitions_count": 6,
+  "scene_type_distribution": {
+    "presenter_only": 0,
+    "precomposited_pip": 0,
+    "presentation_screen": 170,
+    "transition_or_uncertain": 0
+  },
+  "fallback_events_count": 0,
+  "frame_diagnostics_sample": [
+    {
+      "frame_index": 0,
+      "source_timestamp_sec": 901.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 30.2,
+      "crop_contrast_std": 38.3,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 25,
+      "source_timestamp_sec": 902.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 71.2,
+      "crop_contrast_std": 53.8,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 50,
+      "source_timestamp_sec": 903.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 71.1,
+      "crop_contrast_std": 53.4,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 75,
+      "source_timestamp_sec": 904.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 70.7,
+      "crop_contrast_std": 53.1,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 100,
+      "source_timestamp_sec": 905.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 71.1,
+      "crop_contrast_std": 54.4,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 125,
+      "source_timestamp_sec": 906.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 58.8,
+      "crop_contrast_std": 48.4,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 150,
+      "source_timestamp_sec": 907.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 58.1,
+      "crop_contrast_std": 48.3,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 175,
+      "source_timestamp_sec": 908.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 58.6,
+      "crop_contrast_std": 45.0,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 200,
+      "source_timestamp_sec": 909.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 58.2,
+      "crop_contrast_std": 48.0,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 225,
+      "source_timestamp_sec": 910.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 58.7,
+      "crop_contrast_std": 44.8,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 250,
+      "source_timestamp_sec": 911.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 43.1,
+      "crop_contrast_std": 36.2,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 275,
+      "source_timestamp_sec": 912.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 43.4,
+      "crop_contrast_std": 41.7,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 300,
+      "source_timestamp_sec": 913.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 43.1,
+      "crop_contrast_std": 42.5,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 325,
+      "source_timestamp_sec": 914.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 43.5,
+      "crop_contrast_std": 42.2,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 350,
+      "source_timestamp_sec": 915.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 45.0,
+      "crop_contrast_std": 51.0,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 375,
+      "source_timestamp_sec": 916.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 46.0,
+      "crop_contrast_std": 52.8,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 400,
+      "source_timestamp_sec": 917.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 47.2,
+      "crop_contrast_std": 52.2,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 425,
+      "source_timestamp_sec": 918.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 65.4,
+      "crop_contrast_std": 63.9,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 450,
+      "source_timestamp_sec": 919.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 75.9,
+      "crop_contrast_std": 76.5,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 475,
+      "source_timestamp_sec": 920.6,
+      "dominant_mode": "screen_content",
+      "alpha": 0.0,
+      "frame_contrast_std": 74.1,
+      "crop_contrast_std": 64.3,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 497,
+      "source_timestamp_sec": 921.48,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 0.0,
+      "crop_contrast_std": 0.0,
+      "fallback_triggered": false,
+      "scene_cut_detected": true
+    },
+    {
+      "frame_index": 498,
+      "source_timestamp_sec": 921.52,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 15.5,
+      "crop_contrast_std": 18.4,
+      "fallback_triggered": false,
+      "scene_cut_detected": true
+    },
+    {
+      "frame_index": 499,
+      "source_timestamp_sec": 921.56,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 30.5,
+      "crop_contrast_std": 37.3,
+      "fallback_triggered": false,
+      "scene_cut_detected": true
+    },
+    {
+      "frame_index": 500,
+      "source_timestamp_sec": 921.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 29.3,
+      "crop_contrast_std": 33.4,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 501,
+      "source_timestamp_sec": 921.64,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 27.2,
+      "crop_contrast_std": 29.6,
+      "fallback_triggered": false,
+      "scene_cut_detected": true
+    },
+    {
+      "frame_index": 504,
+      "source_timestamp_sec": 921.76,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 28.7,
+      "crop_contrast_std": 32.4,
+      "fallback_triggered": false,
+      "scene_cut_detected": true
+    },
+    {
+      "frame_index": 505,
+      "source_timestamp_sec": 921.8,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 29.2,
+      "crop_contrast_std": 34.9,
+      "fallback_triggered": false,
+      "scene_cut_detected": true
+    },
+    {
+      "frame_index": 506,
+      "source_timestamp_sec": 921.84,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 30.6,
+      "crop_contrast_std": 36.9,
+      "fallback_triggered": false,
+      "scene_cut_detected": true
+    },
+    {
+      "frame_index": 525,
+      "source_timestamp_sec": 922.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 29.9,
+      "crop_contrast_std": 37.1,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 550,
+      "source_timestamp_sec": 923.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 29.8,
+      "crop_contrast_std": 36.1,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 575,
+      "source_timestamp_sec": 924.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 29.0,
+      "crop_contrast_std": 35.7,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 600,
+      "source_timestamp_sec": 925.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 31.6,
+      "crop_contrast_std": 37.2,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 625,
+      "source_timestamp_sec": 926.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 31.4,
+      "crop_contrast_std": 37.9,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 650,
+      "source_timestamp_sec": 927.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 31.8,
+      "crop_contrast_std": 36.7,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 675,
+      "source_timestamp_sec": 928.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 31.9,
+      "crop_contrast_std": 37.5,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 700,
+      "source_timestamp_sec": 929.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 29.6,
+      "crop_contrast_std": 36.8,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 725,
+      "source_timestamp_sec": 930.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 29.2,
+      "crop_contrast_std": 37.3,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 750,
+      "source_timestamp_sec": 931.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 31.5,
+      "crop_contrast_std": 39.4,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 775,
+      "source_timestamp_sec": 932.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 31.3,
+      "crop_contrast_std": 40.0,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 800,
+      "source_timestamp_sec": 933.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 30.0,
+      "crop_contrast_std": 37.7,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 825,
+      "source_timestamp_sec": 934.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 19.4,
+      "crop_contrast_std": 15.9,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 850,
+      "source_timestamp_sec": 935.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 19.3,
+      "crop_contrast_std": 15.9,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 875,
+      "source_timestamp_sec": 936.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 19.4,
+      "crop_contrast_std": 16.0,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 900,
+      "source_timestamp_sec": 937.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 19.5,
+      "crop_contrast_std": 16.3,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 925,
+      "source_timestamp_sec": 938.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 19.6,
+      "crop_contrast_std": 16.7,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 950,
+      "source_timestamp_sec": 939.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 19.8,
+      "crop_contrast_std": 17.2,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 975,
+      "source_timestamp_sec": 940.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 19.9,
+      "crop_contrast_std": 17.6,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 1000,
+      "source_timestamp_sec": 941.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 20.1,
+      "crop_contrast_std": 18.0,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 1025,
+      "source_timestamp_sec": 942.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 20.1,
+      "crop_contrast_std": 18.5,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 1050,
+      "source_timestamp_sec": 943.6,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 21.4,
+      "crop_contrast_std": 19.9,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    },
+    {
+      "frame_index": 1055,
+      "source_timestamp_sec": 943.8,
+      "dominant_mode": "presentation",
+      "alpha": 1.0,
+      "frame_contrast_std": 21.4,
+      "crop_contrast_std": 19.9,
+      "fallback_triggered": false,
+      "scene_cut_detected": false
+    }
+  ],
+  "background_style": {
+    "type": "gaussian_blur_darkened",
+    "blur_sigma": 10.0,
+    "darken_factor": 0.55,
+    "canvas_aspect": "720:1280"
+  },
+  "content_tracking_diagnostics": {
+    "enable_content_tracking": true,
+    "content_min_score": 0.35,
+    "content_max_width_ratio": 0.45,
+    "content_smoothing_alpha": 0.3,
+    "content_hold_sec": 1.0,
+    "total_detections_count": 4,
+    "content_transitions_count": 6,
+    "tracking_mode_distribution": {
+      "too_broad": 48,
+      "tracking_active": 4
+    },
+    "candidate_types_detected": [
+      "diagram_panel",
+      "terminal",
+      "slide_content"
+    ],
+    "scene_type_distribution": {
+      "presenter_only": 0,
+      "precomposited_pip": 0,
+      "presentation_screen": 170,
+      "transition_or_uncertain": 0
+    }
+  },
+  "subtitles_enabled": true,
+  "caption_style": "karaoke",
+  "subtitles_ass_path": "C:\\Users\\Aditya Bhise\\Desktop\\PS04--chakravyuh-kurukshetra2027\\storage\\subtitles\\videoplayback_reel_captioned.ass",
+  "caption_groups_count": 28,
+  "caption_diagnostics": {
+    "total_source_words": 2438,
+    "highlight_words_count": 98,
+    "caption_groups_count": 28,
+    "total_ass_events": 98,
+    "style": "karaoke",
+    "first_caption_start_sec": 0.0,
+    "last_caption_end_sec": 42.26,
+    "zero_duration_words_count": 10,
+    "clamped_words_count": 0,
+    "time_conversion_convention": "relative_to_highlight_start",
+    "ass_file_path": "C:\\Users\\Aditya Bhise\\Desktop\\PS04--chakravyuh-kurukshetra2027\\storage\\subtitles\\videoplayback_reel_captioned.ass"
+  },
+  "branding": null,
+  "warnings": [
+    "Upscaling applied from crop resolution 202x360 to output 720x1280 (3.56x factor). Note that upscaling does not recover detail absent from the source footage."
+  ],
+  "success": true
+}

@@ -1,0 +1,9 @@
+{
+  "job_id": "job_1792196857_videopla",
+  "created_at": 1792196857.845404,
+  "status": "FAILED",
+  "progress_pct": 0,
+  "stage_message": "Error: Source video file not found at: \"D:\\softwares\\videoplayback.mp4\"",
+  "updated_at": 1792196857.8644292,
+  "error_message": "Source video file not found at: \"D:\\softwares\\videoplayback.mp4\""
+}

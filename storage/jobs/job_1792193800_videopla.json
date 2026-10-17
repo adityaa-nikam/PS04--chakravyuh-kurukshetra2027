@@ -1,0 +1,844 @@
+{
+  "job_id": "job_1792193800_videopla",
+  "created_at": 1792193800.2704868,
+  "status": "COMPLETED",
+  "progress_pct": 100,
+  "stage_message": "Pipeline complete in 94.82s! Reel ready for preview.",
+  "updated_at": 1792193895.108136,
+  "media_metadata": {
+    "filename": "videoplayback.mp4",
+    "filepath": "D:\\softwares\\videoplayback.mp4",
+    "duration_sec": 1491.185,
+    "width": 640,
+    "height": 360,
+    "fps": 25.0,
+    "has_audio": true,
+    "audio_sample_rate": 44100,
+    "audio_channels": 2,
+    "video_codec": "h264",
+    "audio_codec": "aac"
+  },
+  "transcript_words": [
+    {
+      "word": "Hi",
+      "start_abs_sec": 0.0,
+      "end_abs_sec": 0.14,
+      "confidence": 0.257,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "everyone,",
+      "start_abs_sec": 0.14,
+      "end_abs_sec": 0.3,
+      "confidence": 0.896,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "welcome",
+      "start_abs_sec": 0.52,
+      "end_abs_sec": 0.64,
+      "confidence": 0.701,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "to",
+      "start_abs_sec": 0.64,
+      "end_abs_sec": 0.84,
+      "confidence": 0.967,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "our",
+      "start_abs_sec": 0.84,
+      "end_abs_sec": 0.94,
+      "confidence": 0.327,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "college",
+      "start_abs_sec": 0.94,
+      "end_abs_sec": 1.18,
+      "confidence": 0.526,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "and",
+      "start_abs_sec": 1.18,
+      "end_abs_sec": 1.38,
+      "confidence": 0.653,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "today's",
+      "start_abs_sec": 1.38,
+      "end_abs_sec": 1.68,
+      "confidence": 0.849,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "session",
+      "start_abs_sec": 1.68,
+      "end_abs_sec": 1.92,
+      "confidence": 0.987,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "is",
+      "start_abs_sec": 1.92,
+      "end_abs_sec": 2.02,
+      "confidence": 0.937,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "going",
+      "start_abs_sec": 2.02,
+      "end_abs_sec": 2.12,
+      "confidence": 0.88,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "to",
+      "start_abs_sec": 2.12,
+      "end_abs_sec": 2.26,
+      "confidence": 0.989,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "be",
+      "start_abs_sec": 2.26,
+      "end_abs_sec": 2.36,
+      "confidence": 0.978,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "about",
+      "start_abs_sec": 2.36,
+      "end_abs_sec": 2.52,
+      "confidence": 0.982,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "how",
+      "start_abs_sec": 2.52,
+      "end_abs_sec": 2.78,
+      "confidence": 0.81,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "can",
+      "start_abs_sec": 2.78,
+      "end_abs_sec": 2.92,
+      "confidence": 0.835,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "we",
+      "start_abs_sec": 2.92,
+      "end_abs_sec": 3.12,
+      "confidence": 0.887,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "start",
+      "start_abs_sec": 3.12,
+      "end_abs_sec": 3.46,
+      "confidence": 0.988,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "our",
+      "start_abs_sec": 3.46,
+      "end_abs_sec": 3.68,
+      "confidence": 0.981,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "coding",
+      "start_abs_sec": 3.68,
+      "end_abs_sec": 3.94,
+      "confidence": 0.977,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "journey",
+      "start_abs_sec": 3.94,
+      "end_abs_sec": 4.14,
+      "confidence": 0.987,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "in",
+      "start_abs_sec": 4.14,
+      "end_abs_sec": 4.4,
+      "confidence": 0.99,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "2026.",
+      "start_abs_sec": 4.4,
+      "end_abs_sec": 4.96,
+      "confidence": 0.943,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "In",
+      "start_abs_sec": 5.7,
+      "end_abs_sec": 5.7,
+      "confidence": 0.123,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "our",
+      "start_abs_sec": 5.7,
+      "end_abs_sec": 5.74,
+      "confidence": 0.061,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "session,",
+      "start_abs_sec": 5.74,
+      "end_abs_sec": 6.06,
+      "confidence": 0.343,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "we",
+      "start_abs_sec": 12.18,
+      "end_abs_sec": 12.18,
+      "confidence": 0.396,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "will",
+      "start_abs_sec": 12.18,
+      "end_abs_sec": 13.26,
+      "confidence": 0.234,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "dedicate",
+      "start_abs_sec": 13.26,
+      "end_abs_sec": 27.06,
+      "confidence": 0.196,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "our",
+      "start_abs_sec": 27.06,
+      "end_abs_sec": 28.08,
+      "confidence": 0.4,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "dedicated",
+      "start_abs_sec": 28.08,
+      "end_abs_sec": 28.22,
+      "confidence": 0.274,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "session.",
+      "start_abs_sec": 59.54,
+      "end_abs_sec": 60.1,
+      "confidence": 0.9,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "If",
+      "start_abs_sec": 67.74,
+      "end_abs_sec": 68.3,
+      "confidence": 0.08,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "you",
+      "start_abs_sec": 68.3,
+      "end_abs_sec": 68.86,
+      "confidence": 0.742,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "want,",
+      "start_abs_sec": 68.86,
+      "end_abs_sec": 69.84,
+      "confidence": 0.346,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "you",
+      "start_abs_sec": 73.28,
+      "end_abs_sec": 73.38,
+      "confidence": 0.916,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "can",
+      "start_abs_sec": 73.38,
+      "end_abs_sec": 73.56,
+      "confidence": 0.985,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "just",
+      "start_abs_sec": 73.56,
+      "end_abs_sec": 73.76,
+      "confidence": 0.748,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "go",
+      "start_abs_sec": 73.76,
+      "end_abs_sec": 74.04,
+      "confidence": 0.965,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "out",
+      "start_abs_sec": 74.04,
+      "end_abs_sec": 74.22,
+      "confidence": 0.985,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "there,",
+      "start_abs_sec": 74.22,
+      "end_abs_sec": 74.46,
+      "confidence": 0.961,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "pick",
+      "start_abs_sec": 74.7,
+      "end_abs_sec": 74.88,
+      "confidence": 0.945,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "a",
+      "start_abs_sec": 74.88,
+      "end_abs_sec": 75.1,
+      "confidence": 0.987,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "specific",
+      "start_abs_sec": 75.1,
+      "end_abs_sec": 75.38,
+      "confidence": 0.995,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "path,",
+      "start_abs_sec": 75.38,
+      "end_abs_sec": 75.7,
+      "confidence": 0.799,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "which",
+      "start_abs_sec": 75.94,
+      "end_abs_sec": 75.94,
+      "confidence": 0.187,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "may",
+      "start_abs_sec": 75.94,
+      "end_abs_sec": 76.34,
+      "confidence": 0.201,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "be",
+      "start_abs_sec": 76.34,
+      "end_abs_sec": 76.58,
+      "confidence": 0.941,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "the",
+      "start_abs_sec": 76.58,
+      "end_abs_sec": 76.64,
+      "confidence": 0.171,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "initial",
+      "start_abs_sec": 76.64,
+      "end_abs_sec": 77.16,
+      "confidence": 0.646,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "interest",
+      "start_abs_sec": 77.16,
+      "end_abs_sec": 77.62,
+      "confidence": 0.964,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "session.",
+      "start_abs_sec": 77.62,
+      "end_abs_sec": 79.2,
+      "confidence": 0.9,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "A",
+      "start_abs_sec": 82.66,
+      "end_abs_sec": 83.54,
+      "confidence": 0.047,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "placement",
+      "start_abs_sec": 83.54,
+      "end_abs_sec": 84.42,
+      "confidence": 0.925,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "-oriented",
+      "start_abs_sec": 84.42,
+      "end_abs_sec": 84.98,
+      "confidence": 0.704,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "student",
+      "start_abs_sec": 84.98,
+      "end_abs_sec": 85.34,
+      "confidence": 0.898,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "preparation,",
+      "start_abs_sec": 85.34,
+      "end_abs_sec": 85.74,
+      "confidence": 0.96,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "category,",
+      "start_abs_sec": 86.16,
+      "end_abs_sec": 86.58,
+      "confidence": 0.043,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "category,",
+      "start_abs_sec": 87.6,
+      "end_abs_sec": 87.6,
+      "confidence": 0.875,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "category,",
+      "start_abs_sec": 87.82,
+      "end_abs_sec": 87.82,
+      "confidence": 0.833,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "and",
+      "start_abs_sec": 87.82,
+      "end_abs_sec": 88.16,
+      "confidence": 0.067,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "technology,",
+      "start_abs_sec": 88.16,
+      "end_abs_sec": 89.38,
+      "confidence": 0.119,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "coding,",
+      "start_abs_sec": 89.7,
+      "end_abs_sec": 89.7,
+      "confidence": 0.202,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "programming,",
+      "start_abs_sec": 90.52,
+      "end_abs_sec": 90.96,
+      "confidence": 0.876,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "internships",
+      "start_abs_sec": 91.46,
+      "end_abs_sec": 92.56,
+      "confidence": 0.503,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "and",
+      "start_abs_sec": 92.56,
+      "end_abs_sec": 92.68,
+      "confidence": 0.487,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "placements.",
+      "start_abs_sec": 92.68,
+      "end_abs_sec": 93.08,
+      "confidence": 0.77,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "In",
+      "start_abs_sec": 246.73,
+      "end_abs_sec": 248.13,
+      "confidence": 0.079,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "our",
+      "start_abs_sec": 248.13,
+      "end_abs_sec": 248.17,
+      "confidence": 0.048,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "session,",
+      "start_abs_sec": 248.17,
+      "end_abs_sec": 248.93,
+      "confidence": 0.9,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "we",
+      "start_abs_sec": 250.71,
+      "end_abs_sec": 250.71,
+      "confidence": 0.54,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "will",
+      "start_abs_sec": 250.71,
+      "end_abs_sec": 257.69,
+      "confidence": 0.447,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "be",
+      "start_abs_sec": 257.69,
+      "end_abs_sec": 263.97,
+      "confidence": 0.094,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "able",
+      "start_abs_sec": 263.97,
+      "end_abs_sec": 265.07,
+      "confidence": 0.034,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "to",
+      "start_abs_sec": 265.07,
+      "end_abs_sec": 265.07,
+      "confidence": 0.992,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "build",
+      "start_abs_sec": 265.07,
+      "end_abs_sec": 265.07,
+      "confidence": 0.036,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "a",
+      "start_abs_sec": 265.07,
+      "end_abs_sec": 265.07,
+      "confidence": 0.445,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "lot",
+      "start_abs_sec": 265.07,
+      "end_abs_sec": 267.25,
+      "confidence": 0.529,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "of",
+      "start_abs_sec": 267.25,
+      "end_abs_sec": 267.57,
+      "confidence": 0.95,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "different",
+      "start_abs_sec": 267.57,
+      "end_abs_sec": 267.87,
+      "confidence": 0.846,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "projects.",
+      "start_abs_sec": 267.87,
+      "end_abs_sec": 268.47,
+      "confidence": 0.756,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "In",
+      "start_abs_sec": 342.03,
+      "end_abs_sec": 343.43,
+      "confidence": 0.016,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "our",
+      "start_abs_sec": 343.43,
+      "end_abs_sec": 344.83,
+      "confidence": 0.01,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "session,",
+      "start_abs_sec": 344.83,
+      "end_abs_sec": 346.81,
+      "confidence": 0.008,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "we",
+      "start_abs_sec": 346.81,
+      "end_abs_sec": 346.81,
+      "confidence": 0.651,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "will",
+      "start_abs_sec": 346.81,
+      "end_abs_sec": 347.55,
+      "confidence": 0.455,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "be",
+      "start_abs_sec": 347.55,
+      "end_abs_sec": 347.55,
+      "confidence": 0.077,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "able",
+      "start_abs_sec": 347.55,
+      "end_abs_sec": 350.67,
+      "confidence": 0.018,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "to",
+      "start_abs_sec": 350.67,
+      "end_abs_sec": 350.75,
+      "confidence": 0.988,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "build",
+      "start_abs_sec": 350.75,
+      "end_abs_sec": 350.75,
+      "confidence": 0.002,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "a",
+      "start_abs_sec": 350.75,
+      "end_abs_sec": 350.75,
+      "confidence": 0.238,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "lot",
+      "start_abs_sec": 350.75,
+      "end_abs_sec": 351.53,
+      "confidence": 0.007,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "of",
+      "start_abs_sec": 351.53,
+      "end_abs_sec": 351.55,
+      "confidence": 0.896,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "different",
+      "start_abs_sec": 351.55,
+      "end_abs_sec": 351.57,
+      "confidence": 0.054,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "projects.",
+      "start_abs_sec": 351.57,
+      "end_abs_sec": 351.59,
+      "confidence": 0.006,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "In",
+      "start_abs_sec": 352.53,
+      "end_abs_sec": 352.53,
+      "confidence": 0.066,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "our",
+      "start_abs_sec": 352.53,
+      "end_abs_sec": 352.75,
+      "confidence": 0.328,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "session,",
+      "start_abs_sec": 352.75,
+      "end_abs_sec": 352.75,
+      "confidence": 0.121,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "we",
+      "start_abs_sec": 354.91,
+      "end_abs_sec": 354.91,
+      "confidence": 0.785,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "will",
+      "start_abs_sec": 354.91,
+      "end_abs_sec": 355.13,
+      "confidence": 0.685,
+      "is_technical_term": false,
+      "term_id": null
+    }
+  ],
+  "selected_highlight": {
+    "clip_id": "videoplayback_hl",
+    "start_time_sec": 901.6,
+    "end_time_sec": 943.86,
+    "duration_sec": 42.26,
+    "pedagogical_score": 67.05,
+    "topic_summary": "Why? Because, shuru, shuru, me, chise, asan, lakti, shuru, shuru, me, kele, koi, be programming language, seeking it. AV",
+    "boundary_reasoning": "defines core concept; explains mechanism"
+  },
+  "crop_plan": {
+    "clip_id": "videoplayback_crop",
+    "aspect_ratio": "9:16",
+    "target_resolution": {
+      "width": 720,
+      "height": 1280
+    },
+    "keyframes_count": 170
+  },
+  "rendered_video_path": "C:\\Users\\Aditya Bhise\\Desktop\\PS04--chakravyuh-kurukshetra2027\\storage\\rendered\\videoplayback_reel_captioned.mp4",
+  "subtitles_ass_path": "C:\\Users\\Aditya Bhise\\Desktop\\PS04--chakravyuh-kurukshetra2027\\storage\\subtitles\\videoplayback_reel_captioned.ass",
+  "elapsed_sec": 94.82
+}

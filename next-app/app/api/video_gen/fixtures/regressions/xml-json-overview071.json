@@ -1,0 +1,83 @@
+{
+  "script": {
+    "title": "XML vs JSON: A Beginner's Guide",
+    "targetAudience": "Beginners",
+    "estimatedDurationSeconds": 45,
+    "scenes": [
+      {
+        "narration": "Hello there! Today, we're going to explore two popular data formats: XML and JSON. Let\u2019s dive in!",
+        "visualDirection": "Show a simple record of information about a book."
+      },
+      {
+        "narration": "Imagine you have this little piece of information about a book:\n\n<book>\n\t<title>Harry Potter</title>\n\t<author>J.K. Rowling</author>\n\t<publisher>Harry Potter Publishing Co.</publisher>\n</book>",
+        "visualDirection": "Display the XML representation of the book record on screen."
+      },
+      {
+        "narration": "And here's how we represent that same data using JSON:\n\n{\n\t\"title\": \"Harry Potter\",\n\t\"author\": \"J.K. Rowling\",\n\t\"publisher\": \"Harry Potter Publishing Co.\"\n}",
+        "visualDirection": "Show the JSON representation of the same information next to the XML one."
+      }
+    ]
+  },
+  "candidate": {
+    "sceneId": "scene-001",
+    "purpose": "hook",
+    "explanation": "Introduce the topic with an engaging example.",
+    "confidence": "overview",
+    "visual": {
+      "sceneId": "scene-001",
+      "concept": "comparison",
+      "mode": "overview",
+      "heading": "XML vs JSON: A Beginner's Guide",
+      "labels": [
+        "XML",
+        "JSON"
+      ],
+      "note": "Conceptual overview",
+      "renderer": "graph",
+      "graph": {
+        "topic": "general",
+        "layout": "comparison",
+        "nodes": [
+          {
+            "id": "xml",
+            "label": "XML",
+            "icon": "database",
+            "role": "input",
+            "evidence": "XML is a markup language used to structure data."
+          },
+          {
+            "id": "json",
+            "label": "JSON",
+            "icon": "database",
+            "role": "output",
+            "evidence": "JSON is a lightweight data interchange format that is easy for humans to read and write."
+          }
+        ],
+        "edges": [
+          {
+            "from": "xml",
+            "to": "json",
+            "label": "converts into",
+            "meaning": "input",
+            "evidence": "XML can be converted into JSON for easier consumption by web applications."
+          }
+        ],
+        "actions": [
+          {
+            "kind": "highlight",
+            "target": "xml",
+            "start": 0,
+            "end": 1
+          },
+          {
+            "kind": "highlight",
+            "target": "json",
+            "start": 0,
+            "end": 1
+          }
+        ],
+        "values": []
+      }
+    }
+  }
+}

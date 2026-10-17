@@ -1,0 +1,104 @@
+{
+  "description": "Actual Block 06 XML/JSON failure: model chose graph-free bridge branch for all scenes.",
+  "script": {
+    "title": "XML vs JSON: A Beginner's Guide",
+    "targetAudience": "Beginners",
+    "estimatedDurationSeconds": 45,
+    "scenes": [
+      {
+        "narration": "Hello, welcome to our quick look at XML and JSON. Imagine you have a small data structure like this: <root><name>John</name><age>30</age></root>. This is a simple XML structure. Let's see how it looks in JSON format: {\"name\": \"John\", \"age\": 30}. See how the structure is different? XML uses tags, like <name> and <age>, to define the structure. JSON uses curly braces and colons, like {name: \"John\", age: 30}. XML is like a tree with branches, while JSON is more like a list of key-value pairs. XML is great for complex data structures, like HTML or XML documents. JSON is better for simpler data, like API responses or configuration files. Which one you use depends on what you're working with and what you're trying to do with it. That's it for today's quick look at XML and JSON. Thanks for watching! \ud83c\udf1f XML: <root><name>John</name><age>30</age></root> JSON: {\"name\": \"John\", \"age\": 30}. Both represent the same data, but in different ways. XML uses tags, JSON uses key-value pairs. XML is for complex data, JSON is for simpler data. Choose based on your needs. \ud83d\udcda XML: <person><name>John</name><age>30</age></person> JSON: {\"person\": {\"name\": \"John\", \"age\": 30}}. XML uses a hierarchical structure,",
+        "visualDirection": "Show the XML structure and JSON structure side by side, highlighting the differences in tags and key-value pairs."
+      },
+      {
+        "narration": "Now, let's compare XML and JSON again. XML uses tags to define structure, like <person> and <name>. JSON uses key-value pairs, like {name: \"John\", age: 30}. XML is like a tree with branches, JSON is more like a list of key-value pairs. XML is great for complex data, like HTML or XML documents. JSON is better for simpler data, like API responses or configuration files. Which one you use depends on what you're working with and what you're trying to do with it. That's it for today's quick look at XML and JSON. Thanks for watching! \ud83c\udf1f XML: <person><name>John</name><age>30</age></person> JSON: {\"person\": {\"name\": \"John\", \"age\": 30}}. Both represent the same data, but in different ways. XML uses tags, JSON uses key-value pairs. XML is for complex data, JSON is for simpler data. Choose based on your needs. \ud83d\udcda XML: <person><name>John</name><age>30</age></person> JSON: {\"person\": {\"name\": \"John\", \"age\": 30}}. XML uses a hierarchical structure, JSON is more like a list of key-value pairs. XML is great for complex data, like HTML or XML documents. JSON is better for simpler data, like API responses or configuration files. Which one you use depends on what you're working with and what you're",
+        "visualDirection": "Show the XML structure and JSON structure side by side, highlighting the differences in tags and key-value pairs."
+      },
+      {
+        "narration": "In summary, XML and JSON are both ways to represent data, but they do it differently. XML uses tags to define structure, like <person> and <name>. JSON uses key-value pairs, like {name: \"John\", age: 30}. XML is like a tree with branches, JSON is more like a list of key-value pairs. XML is great for complex data, like HTML or XML documents. JSON is better for simpler data, like API responses or configuration files. Which one you use depends on what you're working with and what you're trying to do with it. That's it for today's quick look at XML and JSON. Thanks for watching! \ud83c\udf1f XML: <person><name>John</name><age>30</age></person> JSON: {\"person\": {\"name\": \"John\", \"age\": 30}}. Both represent the same data, but in different ways. XML uses tags, JSON uses key-value pairs. XML is for complex data, JSON is for simpler data. Choose based on your needs. \ud83d\udcda XML: <person><name>John</name><age>30</age></person> JSON: {\"person\": {\"name\": \"John\", \"age\": 30}}. XML uses a hierarchical structure, JSON is more like a list of key-value pairs. XML is great for complex data, like HTML or XML documents. JSON is better for simpler data, like API responses or configuration files. Which one you use depends",
+        "visualDirection": "Show the XML structure and JSON structure side by side, highlighting the differences in tags and key-value pairs."
+      }
+    ]
+  },
+  "visualPlan": {
+    "scenes": [
+      {
+        "sceneId": "scene-001",
+        "purpose": "example",
+        "explanation": "Hello, welcome to our quick look at XML and JSON. Imagine you have a small data structure like this: <root><name>John</name><age>30</age></root>. This is a **[X",
+        "confidence": "supported",
+        "visual": {
+          "sceneId": "scene-001",
+          "concept": "comparison",
+          "mode": "overview",
+          "heading": "XML vs JSON",
+          "labels": [
+            "XML",
+            "JSON"
+          ],
+          "note": "Both represent the same data, but in different ways. XML uses **",
+          "renderer": "bridge"
+        }
+      },
+      {
+        "sceneId": "scene-002",
+        "purpose": "example",
+        "explanation": "Now, let's compare XML and JSON again. XML uses tags to define structure, like <person> and <name>. JSON uses key-value pairs, like {name: \"John\", age: 30}. XML",
+        "confidence": "supported",
+        "visual": {
+          "sceneId": "scene-002",
+          "concept": "comparison",
+          "mode": "overview",
+          "heading": "XML vs JSON",
+          "labels": [
+            "XML",
+            "JSON"
+          ],
+          "note": "Both represent the same data, but in different ways. XML uses **",
+          "renderer": "bridge"
+        }
+      },
+      {
+        "sceneId": "scene-003",
+        "purpose": "example",
+        "explanation": "In summary, XML and JSON are both ways to represent data, but they do it differently. XML uses tags to define structure, like <person> and <name>. JSON uses key",
+        "confidence": "supported",
+        "visual": {
+          "sceneId": "scene-003",
+          "concept": "comparison",
+          "mode": "overview",
+          "heading": "XML vs JSON",
+          "labels": [
+            "XML",
+            "JSON"
+          ],
+          "note": "Both represent the same data, but in different ways. XML uses **",
+          "renderer": "bridge"
+        }
+      }
+    ]
+  },
+  "settings": {
+    "width": 720,
+    "height": 1280,
+    "fps": 15,
+    "approveOverrun": true
+  },
+  "frames": [
+    {
+      "id": "scene-001",
+      "from": 0,
+      "durationInFrames": 1468
+    },
+    {
+      "id": "scene-002",
+      "from": 1468,
+      "durationInFrames": 1461
+    },
+    {
+      "id": "scene-003",
+      "from": 2929,
+      "durationInFrames": 1468
+    }
+  ],
+  "durationInFrames": 4397
+}
