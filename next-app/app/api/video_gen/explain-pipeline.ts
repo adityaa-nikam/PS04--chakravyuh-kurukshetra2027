@@ -11,10 +11,12 @@ import { renderStoryboard } from "./render-service";
 import { outputPaths } from "./output-path";
 import { explainOptionsSchema, type ExplainOptions } from "./explain-options";
 import { renderOptionsSchema, prepareRender } from "./render-plan";
-import { ollamaModel, redactDiagnostics, type InferenceContext, type InferenceDiagnostic } from "./ollama";
+import { inferenceModel, inferenceProvider } from "./inference";
+import { redactDiagnostics, type InferenceContext, type InferenceDiagnostic } from "./ollama";
 
 const receiptSchema = z.strictObject({
   version: z.literal(1), request: scriptRequestSchema, script: explainerScriptSchema,
+  provider: z.enum(["ollama", "openrouter"]).optional(), plannerProvider: z.enum(["ollama", "openrouter"]).optional(),
   model: z.string().min(1), generatedAt: z.string().datetime(), output: z.string().min(1),
   renderOptions: renderOptionsSchema.optional(), visuals: z.string().optional(), browser: z.string().optional(),
   planner: z.enum(["graph", "actions-v1"]).optional(), actionPlan: visualActionsSchema.optional(), completedActions: visualActionsSchema.optional(),
@@ -48,7 +50,7 @@ export async function explain(input: ExplainOptions, overrides: Partial<Dependen
   const paths = outputPaths(request.topic, options.output ?? saved?.output);
   // Collision check before either model call, followed by authoritative locked check at publication.
   if (existsSync(paths.video) || existsSync(paths.metadata) || existsSync(paths.lock)) throw new Error(`Output already exists or is locked: ${paths.video}. Use --output with a fresh path.`);
-  console.info(saved ? "[explain] resuming_saved_script" : "[explain] generating_live_script", { model: saved?.model ?? ollamaModel() });
+  console.info(saved ? "[explain] resuming_saved_script" : "[explain] generating_live_script", { model: saved?.model ?? inferenceModel() });
   const renderOptions = renderOptionsSchema.parse({ width: options.width ?? saved?.renderOptions?.width, height: options.height ?? saved?.renderOptions?.height, fps: options.fps ?? saved?.renderOptions?.fps, approveOverrun: options.approveOverrun });
   const explicitPath = options.visuals ? path.resolve(options.visuals) : saved?.visuals;
   const browser = options.browser ?? saved?.browser;
@@ -66,7 +68,7 @@ export async function explain(input: ExplainOptions, overrides: Partial<Dependen
   if (!saved) {
     mkdirSync(deps.requestsDirectory, { recursive: true });
     receiptPath = path.join(mkdtempSync(path.join(deps.requestsDirectory, "request-")), "request.json");
-    saved = { version: 1, planner: actionMode ? "actions-v1" : "graph", request, script, inferenceDiagnostics, model: ollamaModel(), generatedAt: new Date().toISOString(), output: paths.video, renderOptions: { ...renderOptions, approveOverrun: false }, visuals: explicitPath, browser };
+    saved = { version: 1, planner: actionMode ? "actions-v1" : "graph", request, script, provider: inferenceProvider(), inferenceDiagnostics, model: inferenceModel(), generatedAt: new Date().toISOString(), output: paths.video, renderOptions: { ...renderOptions, approveOverrun: false }, visuals: explicitPath, browser };
     writeFileSync(receiptPath, JSON.stringify(saved, null, 2), { flag: "wx" });
   }
   if (storyboard.durationPolicy.classification === "requires_revision" && !options.approveOverrun) throw new PendingExplanation(receiptPath!, storyboard.durationPolicy.reason ?? "Generated narration exceeds the target.");
@@ -75,13 +77,13 @@ export async function explain(input: ExplainOptions, overrides: Partial<Dependen
     // sequential model calls for visuals only, with the original narration untouched.
     mkdirSync(deps.requestsDirectory, { recursive: true });
     receiptPath = path.join(mkdtempSync(path.join(deps.requestsDirectory, "request-")), "request.json");
-    saved = { ...saved, planner: actionMode ? "actions-v1" : "graph", actionPlan: undefined, completedActions: undefined, output: paths.video, visualPlan: undefined, completedScenes: undefined, visualAttempts: undefined, planningFailure: undefined, plannerModel: undefined, plannedAt: undefined };
+    saved = { ...saved, planner: actionMode ? "actions-v1" : "graph", actionPlan: undefined, completedActions: undefined, output: paths.video, visualPlan: undefined, completedScenes: undefined, visualAttempts: undefined, planningFailure: undefined, plannerModel: undefined, plannerProvider: undefined, plannedAt: undefined };
     writeFileSync(receiptPath, JSON.stringify(saved, null, 2), { flag: "wx" });
   }
   const reusedPlan = Boolean(saved.visualPlan);
   let visualPlan: ModelVisualPlan;
   try {
-    console.info(reusedPlan ? "[explain] reusing_saved_visual_plan" : "[explain] generating_live_visual_plan", { model: saved.plannerModel ?? ollamaModel() });
+    console.info(reusedPlan ? "[explain] reusing_saved_visual_plan" : "[explain] generating_live_visual_plan", { model: saved.plannerModel ?? inferenceModel() });
     const planningOptions: PlanningOptions = {
       completed: saved.completedScenes, onDiagnostic,
       onResponse: report => {
@@ -119,7 +121,7 @@ export async function explain(input: ExplainOptions, overrides: Partial<Dependen
       if (saved.visualPlan && JSON.stringify(saved.visualPlan) !== JSON.stringify(visualPlan)) throw new Error("Saved action/render plans differ; use --replan --inspect.");
       saved = { ...saved, actionPlan: actions, completedActions: undefined };
     } else visualPlan = validateModelVisualPlan(saved.visualPlan ?? await deps.planVisuals(storyboard, planningOptions), storyboard);
-    saved = { ...saved, output: paths.video, renderOptions: { ...renderOptions, approveOverrun: false }, visuals: explicitPath, browser, visualPlan, completedScenes: undefined, planningFailure: undefined, inferenceDiagnostics, plannerModel: saved.plannerModel ?? ollamaModel(), plannedAt: saved.plannedAt ?? new Date().toISOString() };
+    saved = { ...saved, output: paths.video, renderOptions: { ...renderOptions, approveOverrun: false }, visuals: explicitPath, browser, visualPlan, completedScenes: undefined, planningFailure: undefined, inferenceDiagnostics, plannerProvider: saved.plannerProvider ?? (reusedPlan ? "ollama" : inferenceProvider()), plannerModel: saved.plannerModel ?? (reusedPlan ? saved.model : inferenceModel()), plannedAt: saved.plannedAt ?? new Date().toISOString() };
     // Only this internal receipt is updated; final deliverables remain exclusive.
     writeFileSync(receiptPath!, JSON.stringify(saved, null, 2));
     const explicit = explicitPath ? z.record(z.string(), z.unknown()).parse(JSON.parse(readFileSync(explicitPath, "utf8"))) : {};
@@ -134,8 +136,8 @@ export async function explain(input: ExplainOptions, overrides: Partial<Dependen
     }
     console.info("[explain] rendering", { output: paths.video });
     const result = await deps.render(storyboard, renderOptions, specifications, paths.video,
-      { provider: "ollama", planner: saved.planner ?? "graph", visualActions: saved.actionPlan, exampleCatalog: actionMode ? actionCatalog(storyboard) : undefined, inferenceDiagnostics, model: saved.model, plannerModel: saved.plannerModel, generatedAt: saved.generatedAt, plannedAt: saved.plannedAt, request, originalScript: script, modelVisualPlan: visualPlan, explicitOverrides: Object.keys(explicit), requestReceipt: receiptPath, factChecked: false }, undefined, browser, actionMode ? ACTION_EVIDENCE : undefined);
-    return { ...result, requestReceipt: receiptPath, planning: reusedPlan ? "saved-ollama-plan" : "live-ollama", factChecked: false };
+      { provider: saved.provider ?? "ollama", plannerProvider: saved.plannerProvider, planner: saved.planner ?? "graph", visualActions: saved.actionPlan, exampleCatalog: actionMode ? actionCatalog(storyboard) : undefined, inferenceDiagnostics, model: saved.model, plannerModel: saved.plannerModel, generatedAt: saved.generatedAt, plannedAt: saved.plannedAt, request, originalScript: script, modelVisualPlan: visualPlan, explicitOverrides: Object.keys(explicit), requestReceipt: receiptPath, factChecked: false }, undefined, browser, actionMode ? ACTION_EVIDENCE : undefined);
+    return { ...result, requestReceipt: receiptPath, planning: reusedPlan ? `saved-${saved.plannerProvider}-plan` : `live-${saved.plannerProvider}`, factChecked: false };
   } catch (error) {
     saved = { ...saved, inferenceDiagnostics, planningFailure: error instanceof Error ? error.message : "Planning/render failed" };
     if (!reusedPlan) writeFileSync(receiptPath!, JSON.stringify(saved, null, 2));

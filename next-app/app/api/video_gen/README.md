@@ -1,3 +1,129 @@
+# Current model: NVIDIA Nemotron 3 Super through OpenRouter
+
+The latest selected default is **`nvidia/nemotron-3-super-120b-a12b:free`**.
+This supersedes the earlier `openrouter/free` router selection described below.
+Both `.env.local` and the code default now pin this NVIDIA model. Keep the same
+OPENROUTER_API_KEY; no NVIDIA-specific key, model download or local GPU is needed.
+
+```dotenv
+VIDEO_GEN_PROVIDER=openrouter
+OPENROUTER_MODEL=nvidia/nemotron-3-super-120b-a12b:free
+OPENROUTER_SCRIPT_MAX_TOKENS=4096
+```
+
+The 4096 script cap above is the existing troubleshooting setting; this model
+change does not increase it. API keys are not shown. Requests still disable
+reasoning, require JSON-schema support, and run the same validators and guards.
+OpenRouter's public catalogue was checked on 2026-10-17: this model lists
+response_format, structured_outputs and reasoning support, with reasoning
+mandatory:false. Its documented supported reasoning efforts include none.
+Free prompt/completion pricing is listed as zero, but availability/rate limits
+and actual script/visual quality require live evaluation. No live request or MP4
+render was run for this change. Smaller Lightning/Nano Omni free endpoints did
+not list response_format support in that catalogue, so they were not selected.
+Sources: [model](https://openrouter.ai/nvidia/nemotron-3-super-120b-a12b:free),
+[public catalogue](https://openrouter.ai/api/v1/models).
+
+Restart the Next server after this configuration change, then rerun the same
+POST /api/video_gen curl test. This selects an NVIDIA model hosted through
+OpenRouter, not the separate NVIDIA NIM API. Existing saved scripts/plans remain
+unchanged; use an explicit --replan to regenerate old saved visuals as before.
+
+---
+
+# Current provider: OpenRouter Free Router
+
+The latest user-authorized default is **OpenRouter**, model **`openrouter/free`**.
+Earlier block sections below document the Ollama implementation history; their
+local-only provider statements are superseded by this section. Rendering is still
+local and unchanged; scripts/visual planning now use OpenRouter unless explicitly
+configured otherwise. No API key is committed or displayed.
+
+Add your own key to the ignored `next-app/.env.local`:
+
+```dotenv
+VIDEO_GEN_PROVIDER=openrouter
+OPENROUTER_MODEL=openrouter/free
+OPENROUTER_API_KEY=your_key_here
+VIDEO_GEN_USE_FIXTURE=false
+```
+
+The CLI and Next use server-side configuration; restart an existing Next dev server
+after editing it. Do not use NEXT_PUBLIC_ for the API key. No OpenRouter SDK or new
+dependency was added. The correct router ID is `openrouter/free` (with **openrouter**
+spelled in full), per the [official router guide](https://openrouter.ai/docs/guides/routing/routers/free-router).
+
+`inference.ts` routes script, graph-plan and visual-action calls through the same
+provider abstraction. OpenRouter uses HTTPS chat completions, Bearer auth and
+[JSON-schema structured outputs](https://openrouter.ai/docs/guides/features/structured-outputs)
+with `provider.require_parameters:true`. The same local Zod parsing and all semantic,
+duration/publication checks remain active. Unsupported free routes fail clearly;
+there is no silent local, paid-model, plain-text or weakened-schema fallback.
+Requests now send their prompt/script content to OpenRouter and its selected model.
+
+The free router can select a different underlying free model on different calls.
+Diagnostics record provider, requested model and `resolvedModel` from the response,
+plus token counts. Original saved Qwen scripts retain their model provenance;
+`plannerProvider`/`plannerModel` identify newly generated visuals separately.
+Existing complete saved plans are reused, so use explicit `--replan` if you want
+new OpenRouter visual inference rather than replaying old plans.
+
+Nullable-content recovery: OpenRouter may return null/absent message content.
+The adapter checks finish_reason before parsing output and preserves the envelope
+for empty completions. OUTPUT_LIMIT, PROVIDER_REFUSAL, INCOMPLETE_OUTPUT and
+EMPTY_OUTPUT are distinct from syntax/structure errors. Reasoning text is never
+used as script JSON; finishReason and reasoningTokens are recorded in diagnostics.
+The historical null-content error alone does not establish its cause. If a retest
+reports OUTPUT_LIMIT, explicitly consider OPENROUTER_SCRIPT_MAX_TOKENS=4096;
+[reasoning can consume the completion budget](https://openrouter.ai/docs/guides/best-practices/reasoning-tokens).
+This changes the provider token cap, not narration length or validation.
+A subsequent user test still exhausted 4096 tokens on the same routed model.
+Do not keep increasing limits without inspecting usage: OpenRouter requests now
+include `reasoning: { enabled: false }`, and OUTPUT_LIMIT reports completion tokens,
+reasoning tokens (or unreported) and visible bytes. This is a request to disable
+reasoning, not proof that every free endpoint honors it. Unsupported controls can
+fail provider routing/configuration; there is no automatic dropped parameter or
+model switch. The reported failures alone establish exhaustion, not whether tokens
+went to reasoning or visible JSON. Restart the server and retest the same request
+with the existing 4096 cap; no additional live test was sent during this fix. A model
+returned by the free router can differ between requests. Nullable-content repair
+verification: 56 combined mocked regression tests, lint, scoped TypeScript and
+git diff --check passed; no live request was sent.
+
+OpenRouter settings (separate from OLLAMA_*):
+
+- `OPENROUTER_TIMEOUT_MS`: default 180000, integer 1000–600000.
+- `OPENROUTER_SCRIPT_MAX_TOKENS`: default existing duration-derived script cap;
+  integer 256–8192 when overridden.
+- `OPENROUTER_VISUAL_MAX_TOKENS`: default 1536 for graph plans, 384 for compact actions;
+  integer 256–8192 when overridden.
+- `OPENROUTER_MODEL`: default openrouter/free. Changing it is an explicit model choice.
+
+There is no local num_ctx allocation on OpenRouter; cloud diagnostics omit that
+field rather than inventing a context size. Calls remain sequential; one transient
+retry is allowed for connection failures or HTTP 429/502/503. JSON/schema errors,
+auth/configuration errors, timeouts and length limits are not transport-retried.
+Existing planners retain their bounded corrective validation retry. Rate limits,
+free availability, model quality and actual live latency still require evaluation.
+To deliberately use local Qwen again, set `VIDEO_GEN_PROVIDER=ollama`; original
+OLLAMA_* configuration remains supported.
+
+After adding the key, inspect OpenRouter action planning with the saved script:
+
+```sh
+npm run explain -- --resume artifacts/requests/request-ObyOtP/request.json --visual-actions --replan --inspect --output artifacts/videos/xml-json-openrouter/final.mp4
+```
+
+This forks a new receipt and preserves the old script. Use the NEW receipt path
+printed by the command for subsequent inspection/render; ordinary recovery uses
+`--resume` without `--replan`. Review the plan before rendering. See
+[manual-block08-checks.md](./manual-block08-checks.md) for inspection/frame/playback
+steps, substituting the new receipt and `xml-json-openrouter` output path.
+Provider migration checks: **9 storyboard + 55 render/planner/inference/action/provider tests passed**; lint, scoped TypeScript and git diff --check passed. Logs: `/home/maithili-wagh/Desktop/PS04--chakravyuh-kurukshetra2027/next-app/artifacts/tests/openrouter/checks-o9kvesdb`.
+No live OpenRouter call or actual video was run as part of the provider change.
+
+---
+
 # Block 01: local explainer scripts
 
 POST `/api/video_gen` generates topic-dependent script JSON with Ollama's native

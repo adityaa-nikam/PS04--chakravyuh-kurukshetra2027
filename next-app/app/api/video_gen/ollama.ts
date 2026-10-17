@@ -16,8 +16,8 @@ export class ScriptGenerationError extends Error {
   }
 }
 export type InferenceDiagnostic = {
-  stage: string; sceneId?: string; model: string; attempt: number; elapsedMs: number;
-  inputBytes: number; schemaBytes: number; estimatedInputTokens: number; contextTokens: number;
+  provider?: "ollama" | "openrouter"; resolvedModel?: string; finishReason?: string | null; reasoningTokens?: number; stage: string; sceneId?: string; model: string; attempt: number; elapsedMs: number;
+  inputBytes: number; schemaBytes: number; estimatedInputTokens: number; contextTokens?: number;
   outputLimit: number; timeoutMs: number; queueMs?: number; providerTotalMs?: number; outputBytes?: number; outputTokens?: number;
   promptTokens?: number; loadMs?: number; promptEvalMs?: number; evalMs?: number;
   status: string; reason?: string; planningAttempt?: number;

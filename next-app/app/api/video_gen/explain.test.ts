@@ -1,3 +1,5 @@
+// Historical transport regressions explicitly use Ollama; production defaults to OpenRouter.
+process.env.VIDEO_GEN_PROVIDER = "ollama";
 import { test, mock } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, writeFileSync, readdirSync, existsSync, rmSync } from "node:fs";

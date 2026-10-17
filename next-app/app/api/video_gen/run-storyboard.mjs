@@ -11,7 +11,7 @@ const app = path.resolve(__dirname, "../../..");
 const output = mkdtempSync(path.join(tmpdir(), "explainer-storyboard-"));
 const mode = process.argv[2];
 try {
-  const files = mode === "explain" ? ["explain-cli"] : mode === "render-test" ? ["render-plan", "render-cli", "render.test", "explain.test", "inference.test", "visual-actions.test"] : mode === "generate" ? ["generate-script-cli"] : mode === "render" ? ["render-plan", "render-cli", "render.test"] : ["schema", "fixture", "normalize", "storyboard", "storyboard-cli", "storyboard.test"];
+  const files = mode === "explain" ? ["explain-cli"] : mode === "render-test" ? ["render-plan", "render-cli", "render.test", "explain.test", "inference.test", "visual-actions.test", "openrouter.test"] : mode === "generate" ? ["generate-script-cli"] : mode === "render" ? ["render-plan", "render-cli", "render.test"] : ["schema", "fixture", "normalize", "storyboard", "storyboard-cli", "storyboard.test"];
   const compilation = spawnSync(process.execPath, [require.resolve("typescript/bin/tsc"),
     "--outDir", output, "--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node",
     "--jsx", "react-jsx", "--strict", "--skipLibCheck", "--esModuleInterop", "--types", "node",
@@ -28,7 +28,7 @@ try {
       env: { ...process.env, NODE_PATH: path.join(app, "node_modules") } });
     process.exitCode = execution.status || (execution.error ? 1 : 0);
     if (mode === "render-test" && !process.exitCode) {
-      for (const suite of ["explain.test", "inference.test", "visual-actions.test"]) {
+      for (const suite of ["explain.test", "inference.test", "visual-actions.test", "openrouter.test"]) {
         const extra = spawnSync(process.execPath, [path.join(output, `${suite}.js`)], { cwd: process.cwd(), stdio: "inherit", env: { ...process.env, NODE_PATH: path.join(app, "node_modules") } });
         process.exitCode = extra.status || (extra.error ? 1 : 0);
         if (process.exitCode) break;

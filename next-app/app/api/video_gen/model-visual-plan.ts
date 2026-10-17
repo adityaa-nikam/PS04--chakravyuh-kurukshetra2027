@@ -1,9 +1,10 @@
+import { generateJson } from "./inference";
 import { z } from "zod";
 import { visualSceneSchema, graphVisualSceneSchema, assertVisualDomain, hasPhysicalBridgeContext } from "./visual-plan";
 import { graphStructureSchema } from "./visual-graph";
 import { actionEvidenceText, type ActionEvidence } from "./action-catalog";
 import type { Storyboard } from "./storyboard";
-import { generateOllamaJson, ScriptGenerationError, type InferenceContext, type OutputReport } from "./ollama";
+import { ScriptGenerationError, type InferenceContext, type OutputReport } from "./ollama";
 
 export const modelVisualPlanSchema = z.strictObject({
   scenes: z.array(z.strictObject({
@@ -140,7 +141,7 @@ export async function generateModelVisualPlan(storyboard: Storyboard, options: P
         let resolved: ModelVisualPlan["scenes"][number];
         let repairReason: string | undefined;
         try {
-          candidate = await generateOllamaJson(schema, {
+          candidate = await generateJson(schema, {
               title: storyboard.title, targetAudience: storyboard.targetAudience,
               sceneId: scene.id, narration: scene.narration, visualDirection: scene.visualDirection,
               position: { index: scenes.length + 1, count: storyboard.scenes.length },
