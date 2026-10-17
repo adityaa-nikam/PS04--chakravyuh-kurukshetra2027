@@ -13,6 +13,22 @@ export const visualActionSchema = z.discriminatedUnion("action", [
 export type VisualAction = z.infer<typeof visualActionSchema>;
 export const visualActionsSchema = z.array(visualActionSchema).max(8);
 
+function inferNodeIcon(text: string): "leaf" | "sun" | "water" | "gas" | "sugar" | "chip" | "memory" | "fetch" | "decode" | "execute" | "force" | "item" | "browser" | "server" | "document" | "database" {
+  const t = text.toLowerCase();
+  if (/database|db|store|vector|embed|sql|redis|index|storage|memory/i.test(t)) return "database";
+  if (/document|doc|pdf|file|text|prompt|xml|json|script|record|context/i.test(t)) return "document";
+  if (/browser|web|ui|client|frontend|app|view/i.test(t)) return "browser";
+  if (/server|backend|api|cloud|endpoint|service|gateway/i.test(t)) return "server";
+  if (/fetch|search|retrieve|query|lookup|rag|find/i.test(t)) return "fetch";
+  if (/chip|cpu|processor|core|hardware/i.test(t)) return "chip";
+  if (/execute|ai|model|llm|generate|compute|algorithm|process/i.test(t)) return "execute";
+  if (/force|speed|action|motion|power/i.test(t)) return "force";
+  if (/leaf|plant|botany|bio/i.test(t)) return "leaf";
+  if (/sun|solar|light|energy/i.test(t)) return "sun";
+  if (/water|fluid|liquid|flow/i.test(t)) return "water";
+  return "item";
+}
+
 export function compileActions(input: unknown, board: Storyboard, complete = true) {
   const actions = visualActionsSchema.parse(input), catalog = actionCatalog(board);
   if (complete && actions.length !== board.scenes.length) throw new Error("VISUAL_ACTION: one action per scene is required");
@@ -35,7 +51,7 @@ export function compileActions(input: unknown, board: Storyboard, complete = tru
     }
     return { sceneId: scene.id, purpose, explanation: "Source-based conceptual overview, not a factual mechanism.", confidence: "overview", visual: {
       ...base, concept: "diagram", heading: action.labels[0].text, labels: action.labels.map(l => l.text), note: "Conceptual overview",
-      graph: { topic: "general", layout: "overview", nodes: action.labels.map((l, j) => ({ id: `item-${j}`, label: l.text, icon: "item", role: "item", evidence: l.evidence })), edges: [], values: [],
+      graph: { topic: "general", layout: "overview", nodes: action.labels.map((l, j) => ({ id: `item-${j}`, label: l.text, icon: inferNodeIcon(l.text), role: "item", evidence: l.evidence })), edges: [], values: [],
         actions: action.labels.map((_, j) => ({ kind: "reveal", target: `item-${j}`, start: j * 0.15, end: j * 0.15 + 0.15 })) },
     } };
   });
