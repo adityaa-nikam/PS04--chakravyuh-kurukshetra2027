@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Astra Studio Importer</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="logo-row">
+        <div class="logo-mark">
+          <svg viewBox="0 0 24 24" class="star-icon">
+            <path d="M12 2L14.6 9.4L22 12L14.6 14.6L12 22L9.4 14.6L2 12L9.4 9.4L12 2Z"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">Astra Studio</span>
+          <span class="brand-tag">YouTube Importer</span>
+        </div>
+      </div>
+      <span class="status-dot" title="Extension Active"></span>
+    </header>
+
+    <!-- Detected Video Section -->
+    <section id="video-section" class="card">
+      <div id="video-detected" class="detected-view hidden">
+        <div class="thumb-wrapper">
+          <img id="video-thumb" src="" alt="Thumbnail">
+          <span class="pill-badge">YouTube</span>
+        </div>
+        <h3 id="video-title" class="video-title">Detecting video...</h3>
+        <p id="video-id-display" class="video-id"></p>
+        <button id="send-btn" class="primary-btn">
+          <svg viewBox="0 0 24 24" class="btn-icon">
+            <path d="M12 2L14.6 9.4L22 12L14.6 14.6L12 22L9.4 14.6L2 12L9.4 9.4L12 2Z"/>
+          </svg>
+          <span>Send to Astra Studio</span>
+        </button>
+      </div>
+
+      <div id="no-video" class="empty-view">
+        <div class="empty-icon">📺</div>
+        <p class="empty-text">No YouTube video detected on the active tab.</p>
+        <a id="open-yt-btn" href="https://www.youtube.com" target="_blank" class="secondary-btn">
+          Open YouTube
+        </a>
+      </div>
+    </section>
+
+    <!-- Configuration Section -->
+    <section class="card config-card">
+      <label for="astra-url" class="config-label">Astra Studio Workspace URL</label>
+      <div class="input-row">
+        <input type="text" id="astra-url" placeholder="http://localhost:3000" spellcheck="false">
+        <button id="save-url-btn" class="save-btn" title="Save URL">Save</button>
+      </div>
+      <p id="save-feedback" class="feedback-text"></p>
+    </section>
+
+    <!-- Footer Quick Links -->
+    <footer class="popup-footer">
+      <a id="open-studio-link" href="http://localhost:3000" target="_blank" class="footer-link">
+        Open Astra Studio Workspace &rarr;
+      </a>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

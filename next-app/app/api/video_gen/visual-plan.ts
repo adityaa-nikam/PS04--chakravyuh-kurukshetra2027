@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { Storyboard } from "./storyboard";
 import { graphSchema } from "./visual-graph";
 import { adaptConceptGraph, compactText } from "./concept-adapter";
+import { sceneTechSubjects, isTechSubject, supportsTechSubject, techVisual } from "./tech-catalog";
 
 export const visualRegistry = {
   title: "hook", process: "process", diagram: "diagram",
@@ -36,6 +37,9 @@ export function hasPhysicalBridgeContext(text: string) {
     && !/\b(?:network bridge|bridge pattern|dental bridge)\b/i.test(text);
 }
 export function assertVisualDomain(scene: Storyboard["scenes"][number], title: string, visual: VisualScene) {
+  if (visual.renderer === "graph" && isTechSubject(visual.graph.topic) && !supportsTechSubject(visual.graph.topic, `${title} ${scene.narration}`)) {
+    throw new Error(`VISUAL_DOMAIN_MISMATCH: ${scene.id} selected ${visual.graph.topic} graphics without source context.`);
+  }
   if (visual.renderer === "bridge" && !hasPhysicalBridgeContext(title + " " + scene.narration)) {
     throw new Error(`VISUAL_DOMAIN_MISMATCH: ${scene.id} selected physical bridge graphics without bridge source context. Replan this scene; no domain fallback is allowed.`);
   }
@@ -53,6 +57,8 @@ function shortTitle(title: string) {
 // Fixed, authored visuals only. Source strings are inspected as data, never markup.
 // Narration is not rewritten: this returns a separate, intentionally concise display plan.
 export function adaptVisualScene(scene: Storyboard["scenes"][number], title: string): VisualScene {
+  const tech = sceneTechSubjects(title, scene.narration)[0];
+  if (tech) return visualSceneSchema.parse(techVisual(scene, title, tech));
   const content = scene.narration + " " + scene.visualDirection;
   const concept = selectVisualConcept(scene.visualType);
   const bridge = hasPhysicalBridgeContext(scene.narration + " " + title);

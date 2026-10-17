@@ -10,11 +10,49 @@
 
 **Working branch:** `feat/maithili-explainer`
 
-**Current milestone:** Block 08 implemented and automatically tested; its opt-in visual-action workflow is awaiting live-model and MP4 manual review.
+**Current milestone:** Block 09 website job integration implemented and automatically tested; live Qwen, browser/LAN and MP4 manual review are pending. Block 08 visual actions remain opt-in.
 
 ---
 
-## Latest model selection — NVIDIA Nemotron 3 Super via OpenRouter
+## Block 09 — local website job integration
+
+The inspected homepage was the Next starter page. It now has a prompt form,
+progress/error display, saved-job recovery, narration review, and authenticated
+MP4 preview/download. `POST /api/generate` creates a UUID job; authenticated
+`GET /api/jobs/[id]` polls status, `POST /api/jobs/[id]/resume` resumes failures,
+and `GET /api/jobs/[id]/video` streams only a finalized, verified job output.
+
+Website jobs explicitly select existing local Ollama (`qwen2.5:3b` by default)
+for scripts and visuals. They validate and exclusively save live-generated
+`next-app/app/api/video_gen/fixtures/block05/generated-<UUID>.script.json`,
+then reuse `explain()` directly with a saved receipt and checkpoints.
+One bounded, sequential worker handles up to four queued/active jobs. Records,
+diagnostics, receipt and the single final MP4/sidecar live under
+`next-app/artifacts/jobs/<UUID>/`. Evidence, uncertainty, narration, duration
+approval and publication guards remain active. No shell command is built from
+client input. Completion requires ffprobe verification against metadata.
+
+The shared `ASTRA_ACCESS_TOKEN` must be configured server-side (24+ characters).
+It is distinct from model keys and grants access to all jobs, without per-user
+ownership. The legacy `/api/video_gen` script endpoint now also requires Bearer
+authentication. Default dev/start bind loopback; LAN binding is explicit through
+`dev:lan`/`start:lan`, with exact trusted origins in `ASTRA_ALLOWED_ORIGINS`.
+Do not expose raw Ollama or forward this trusted-LAN service publicly.
+
+The existing CLI/provider defaults remain NVIDIA through OpenRouter as described
+below; the job-specific override does not migrate or regenerate old requests.
+No new cloud integration, TTS, live inference, video encode, commit or push was
+performed for Block 09. This is a persistent single-laptop worker, not a
+distributed/serverless queue; disk history has no automatic deletion policy.
+
+Automated verification: storyboard 9; combined render/pipeline/inference/actions/
+OpenRouter/jobs suite 66; lint; scoped strict TypeScript; diff whitespace check.
+Browser interaction, live Qwen quality, final MP4 playback and second-computer
+connectivity still need manual review. Full architecture, exact changed files,
+setup and manual commands:
+[manual-block09-checks.md](next-app/app/api/video_gen/manual-block09-checks.md).
+
+## Latest CLI model selection — NVIDIA Nemotron 3 Super via OpenRouter
 
 The latest user-requested switch pins **nvidia/nemotron-3-super-120b-a12b:free**
 in `.env.local` and the code default. The provider remains OpenRouter, using the

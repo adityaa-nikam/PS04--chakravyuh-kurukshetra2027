@@ -3,8 +3,9 @@ import { cancelRender, continueRender, delayRender } from "remotion";
 import { fitText, textSizes, type TextRole } from "./text-layout";
 
 // Hold the render until fonts and the parent composition layout are ready.
-export function FitText({ text, sceneId, role, scale, statistic = false, preferredSize, minimumSize, color = "#f8fafc" }: {
+export function FitText({ text, children, sceneId, role, scale, statistic = false, preferredSize, minimumSize, color = "#f8fafc" }: {
   text: string; sceneId: string; role: TextRole; scale: number; statistic?: boolean; preferredSize?: number; minimumSize?: number; color?: string;
+  children?: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [handle] = useState(() => delayRender(`Fit ${sceneId} ${role}`));
@@ -48,5 +49,5 @@ export function FitText({ text, sceneId, role, scale, statistic = false, preferr
   return <div ref={ref} data-scene-id={sceneId} data-text-role={role} style={{
     position: "absolute", inset: 0, fontSize: preferred, color,
     lineHeight: 1.3, overflowWrap: "anywhere", whiteSpace: "pre-wrap",
-  }}>{text}</div>;
+  }}>{children ?? text}</div>;
 }

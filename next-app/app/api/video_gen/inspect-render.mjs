@@ -8,8 +8,12 @@ if (extra.length || (progressFlag && progressFlag !== "--progress")) throw new E
 if (!video || !directory) throw new Error("Usage: node app/api/video_gen/inspect-render.mjs final.mp4 separate-review-directory [--progress]");
 const metadata = JSON.parse(readFileSync(`${video}.json`, "utf8"));
 const probe = JSON.parse(execFileSync("ffprobe", ["-v", "error", "-show_entries", "stream=codec_name,codec_type,width,height,r_frame_rate,nb_frames:format=duration", "-of", "json", video], { encoding: "utf8" }));
-assert.equal(probe.streams.length, 1);
-const stream = probe.streams[0];
+const videos = probe.streams.filter(s => s.codec_type === "video");
+const audio = probe.streams.filter(s => s.codec_type === "audio");
+assert.equal(videos.length, 1);
+assert.equal(audio.length, metadata.narration ? 1 : 0);
+if (metadata.narration) assert.equal(audio[0].codec_name, "aac");
+const stream = videos[0];
 assert.equal(stream.codec_type, "video"); assert.equal(stream.codec_name, "h264");
 const [rate, denominator] = stream.r_frame_rate.split("/").map(Number);
 assert.equal(rate / denominator, metadata.settings.fps);
@@ -23,7 +27,7 @@ for (const [i, frame] of metadata.frames.entries()) {
   const scene = metadata.storyboard.scenes[i];
   assert.equal(frame.from, cursor); assert.equal(frame.id, scene.id);
   cursor += frame.durationInFrames;
-  assert.equal(frame.durationInFrames, Math.max(1, Math.ceil(scene.estimatedDurationSeconds * metadata.settings.fps)));
+  assert.equal(frame.durationInFrames, Math.max(1, Math.ceil(scene.estimatedDurationSeconds * metadata.settings.fps), metadata.narration ? Math.ceil((metadata.narration.seconds[i] + 0.35) * metadata.settings.fps) : 0));
   const seconds = (frame.from + Math.floor(frame.durationInFrames / 2)) / metadata.settings.fps;
   const file = path.resolve(directory, `${scene.id}.png`);
   execFileSync("ffmpeg", ["-v", "error", "-n", "-ss", String(seconds), "-i", video, "-frames:v", "1", file]);

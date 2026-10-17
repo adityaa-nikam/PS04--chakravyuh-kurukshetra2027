@@ -3,6 +3,52 @@ import assert from "node:assert/strict";
 import { prepareRender } from "./render-plan";
 import { buildStoryboard } from "./storyboard";
 import { getExplainerScriptFixture } from "./fixture";
+import { rendererEnvironment } from "./render-worker";
+import { graphNodeLayouts, graphSchema } from "./visual-graph";
+
+test("graph labels use available column width and dense rows reserve three readable lines", () => {
+  const nodes = Array.from({ length: 6 }, (_, i) => ({ id: `node-${i}`, label: "W".repeat(28), icon: "item" as const, evidence: "W".repeat(28) }));
+  for (const count of [1, 2, 3, 4, 5, 6]) {
+    const graph = graphSchema.parse({ topic: "general", layout: "overview", nodes: nodes.slice(0, count), edges: [] });
+    const boxes = graphNodeLayouts(graph);
+    boxes.forEach((box, i) => {
+      assert.ok(box.label.x >= 0 && box.label.x + box.label.width <= 640);
+      assert.ok(box.label.y + box.label.height <= 520);
+      assert.ok(box.label.y >= box.y + 54 * box.symbolScale);
+      if (count <= 3) assert.equal(box.label.width, 480);
+      else { assert.equal(box.label.height, 78); assert.equal(box.symbolScale, 0.74); }
+      const nextRow = boxes[i + 2];
+      if (count > 3 && nextRow) assert.ok(box.label.y + box.label.height < nextRow.y - 54 * nextRow.symbolScale);
+    });
+  }
+  const flow = graphSchema.parse({ topic: "general", layout: "flow", nodes: nodes.map((n, i) => ({ ...n, role: i < 3 ? "input" : i === 3 ? "core" : "output" })), edges: [] });
+  for (const box of graphNodeLayouts(flow)) {
+    assert.equal(box.label.width, 190); assert.equal(box.label.height, 78);
+    assert.ok(box.label.y + box.label.height <= 520);
+  }
+});
+
+test("XML fragment regression remains intact in the wider real graph label", async () => {
+  const React = await import("react"), { renderToStaticMarkup } = await import("react-dom/server");
+  const { GraphVisual } = await import("./remotion/GraphVisual");
+  const { visualSceneSchema } = await import("./visual-plan");
+  const label = "book><title>Example</title><";
+  const graph = graphSchema.parse({ topic: "general", layout: "overview", nodes: [{ id: "item-0", label, icon: "item", evidence: label }, { id: "item-1", label: "JSON", icon: "document", evidence: "JSON" }], edges: [] });
+  const visual = visualSceneSchema.parse({ sceneId: "scene-002", concept: "diagram", renderer: "graph", mode: "overview", heading: "XML vs JSON", labels: [label, "JSON"], note: "Conceptual overview", graph });
+  const markup = renderToStaticMarkup(React.createElement(GraphVisual, { visual, frame: 100, fps: 15, scale: 1 }));
+  assert.match(markup, /data-node-label="item-0"/); assert.match(markup, /width:75%/);
+  assert.match(markup, /book&gt;&lt;title&gt;Example&lt;\/title&gt;&lt;/);
+  assert.match(markup, /font-size:23px/); // unchanged preferred/minimum typography
+});
+
+test("renderer child removes IDE preload/bootstrap hooks without mutating server environment", () => {
+  const source = { LD_PRELOAD: "/lib/keep.so:/ide/console-ninja-fs-hooks.node /lib/other.so", NODE_OPTIONS: "--require /ide/console-ninja/hook.js", PATH: "/usr/bin", VIDEO_GEN_PROVIDER: "openrouter" };
+  const before = { ...source };
+  assert.deepEqual(rendererEnvironment(source), { LD_PRELOAD: "/lib/keep.so:/lib/other.so", PATH: "/usr/bin", VIDEO_GEN_PROVIDER: "openrouter" });
+  assert.deepEqual(source, before);
+  assert.equal(rendererEnvironment({ LD_PRELOAD: "/ide/console-ninja-fs-hooks.node" }).LD_PRELOAD, undefined);
+  assert.deepEqual(rendererEnvironment({ PATH: "/usr/bin" }), { PATH: "/usr/bin" });
+});
 
 test("frame allocation preserves order, duration, and narration", () => {
   const board = buildStoryboard(getExplainerScriptFixture());

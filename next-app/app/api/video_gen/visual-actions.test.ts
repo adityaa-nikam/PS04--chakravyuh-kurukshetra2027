@@ -13,6 +13,8 @@ import { buildStoryboard } from "./storyboard";
 import { validateModelVisualPlan, modelSpecifications } from "./model-visual-plan";
 import { prepareRender } from "./render-plan";
 import { GraphVisual } from "./remotion/GraphVisual";
+import { SceneFrame } from "./remotion/Explainer";
+import { illustratedSubjects } from "./subject-plan";
 import { recordRepresentations } from "./visual-graph";
 import { explain } from "./explain-pipeline";
 import { renderStoryboard } from "./render-service";
@@ -23,6 +25,63 @@ const source = JSON.parse(readFileSync("app/api/video_gen/fixtures/regressions/x
 const board = buildStoryboard(source);
 const actions: VisualAction[] = board.scenes.map((s, i) => ({ sceneId: s.id, action: "format_comparison", exampleId: "record-001", focus: i === 0 ? "structure" : "fields" }));
 const envelope = (data: unknown) => new Response(JSON.stringify({ done: true, message: { content: JSON.stringify(data) } }));
+
+test("illustrated subject actions restore the original bridge, photosynthesis and CPU graphics through validated plans", () => {
+  for (const subject of ["bridge", "photosynthesis", "cpu"] as const) {
+    const script = JSON.parse(readFileSync(`app/api/video_gen/fixtures/block05/${subject}.script.json`, "utf8"));
+    const storyboard = buildStoryboard(script);
+    const before = JSON.stringify(storyboard);
+    const subjectActions: VisualAction[] = storyboard.scenes.map(scene => ({ sceneId: scene.id, action: "subject_scene", subject }));
+    const visualPlan = compileActions(subjectActions, storyboard);
+    assert.equal(JSON.stringify(storyboard), before);
+    assert.doesNotThrow(() => validateModelVisualPlan(visualPlan, storyboard));
+    const resolved = prepareRender(storyboard, { approveOverrun: true }, modelSpecifications(visualPlan));
+    for (const [i, entry] of visualPlan.scenes.entries()) {
+      const markup = renderToStaticMarkup(React.createElement(SceneFrame, { plan: resolved, index: i, frame: Math.floor(resolved.frames[i].durationInFrames * 0.5) }));
+      if (subject === "bridge") {
+        assert.equal(entry.visual.renderer, "bridge"); assert.match(markup, /data-component="bridge"/);
+        if (i === 1) { assert.match(markup, /data-component="wind"/); assert.match(markup, /data-component="vehicle"/); }
+        if (i === 3) assert.match(markup, /data-component="damper"/);
+      } else {
+        assert.equal(entry.visual.renderer, "graph");
+        if (entry.visual.renderer !== "graph") assert.fail();
+        assert.equal(entry.visual.graph.topic, subject);
+        assert.doesNotMatch(markup, /data-component="source-point"/);
+        assert.match(markup, subject === "photosynthesis" ? /data-component="leaf"/ : /data-component="(?:chip|fetch|decode|execute)"/);
+        for (const edge of entry.visual.graph.edges) assert.ok(entry.visual.graph.actions.some(a => a.kind === "transfer" && a.target === `${edge.from}->${edge.to}`));
+      }
+    }
+  }
+});
+
+test("planner is offered recognizable subjects and retries generic cards instead of silently accepting them", async () => {
+  const storyboard = buildStoryboard(JSON.parse(readFileSync("app/api/video_gen/fixtures/block05/bridge.script.json", "utf8")));
+  let calls = 0;
+  const provider = mock.method(globalThis, "fetch", async (_url: unknown, init?: RequestInit) => {
+    const input = JSON.parse(JSON.parse(String(init?.body)).messages[1].content);
+    assert.deepEqual(input.availableSubjects, ["bridge"]);
+    calls++;
+    return envelope(calls === 1 ? { sceneId: input.sceneId, action: "concept_overview", labels: [{ text: "bridge", evidence: "bridge" }] }
+      : { sceneId: input.sceneId, action: "subject_scene", subject: "bridge" });
+  });
+  try {
+    const result = await generateVisualActions(storyboard);
+    assert.equal(calls, storyboard.scenes.length + 1);
+    assert.ok(result.actions.every(a => a.action === "subject_scene"));
+    assert.ok(result.plan.scenes.every(s => s.visual.renderer === "bridge"));
+  } finally { provider.mock.restore(); }
+});
+
+test("subject selection cannot turn software bridges, unrelated topics or illustration directions into physical mechanisms", () => {
+  for (const narration of ["A network bridge forwards packets between networks.", "JSON and XML describe the same record."]) {
+    const unrelated = buildStoryboard({ title: "Data systems", targetAudience: "Beginners", estimatedDurationSeconds: 45, scenes: Array.from({ length: 3 }, () => ({ narration, visualDirection: "Show a bridge carrying cars and a plant absorbing water." })) });
+    assert.deepEqual(illustratedSubjects(unrelated, unrelated.scenes[0]), []);
+    assert.throws(() => compileActions(unrelated.scenes.map(s => ({ sceneId: s.id, action: "subject_scene", subject: "bridge" })), unrelated), /lacks source context/);
+  }
+  const uncertain = buildStoryboard({ title: "Bridge vibration", targetAudience: "Beginners", estimatedDurationSeconds: 45, scenes: Array.from({ length: 3 }, () => ({ narration: "The bridge may vibrate; wind might be involved.", visualDirection: "Show wind shaking the bridge." })) });
+  assert.deepEqual(illustratedSubjects(uncertain, uncertain.scenes[0]), []);
+  assert.equal(visualActionSchema.safeParse({ sceneId: "scene-001", action: "subject_scene", subject: "bridge", svg: "<svg/>" }).success, false);
+});
 
 test("compact strict action union rejects unknown actions, fields, mechanics and references", () => {
   assert.doesNotThrow(() => visualActionSchema.parse(actions[0]));

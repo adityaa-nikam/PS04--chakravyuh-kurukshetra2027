@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Local video deliverables and manual test artifacts
 /artifacts/
+
+# Project-local speech engine
+/.venv-tts/
