@@ -1,3 +1,29 @@
+# Active configuration: OpenRouter for script and all visual planning
+
+Use the existing OpenRouter configuration for both the website and CLI. Script,
+graph-plan and compact-action generation all use `inference.ts`; no Ollama process
+is needed for this configuration. The server-only `.env.local` selects
+`VIDEO_GEN_PROVIDER=openrouter` and disables development fixtures. Historical
+Ollama examples below are implementation history, not the current run instructions.
+Saved artifacts retain their original provenance; replay does not relabel them.
+
+```sh
+npm run explain -- "Explain XML versus JSON using one illustrative person record with name Ana" --visual-actions --inspect --output artifacts/videos/xml-json-openrouter-review/final.mp4
+```
+
+This command makes live OpenRouter requests but does not render. Review its saved
+script/plan, then resume the printed receipt to render. No live request or render
+was run while making this change.
+
+Reusable animation components now live in `remotion/AnimationPrimitives.tsx`:
+`WipeReveal`, `HighlightBand`, and `TracePath`. The XML/JSON comparison uses these
+components. `TracePath` uses the version-matched `@remotion/paths` library for
+path drawing and point sampling, driven by deterministic scene progress.
+Official reusable libraries: [paths](https://www.remotion.dev/docs/paths/),
+[shapes](https://www.remotion.dev/docs/shapes/), and
+[transitions](https://www.remotion.dev/docs/transitions/). Only paths is added as
+a direct dependency here; scene allocations and other visual types are unchanged.
+
 # Current model: NVIDIA Nemotron 3 Super through OpenRouter
 
 The latest selected default is **`nvidia/nemotron-3-super-120b-a12b:free`**.

@@ -2,6 +2,7 @@ import React from "react";
 import type { VisualScene } from "../visual-plan";
 import { graphMotion, graphPositions, plannedMotion, recordRepresentations, type GraphNode } from "../visual-graph";
 import { FitText } from "./FitText";
+import { RecordComparison } from "./RecordComparison";
 const cyan = "#63e4ec", gold = "#ffcc66";
 
 // Authored symbols only. Source strings never become tag names, paths, or styles.
@@ -25,6 +26,7 @@ function Symbol({ icon, phase }: { icon: GraphNode["icon"]; phase: number }) {
 export function GraphVisual({ visual, frame, fps, scale, durationInFrames = 180 }: { visual: VisualScene; frame: number; fps: number; scale: number; durationInFrames?: number }) {
   if (visual.renderer !== "graph") return null;
   const graph = visual.graph;
+  if (graph.example && graph.comparisonFocus) return <RecordComparison graph={graph} sceneId={visual.sceneId} frame={frame} durationInFrames={durationInFrames} scale={scale} />;
   const positions = graphPositions(graph);
   const bar = graph.layout === "bars";
   const motion = (id: string, i: number) => {

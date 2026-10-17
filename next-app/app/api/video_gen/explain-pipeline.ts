@@ -142,6 +142,6 @@ export async function explain(input: ExplainOptions, overrides: Partial<Dependen
     saved = { ...saved, inferenceDiagnostics, planningFailure: error instanceof Error ? error.message : "Planning/render failed" };
     if (!reusedPlan) writeFileSync(receiptPath!, JSON.stringify(saved, null, 2));
     console.error("[explain] planning_or_render_failure", { receipt: receiptPath, reason: saved.planningFailure });
-    throw new Error(`${error instanceof Error ? error.message : "Planning/render failed"}\nSaved request: ${receiptPath}. For an invalid cached plan use --resume with --replan --inspect and a fresh --output; only visual planning will call Ollama. Otherwise retry --resume with the same approval flag if needed. No generated narration was shortened.`, { cause: error });
+    throw new Error(`${error instanceof Error ? error.message : "Planning/render failed"}\nSaved request: ${receiptPath}. For an invalid cached plan use --resume with --replan --inspect and a fresh --output; only visual planning will call the configured provider. Otherwise retry --resume with the same approval flag if needed. No generated narration was shortened.`, { cause: error });
   }
 }
