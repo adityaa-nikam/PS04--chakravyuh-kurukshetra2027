@@ -71,7 +71,7 @@ export async function POST(request: Request) {
   // Mode 1: Script only
   if (!shouldRender) {
     try {
-      const script = await generateExplainerScript({ topic, targetAudience, durationSeconds });
+      const script = await generateExplainerScript({ topic, targetAudience, durationSeconds }, { live: true });
       return Response.json(script, { headers: { "Cache-Control": "no-store" } });
     } catch (error) {
       if (error instanceof ScriptGenerationError) {

@@ -2,9 +2,14 @@ import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
+type RendererEnvironment = Record<string, string | undefined>;
+
 // Keep changes local to the render child. Next's instrumented process.env is
 // shared across requests and its dev launcher can re-inject Node-only hooks.
-export function rendererEnvironment(source: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+// A complete process environment stays complete; partial fixtures need no NODE_ENV.
+export function rendererEnvironment(source: NodeJS.ProcessEnv): NodeJS.ProcessEnv;
+export function rendererEnvironment(source: RendererEnvironment): RendererEnvironment;
+export function rendererEnvironment(source: RendererEnvironment): RendererEnvironment {
   const env = { ...source };
   const preload = env.LD_PRELOAD?.split(/[\s:]+/).filter(entry => entry && !entry.includes("console-ninja"));
   if (preload?.length) env.LD_PRELOAD = preload.join(":");

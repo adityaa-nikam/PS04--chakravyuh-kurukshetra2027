@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <!-- Cyan & Neon Blue Soft Glow -->
+    <filter id="neon-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur1" />
+      <feGaussianBlur stdDeviation="6" result="blur2" />
+      <feGaussianBlur stdDeviation="12" result="blur3" />
+      <feMerge>
+        <feMergeNode in="blur3" />
+        <feMergeNode in="blur2" />
+        <feMergeNode in="blur1" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Star Core Radiant Gradient -->
+    <radialGradient id="star-core-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1" />
+      <stop offset="25%" stop-color="#e0f2fe" stop-opacity="0.95" />
+      <stop offset="55%" stop-color="#38bdf8" stop-opacity="0.85" />
+      <stop offset="85%" stop-color="#0ea5e9" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Center Burst Aura -->
+    <radialGradient id="center-burst" cx="50%" cy="50%" r="40%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.45" />
+      <stop offset="50%" stop-color="#0284c7" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#0369a1" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Central Radial Glow Atmosphere -->
+  <circle cx="100" cy="100" r="75" fill="url(#center-burst)" />
+
+  <!-- Outer 4-Pointed Astroid Star Outline -->
+  <g filter="url(#neon-glow)">
+    <!-- Broad Ambient Neon Stroke -->
+    <path
+      d="M 100 8
+         C 102 65, 135 98, 186 100
+         C 135 102, 102 135, 100 192
+         C 98 135, 65 102, 14 100
+         C 65 98, 98 65, 100 8 Z"
+      fill="none"
+      stroke="#0284c7"
+      stroke-width="7"
+      stroke-linejoin="round"
+      opacity="0.65"
+    />
+    <!-- Intense Electric Cyan Primary Stroke -->
+    <path
+      d="M 100 8
+         C 102 65, 135 98, 186 100
+         C 135 102, 102 135, 100 192
+         C 98 135, 65 102, 14 100
+         C 65 98, 98 65, 100 8 Z"
+      fill="none"
+      stroke="#38bdf8"
+      stroke-width="4"
+      stroke-linejoin="round"
+    />
+    <!-- Brilliant White Core Stroke -->
+    <path
+      d="M 100 8
+         C 102 65, 135 98, 186 100
+         C 135 102, 102 135, 100 192
+         C 98 135, 65 102, 14 100
+         C 65 98, 98 65, 100 8 Z"
+      fill="none"
+      stroke="#ffffff"
+      stroke-width="1.8"
+      stroke-linejoin="round"
+      opacity="0.95"
+    />
+  </g>
+
+  <!-- Inner 4-Pointed Star Core -->
+  <g filter="url(#neon-glow)">
+    <path
+      d="M 100 68
+         C 101 88, 112 99, 130 100
+         C 112 101, 101 112, 100 132
+         C 99 112, 88 101, 70 100
+         C 88 99, 99 88, 100 68 Z"
+      fill="url(#star-core-glow)"
+    />
+    <!-- Blinding Pure White Center Spark -->
+    <circle cx="100" cy="100" r="5" fill="#ffffff" />
+  </g>
+</svg>
