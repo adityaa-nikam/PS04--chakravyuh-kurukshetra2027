@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
     let compositionMode: "adaptive" | "presenter" | "screen_content" = "adaptive";
     let modelSize = "base.en";
     let jobId: string | undefined;
+    let maxClips = 3;
 
     if (contentType.includes("multipart/form-data")) {
       const formData = await req.formData();
@@ -33,6 +34,8 @@ export async function POST(req: NextRequest) {
       if (formData.has("compositionMode")) compositionMode = formData.get("compositionMode") as any;
       if (formData.has("modelSize")) modelSize = formData.get("modelSize") as string;
       if (formData.has("jobId")) jobId = formData.get("jobId") as string;
+      if (formData.has("maxClips")) maxClips = Math.max(1, Math.min(10, parseInt(formData.get("maxClips") as string, 10) || 3));
+      else if (formData.has("targetClips")) maxClips = Math.max(1, Math.min(10, parseInt(formData.get("targetClips") as string, 10) || 3));
 
       if (file && file.size > 0) {
         // Save uploaded video file to storage/raw
@@ -60,6 +63,9 @@ export async function POST(req: NextRequest) {
       if (body.compositionMode) compositionMode = body.compositionMode;
       if (body.modelSize) modelSize = body.modelSize;
       if (body.jobId) jobId = body.jobId;
+      if (body.maxClips !== undefined) maxClips = Math.max(1, Math.min(10, Number(body.maxClips) || 3));
+      else if (body.targetClips !== undefined) maxClips = Math.max(1, Math.min(10, Number(body.targetClips) || 3));
+      else if (body.max_clips !== undefined) maxClips = Math.max(1, Math.min(10, Number(body.max_clips) || 3));
     }
 
     if (!videoPath) {
@@ -77,6 +83,7 @@ export async function POST(req: NextRequest) {
       compositionMode,
       modelSize,
       jobId,
+      maxClips,
     });
 
     return NextResponse.json(

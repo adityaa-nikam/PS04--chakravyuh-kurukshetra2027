@@ -13,6 +13,24 @@ export interface PipelineStartParams {
   compositionMode?: "adaptive" | "presenter" | "screen_content";
   modelSize?: string;
   jobId?: string;
+  maxClips?: number;
+}
+
+export interface PipelineRenderedClip {
+  clip_index: number;
+  clip_id: string;
+  title: string;
+  start_time_sec: number;
+  end_time_sec: number;
+  duration_sec: number;
+  pedagogical_score: number;
+  topic_summary: string;
+  boundary_reasoning: string;
+  rendered_video_path?: string | null;
+  video_url?: string | null;
+  download_filename?: string | null;
+  mercury_score?: number | null;
+  caption?: string | null;
 }
 
 export interface PipelineJobStatus {
@@ -48,7 +66,11 @@ export interface PipelineJobStatus {
     pedagogical_score: number;
     topic_summary: string;
     boundary_reasoning: string;
+    title?: string;
+    caption?: string;
+    mercury_score?: number;
   };
+  rendered_clips?: PipelineRenderedClip[];
   crop_plan?: {
     clip_id: string;
     aspect_ratio: string;
@@ -72,6 +94,7 @@ export class PipelineClient {
       caption_style: params.captionStyle ?? "karaoke",
       composition_mode: params.compositionMode ?? "adaptive",
       model_size: params.modelSize ?? "base.en",
+      max_clips: params.maxClips ?? 3,
       ...(params.jobId ? { job_id: params.jobId } : {}),
     };
 

@@ -73,6 +73,7 @@ class PipelineStartRequest(BaseModel):
     caption_style: str = Field("karaoke", description="Subtitle style: 'karaoke' or 'standard'.")
     composition_mode: str = Field("adaptive_hybrid", description="Adaptive hybrid composition mode.")
     model_size: str = Field("base.en", description="Whisper model size (tiny, base, small).")
+    max_clips: int = Field(3, description="Maximum number of clips/topics to extract and render (1-10).")
 
 
 class PipelineStartResponse(BaseModel):
@@ -150,6 +151,7 @@ def execute_pipeline_worker(
     caption_style: str,
     composition_mode: str,
     model_size: str,
+    max_clips: int = 3,
 ) -> None:
     """Executes the full AI pipeline asynchronously in a background thread."""
     start_time = time.time()
@@ -262,108 +264,144 @@ def execute_pipeline_worker(
         ]
 
         # --------------------------------------------------------------------
-        # Stage 3: Educational Highlight Selection
+        # Stage 3: Educational Highlight Selection (Multi-Topic with Mercury Decide)
         # --------------------------------------------------------------------
-        update_job_status(job_id, "SELECTING_MOMENT", 50, "Evaluating educational moments and selecting highlight...", {
+        update_job_status(job_id, "SELECTING_MOMENT", 50, f"Evaluating pedagogical topics with Mercury Decide (target {max_clips} clips)...", {
             "transcript_words": transcript_words_summary[:100],  # sample for lightweight status
         })
         
-        highlight_path = settings.HIGHLIGHTS_DIR / f"{stem}_highlight.json"
         highlight_selector = HighlightSelectorService(
             min_duration_sec=settings.HIGHLIGHT_MIN_DURATION_SEC,
             max_duration_sec=settings.HIGHLIGHT_MAX_DURATION_SEC,
             target_duration_sec=settings.HIGHLIGHT_TARGET_DURATION_SEC,
         )
-        highlight_result = highlight_selector.select_best_highlight(validated_transcript)
-        HighlightSelectorService.save_highlight(highlight_result, output_path=highlight_path)
-
-        highlight_dict = {
-            "clip_id": f"{stem}_hl",
-            "start_time_sec": highlight_result.start_sec,
-            "end_time_sec": highlight_result.end_sec,
-            "duration_sec": highlight_result.duration_sec,
-            "pedagogical_score": highlight_result.score,
-            "topic_summary": highlight_result.transcript_excerpt[:120],
-            "boundary_reasoning": highlight_result.reason,
-        }
-
-        logger.info(
-            "[ONGOING] [SELECTING_MOMENT] Highlight selected: [%.2fs -> %.2fs] (%.1fs) | Score: %.1f | Reason: %s",
-            highlight_result.start_sec,
-            highlight_result.end_sec,
-            highlight_result.duration_sec,
-            highlight_result.score,
-            highlight_result.reason
+        selected_highlights = highlight_selector.select_multiple_highlights(
+            validated_transcript,
+            max_clips=max_clips,
+            use_decision_model=True
         )
 
+        primary_highlight = selected_highlights[0]
+        highlight_path = settings.HIGHLIGHTS_DIR / f"{stem}_highlight.json"
+        HighlightSelectorService.save_highlight(primary_highlight, output_path=highlight_path)
+
+        highlight_dict = {
+            "clip_id": f"{stem}_hl_01",
+            "start_time_sec": primary_highlight.start_sec,
+            "end_time_sec": primary_highlight.end_sec,
+            "duration_sec": primary_highlight.duration_sec,
+            "pedagogical_score": primary_highlight.score,
+            "topic_summary": primary_highlight.title or primary_highlight.transcript_excerpt[:120],
+            "boundary_reasoning": primary_highlight.reason,
+            "title": primary_highlight.title,
+            "caption": primary_highlight.caption,
+            "mercury_score": primary_highlight.mercury_score,
+        }
+
         # --------------------------------------------------------------------
-        # Stage 4: Computer Vision Crop Planning (9:16)
+        # Stage 4 & 5: Multi-Clip 9:16 Crop Planning & Video Rendering
         # --------------------------------------------------------------------
-        update_job_status(job_id, "PLANNING_CROPS", 65, "Tracking instructor and planning 9:16 portrait crops...", {
-            "selected_highlight": highlight_dict
-        })
-        
-        crop_plan_path = settings.CROP_PLANS_DIR / f"{stem}_crop_plan.json"
         crop_planner = CropPlannerService(
             target_aspect_ratio="9:16",
             analysis_interval_sec=1.0 / settings.CV_SAMPLE_FPS,
             smoother_alpha=settings.CV_SMOOTHING_ALPHA,
         )
 
-        def _crop_progress(idx, total, pct):
-            overall = int(65 + (pct / 100.0) * 12)  # 65% to 77%
-            if idx % max(1, total // 5) == 0 or idx == total:
+        rendered_clips = []
+        primary_rendered_mp4_path = None
+        subtitles_ass_path = None
+        last_crop_plan = None
+        num_highlights = len(selected_highlights)
+
+        for k, hl in enumerate(selected_highlights):
+            clip_num = k + 1
+            clip_id = f"{stem}_hl_{clip_num:02d}"
+            clip_title = hl.title or f"Highlight #{clip_num}"
+
+            # Step 4: Crop planning for this highlight window
+            crop_start_pct = int(55 + (k / num_highlights) * 15)
+            update_job_status(
+                job_id,
+                "PLANNING_CROPS",
+                crop_start_pct,
+                f"Tracking subject & planning 9:16 crop for clip {clip_num}/{num_highlights}: '{clip_title}'...",
+                {"selected_highlight": highlight_dict}
+            )
+
+            crop_plan_path = settings.CROP_PLANS_DIR / f"{stem}_clip_{clip_num:02d}_crop_plan.json"
+            crop_plan = crop_planner.plan_crop(
+                video_path=video_path,
+                highlight=hl,
+            )
+            CropPlannerService.save_crop_plan(crop_plan, output_path=crop_plan_path)
+            last_crop_plan = crop_plan
+
+            clip_rendered_mp4 = None
+            if render_video:
+                render_pct = int(70 + (k / num_highlights) * 25)
                 update_job_status(
                     job_id,
-                    "PLANNING_CROPS",
-                    overall,
-                    f"Tracking subject & planning 9:16 crops: {pct:.0f}% ({idx}/{total} frames)"
+                    "RENDERING_VIDEO",
+                    render_pct,
+                    f"Rendering vertical 9:16 reel {clip_num}/{num_highlights}: '{clip_title}'..."
                 )
 
-        crop_plan = crop_planner.plan_crop(
-            video_path=video_path,
-            highlight=highlight_result,
-            progress_callback=_crop_progress,
-        )
-        CropPlannerService.save_crop_plan(crop_plan, output_path=crop_plan_path)
+                clip_rendered_mp4 = settings.RENDERED_DIR / f"{stem}_reel_{clip_num:02d}.mp4"
+                manifest_path = settings.RENDERED_DIR / f"{stem}_reel_{clip_num:02d}_manifest.json"
+
+                render_options = RenderOptions(
+                    output_width=720,
+                    output_height=1280,
+                    composition_mode=composition_mode,
+                    subtitles_enabled=subtitles,
+                    caption_style=caption_style,
+                    overwrite=True,
+                )
+
+                render_res = VideoRendererService.render_video(
+                    video_path=video_path,
+                    highlight_input=hl,
+                    crop_plan_input=crop_plan,
+                    transcript_input=validated_transcript,
+                    output_path=clip_rendered_mp4,
+                    options=render_options,
+                    manifest_path_input=manifest_path,
+                )
+
+                if k == 0:
+                    primary_rendered_mp4_path = clip_rendered_mp4
+                    subtitles_ass_path = render_res.subtitles_ass_path
+                    # Copy to legacy path for backward compatibility
+                    legacy_path = settings.RENDERED_DIR / f"{stem}_reel_captioned.mp4"
+                    try:
+                        import shutil
+                        shutil.copyfile(clip_rendered_mp4, legacy_path)
+                    except Exception:
+                        pass
+
+            rendered_clips.append({
+                "clip_index": k,
+                "clip_id": clip_id,
+                "title": clip_title,
+                "start_time_sec": hl.start_sec,
+                "end_time_sec": hl.end_sec,
+                "duration_sec": hl.duration_sec,
+                "pedagogical_score": round(hl.score, 1),
+                "topic_summary": hl.transcript_excerpt[:140],
+                "boundary_reasoning": hl.reason,
+                "rendered_video_path": str(clip_rendered_mp4) if clip_rendered_mp4 else None,
+                "video_url": f"/api/ai/video?filename={clip_rendered_mp4.name}" if clip_rendered_mp4 else None,
+                "download_filename": f"{stem}_clip_{clip_num:02d}.mp4",
+                "mercury_score": hl.mercury_score,
+                "caption": hl.caption,
+            })
 
         crop_plan_dict = {
             "clip_id": f"{stem}_crop",
             "aspect_ratio": "9:16",
             "target_resolution": {"width": 720, "height": 1280},
-            "keyframes_count": len(crop_plan.keyframes),
+            "keyframes_count": len(last_crop_plan.keyframes) if last_crop_plan else 0,
         }
-
-        rendered_mp4_path = None
-        subtitles_ass_path = None
-
-        # --------------------------------------------------------------------
-        # Stage 5: Subtitles & Video Rendering
-        # --------------------------------------------------------------------
-        if render_video:
-            update_job_status(job_id, "RENDERING_VIDEO", 80, "Rendering vertical reel with adaptive composition & captions...")
-            rendered_mp4_path = settings.RENDERED_DIR / f"{stem}_reel_captioned.mp4"
-            manifest_path = settings.RENDERED_DIR / f"{stem}_reel_captioned_manifest.json"
-
-            render_options = RenderOptions(
-                output_width=720,
-                output_height=1280,
-                composition_mode=composition_mode,
-                subtitles_enabled=subtitles,
-                caption_style=caption_style,
-                overwrite=True,
-            )
-
-            render_res = VideoRendererService.render_video(
-                video_path=video_path,
-                highlight_input=highlight_result,
-                crop_plan_input=crop_plan,
-                transcript_input=validated_transcript,
-                output_path=rendered_mp4_path,
-                options=render_options,
-                manifest_path_input=manifest_path,
-            )
-            subtitles_ass_path = render_res.subtitles_ass_path
 
         # --------------------------------------------------------------------
         # Stage 6: Completed Successfully
@@ -373,12 +411,13 @@ def execute_pipeline_worker(
             job_id,
             "COMPLETED",
             100,
-            f"Pipeline complete in {elapsed}s! Reel ready for preview.",
+            f"Pipeline complete in {elapsed}s! {len(rendered_clips)} distinct topic reel(s) ready for preview.",
             {
                 "media_metadata": media_meta_dict,
                 "selected_highlight": highlight_dict,
+                "rendered_clips": rendered_clips,
                 "crop_plan": crop_plan_dict,
-                "rendered_video_path": str(rendered_mp4_path) if rendered_mp4_path else None,
+                "rendered_video_path": str(primary_rendered_mp4_path) if primary_rendered_mp4_path else None,
                 "subtitles_ass_path": str(subtitles_ass_path) if subtitles_ass_path else None,
                 "elapsed_sec": elapsed,
             }
@@ -435,6 +474,7 @@ def start_pipeline_job(request: PipelineStartRequest, background_tasks: Backgrou
         caption_style=request.caption_style,
         composition_mode=request.composition_mode,
         model_size=request.model_size,
+        max_clips=request.max_clips,
     )
 
     return PipelineStartResponse(

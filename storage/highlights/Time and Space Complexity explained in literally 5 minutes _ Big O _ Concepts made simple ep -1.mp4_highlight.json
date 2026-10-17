@@ -8,22 +8,25 @@
     "video_height": 360,
     "fps": 29.97
   },
-  "start_sec": 132.44,
-  "end_sec": 177.78,
-  "duration_sec": 45.34,
-  "score": 63.84,
-  "reason": "includes illustrative example/analogy",
-  "transcript_excerpt": "To SMA time, Jada Lagiga, right? Abhayam is a tank complexity in Matlab Jitna. He algorithm keeps efficient in terms of time. Java Musko run cartes. Time ke bard, Abham bard cartes, space ke. Imagine Kurotome gharjana hai, and Tumaripas do bage. Iqbada or Iqchota or Tume, saari zurvat kitchi zha pek karni. We can concept a chuskaroga. Obvious, we bid a bad code. Jisme zha dasama aana zhaiga. Space complexity is equals to Kitna time left hai. Then you concept, koding muoth hai hai. Space complexity, kamat wa hai ke aakka code. Kitri memory, yafa storage, jus kara. Agar Tume, Chota data store karni hai. Chota memory coffee hai. And Jai Agar Tume, zha dada data store karni hai, zha dada memory chayogi. Jaseki, kopan essential atel saknicale, barda bag chayogi. Koding muoth hai, saari zurvat karni hai.",
+  "start_sec": 173.04,
+  "end_sec": 213.06,
+  "duration_sec": 40.02,
+  "score": 29.2,
+  "reason": "Coherent standalone explanation",
+  "transcript_excerpt": "Jaseki, kopan essential atel saknicale, barda bag chayogi. Koding muoth hai, saari zurvat karni hai. Agar Tume simple ari yus karao. So, 30 memory yusogi. But Jai Agar Tume complex data structure yus karao. Jaseki, pre, maps, yafa gharjana, zha dada memory yusogi. Or jai memory yusogi, space complexity ke lataa. Jase simple ari ka space complexity big oafan. Matlab jitna zha dalimant shange aokna zha damari lagigi. But Jai Agar Tume complex data structure ke bakkurum. Yaf space complexity big oafan square yus oafan. Matlab space complexity can grow exponentially. Nanate ka hai, big oafan karnam sonte hai. Subkit chai ropa darai lagigi. Big oak ik super hiroki tare hai.",
   "score_breakdown": {
-    "information_value": 45.0,
+    "information_value": 30.0,
     "self_contained": 70.0,
-    "opening_hook": 70.0,
+    "opening_hook": 50.0,
     "ending_quality": 85.0,
     "speech_density": 100.0,
-    "confidence": 43.58,
-    "duration_penalty": 0.09
+    "confidence": 51.79,
+    "duration_penalty": 1.33
   },
-  "word_start_id": 484,
-  "word_end_id": 622,
-  "selection_method": "transcript_heuristic_v1"
+  "word_start_id": 608,
+  "word_end_id": 718,
+  "selection_method": "mercury_decide_nms",
+  "title": "Understanding Space Complexity",
+  "caption": "When your code eats memory like a snack, simple structures keep it light. Choose wisely—your space complexity can make or break performance #SpaceComplexity #CodingTips #DevLife",
+  "mercury_score": 0.11920291419948606
 }
