@@ -502,76 +502,195 @@ export default function AIStudioPage() {
     pipelineStage !== "FAILED";
 
   return (
-    <div className="min-h-screen bg-[#08080c] text-white flex flex-col font-sans selection:bg-purple-600 selection:text-white">
-      {/* Background Glow Accents */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-purple-700/20 rounded-full blur-[120px]" />
-        <div className="absolute top-1/3 -right-40 w-[500px] h-[500px] bg-pink-600/15 rounded-full blur-[140px]" />
-        <div className="absolute -bottom-40 left-1/3 w-96 h-96 bg-blue-600/15 rounded-full blur-[130px]" />
-      </div>
+    <div className="min-h-screen bg-[#0c061d] text-zinc-100 flex flex-col font-sans selection:bg-purple-600/40 selection:text-white relative overflow-x-hidden">
+      {/* Hostinger-exact Atmospheric Purple Gradient Background */}
+      <div className="absolute top-0 left-0 right-0 h-[740px] hostinger-hero-gradient pointer-events-none -z-10" />
 
-      {/* Header */}
-      <header className="border-b border-white/10 bg-black/40 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-18 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 via-pink-500 to-amber-400 p-[2px] shadow-lg shadow-purple-500/20">
-              <div className="w-full h-full bg-black rounded-[10px] flex items-center justify-center font-black text-lg text-transparent bg-clip-text bg-gradient-to-tr from-purple-400 to-pink-400">
-                CH
+      {/* Top Navigation Bar (Hostinger Style) */}
+      <header className="w-full bg-[#13082e]/60 backdrop-blur-md border-b border-violet-400/10 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
+          {/* Logo & Navigation Links */}
+          <div className="flex items-center gap-8 sm:gap-12">
+            <a href="/" className="flex items-center gap-3 group">
+              <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
+                <img
+                  src="/astra-logo.svg"
+                  alt="Astra Studio Logo"
+                  className="w-full h-full object-contain drop-shadow-[0_0_14px_rgba(167,139,250,0.8)] group-hover:scale-105 transition-transform"
+                />
               </div>
-            </div>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight flex items-center gap-2">
-                Chakravyuh <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-300 font-mono">AI REEL STUDIO</span>
-              </h1>
-              <p className="text-xs text-zinc-400">Lecture Highlight Extractor • 9:16 Adaptive Framing • Auto Instagram Reels</p>
-            </div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-base tracking-tight text-white group-hover:text-violet-200 transition-colors uppercase">
+                  Astra Studio
+                </span>
+                <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-violet-950/80 text-violet-300 border border-violet-600/40">
+                  AI
+                </span>
+              </div>
+            </a>
+
+            {/* Desktop Navigation Links */}
+            <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-violet-100/80">
+              <a href="#studio-workspace" className="text-white hover:text-violet-200 transition-colors">
+                Studio
+              </a>
+              <a href="#how-it-works" className="hover:text-white transition-colors flex items-center gap-1">
+                <span>Pipeline</span>
+              </a>
+              <a href="#how-it-works" className="hover:text-white transition-colors flex items-center gap-1">
+                <span>Features</span>
+                <svg className="w-3.5 h-3.5 text-violet-300/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </a>
+              <a href="#how-it-works" className="hover:text-white transition-colors">
+                How It Works
+              </a>
+              <a href="/upload" className="hover:text-white transition-colors">
+                Publisher
+              </a>
+            </nav>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              NVIDIA RTX 2050 (CUDA Active)
+          {/* Right Action Badges & Buttons */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            <button
+              type="button"
+              onClick={() => {
+                const searchEl = document.getElementById("hero-command-input");
+                searchEl?.focus();
+              }}
+              className="px-4 py-1.5 rounded-full border border-violet-400/40 bg-violet-950/50 hover:bg-violet-900/50 text-violet-200 text-xs font-medium flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+            >
+              <span className="text-violet-300">✨</span>
+              <span>AI Agent</span>
+            </button>
+
+            <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-violet-200/90 px-3 py-1.5 rounded-full bg-violet-950/40 border border-violet-400/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>CUDA Active</span>
             </div>
+
+            <a
+              href="/upload"
+              className="text-xs font-medium px-4 py-1.5 rounded-full bg-white text-zinc-950 hover:bg-zinc-100 font-semibold shadow-md transition-all active:scale-95"
+            >
+              Publisher
+            </a>
           </div>
         </div>
       </header>
 
-      {/* Main Grid Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      {/* Hostinger Command / Topic Search Bar (Directly below Header) */}
+      <div className="w-full max-w-4xl mx-auto px-4 pt-6 sm:pt-8 relative z-20">
+        <div className="bg-[#24174d]/85 border border-violet-400/30 rounded-full p-2 pl-5 shadow-2xl shadow-purple-950/60 flex items-center justify-between backdrop-blur-md transition-all focus-within:border-violet-300 focus-within:ring-2 focus-within:ring-violet-400/20">
+          <div className="flex items-center gap-3 flex-1 min-w-0 mr-3">
+            <svg className="w-5 h-5 text-violet-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              id="hero-command-input"
+              type="text"
+              value={aiTopic}
+              onChange={(e) => setAiTopic(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !isRunning && aiTopic.trim()) {
+                  startRemotionGeneration();
+                }
+              }}
+              placeholder="Type your lecture topic, YouTube URL, or prompt..."
+              className="w-full bg-transparent text-sm sm:text-base text-white placeholder-violet-200/50 outline-none font-normal"
+            />
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={startRemotionGeneration}
+              disabled={isRunning || !aiTopic.trim()}
+              className="bg-white text-zinc-950 hover:bg-zinc-100 disabled:opacity-40 font-semibold text-xs sm:text-sm px-6 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
+            >
+              {isRunning ? "Generating..." : "Generate Reel"}
+            </button>
+          </div>
+        </div>
+        <div className="text-right text-xs text-violet-200/70 mt-2 pr-4 font-normal">
+          Instant GPU pipeline included with <a href="#studio-workspace" className="underline hover:text-white transition-colors">all plans</a>
+        </div>
+      </div>
+
+      {/* Hostinger-exact Hero Section */}
+      <section className="pt-16 sm:pt-24 pb-16 sm:pb-20 px-4 sm:px-6 max-w-4xl mx-auto text-center flex flex-col items-center gap-5 relative z-10">
+        <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white leading-[1.08] text-center max-w-3xl mx-auto">
+          All-in-One AI Studio.
+          <br />
+          <span className="text-white">Create, Automate, Distribute, Analyze.</span>
+        </h1>
+
+        <p className="text-sm sm:text-base text-violet-200/85 max-w-xl mx-auto text-center font-normal leading-relaxed mt-1">
+          An agentic platform to build, automate, and publish technical video reels online, all in one place.
+        </p>
+
+        {/* CTA Button & Guarantee Line */}
+        <div className="flex flex-col items-center gap-3 pt-3">
+          <button
+            type="button"
+            onClick={() => {
+              const studioMain = document.getElementById("studio-workspace");
+              studioMain?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+            className="bg-white text-zinc-950 hover:bg-zinc-100 font-semibold px-8 py-3.5 rounded-xl shadow-xl shadow-purple-950/60 hover:shadow-purple-900/80 transition-all text-sm sm:text-base cursor-pointer active:scale-95"
+          >
+            Get started
+          </button>
+          <div className="flex items-center gap-2 text-xs text-violet-200/70 font-normal">
+            <svg className="w-3.5 h-3.5 text-violet-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span>Autonomous AI Video Workstation · NVIDIA CUDA Accelerated</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Main Grid Content - Peeking into Hero bottom (Hostinger Showcase style) */}
+      <main id="studio-workspace" className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 -mt-4 sm:-mt-8 relative z-20 pb-16 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Input, Pipeline Controls & Live Status */}
         <div className="lg:col-span-7 flex flex-col gap-6">
-          {/* Card 1: Video Input Selection */}
-          <div className="p-6 rounded-2xl bg-zinc-900/60 border border-white/10 backdrop-blur-md shadow-2xl relative overflow-hidden">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-2">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-500 text-xs font-bold">1</span>
-                <h2 className="text-base font-semibold text-white">
+          {/* Card 1: Video Input & Creation Controls */}
+          <div className="p-6 sm:p-7 rounded-3xl bg-[#160d36]/80 border border-violet-500/20 backdrop-blur-xl shadow-2xl shadow-purple-950/60 relative overflow-hidden flex flex-col gap-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-violet-500/20">
+              <div className="flex items-center gap-2.5">
+                <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded bg-violet-950/80 text-violet-300 border border-violet-600/40">
+                  STEP 01
+                </span>
+                <h2 className="text-sm font-semibold text-white tracking-tight">
                   {inputMode === "ai_prompt"
-                    ? "Generate Reel by Command (Remotion Engine)"
+                    ? "Generate Reel by Command (Remotion)"
                     : "Select Lecture Source Video"}
                 </h2>
               </div>
 
               {/* Mode Toggle Tabs */}
-              <div className="flex rounded-lg bg-black/50 p-1 border border-white/10 text-xs">
+              <div className="flex rounded-lg bg-[#0e0722] border border-violet-500/30 p-1 text-xs self-start sm:self-auto">
                 <button
                   type="button"
                   onClick={() => setInputMode("ai_prompt")}
                   className={`px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 ${
                     inputMode === "ai_prompt"
-                      ? "bg-purple-600 text-white font-medium shadow-sm"
-                      : "text-zinc-400 hover:text-white"
+                      ? "bg-[#281858] text-white font-medium shadow-xs"
+                      : "text-violet-300/70 hover:text-white"
                   }`}
                 >
-                  <span>✨</span>
-                  <span>Command (Remotion)</span>
+                  <svg className="w-3.5 h-3.5 text-violet-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                  <span>AI Explainer</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setInputMode("path")}
                   className={`px-3 py-1.5 rounded-md transition-all ${
                     inputMode === "path"
-                      ? "bg-purple-600 text-white font-medium shadow-sm"
+                      ? "bg-zinc-800 text-white font-medium shadow-xs"
                       : "text-zinc-400 hover:text-white"
                   }`}
                 >
@@ -582,7 +701,7 @@ export default function AIStudioPage() {
                   onClick={() => setInputMode("upload")}
                   className={`px-3 py-1.5 rounded-md transition-all ${
                     inputMode === "upload"
-                      ? "bg-purple-600 text-white font-medium shadow-sm"
+                      ? "bg-zinc-800 text-white font-medium shadow-xs"
                       : "text-zinc-400 hover:text-white"
                   }`}
                 >
@@ -600,9 +719,12 @@ export default function AIStudioPage() {
                   <button
                     type="button"
                     onClick={loadLatestRemotionVideo}
-                    className="text-[11px] text-purple-300 hover:text-purple-200 underline font-medium transition-colors"
+                    className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-medium transition-colors"
                   >
-                    ⚡ Load Last Rendered Video
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>Load Last Rendered Video</span>
                   </button>
                 </div>
                 <textarea
@@ -611,58 +733,58 @@ export default function AIStudioPage() {
                   disabled={isRunning}
                   rows={3}
                   placeholder="e.g. Explain XML versus JSON with a simple example"
-                  className="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all disabled:opacity-50 resize-none font-sans"
+                  className="w-full bg-[#221447]/70 border border-violet-400/20 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder:text-violet-300/40 focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400 transition-all disabled:opacity-50 resize-none font-sans"
                 />
 
                 {/* Quick Presets */}
-                <div className="flex items-center gap-2 flex-wrap text-xs text-zinc-400 mt-1">
-                  <span className="text-zinc-500">Quick Presets:</span>
+                <div className="flex items-center gap-1.5 flex-wrap text-xs text-zinc-400 mt-0.5">
+                  <span className="text-zinc-500 text-[11px] uppercase font-mono mr-1">Presets:</span>
                   <button
                     type="button"
                     onClick={() => setAiTopic("Explain AI RAG System with a simple example")}
-                    className="px-2.5 py-1 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-purple-300 transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-zinc-950/60 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white transition-colors"
                   >
                     AI RAG System
                   </button>
                   <button
                     type="button"
                     onClick={() => setAiTopic("Explain XML versus JSON with a simple example")}
-                    className="px-2.5 py-1 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-purple-300 transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-zinc-950/60 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white transition-colors"
                   >
-                    XML vs JSON Example
+                    XML vs JSON
                   </button>
                   <button
                     type="button"
                     onClick={() => setAiTopic("Explain QuickSort versus MergeSort with time complexity")}
-                    className="px-2.5 py-1 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-purple-300 transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-zinc-950/60 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white transition-colors"
                   >
                     QuickSort vs MergeSort
                   </button>
                   <button
                     type="button"
                     onClick={() => setAiTopic("Explain how REST APIs work versus GraphQL in 45 seconds")}
-                    className="px-2.5 py-1 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-purple-300 transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-zinc-950/60 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white transition-colors"
                   >
                     REST vs GraphQL
                   </button>
                   <button
                     type="button"
                     onClick={() => setAiTopic("Explain how Git branching and merge conflicts work")}
-                    className="px-2.5 py-1 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-purple-300 transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-zinc-950/60 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white transition-colors"
                   >
                     Git Branching
                   </button>
                 </div>
 
                 {/* Remotion Configuration */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 pt-4 border-t border-white/10 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 pt-3 border-t border-zinc-800/60 text-xs">
                   <div>
                     <label className="text-zinc-400 block mb-1.5 font-medium">Target Audience</label>
                     <select
                       value={aiAudience}
                       onChange={(e) => setAiAudience(e.target.value)}
                       disabled={isRunning}
-                      className="w-full bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-purple-500"
+                      className="w-full bg-zinc-950/70 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-cyan-500"
                     >
                       <option value="Beginners">Beginners (Intuitive & Visual)</option>
                       <option value="CS Students">CS Students (Concepts & Big-O)</option>
@@ -676,18 +798,18 @@ export default function AIStudioPage() {
                       value={aiDuration}
                       onChange={(e) => setAiDuration(Number(e.target.value))}
                       disabled={isRunning}
-                      className="w-full bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-purple-500"
+                      className="w-full bg-zinc-950/70 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-cyan-500"
                     >
                       <option value={30}>30 Seconds (Fast Reel)</option>
-                      <option value={45}>45 Seconds (Recommended Standard)</option>
+                      <option value={45}>45 Seconds (Standard Recommended)</option>
                       <option value={60}>60 Seconds (Deep Dive)</option>
                     </select>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs mt-1">
-                  <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
-                  <span>Remotion 4.0 + Chrome Headless GPU (9:16 Vertical Render with Animated Visual Actions)</span>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800/80 text-zinc-400 text-xs mt-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                  <span>Remotion 4.0 · Chrome Headless GPU (9:16 Vertical Render with Animated Code Blocks)</span>
                 </div>
               </div>
             ) : inputMode === "path" ? (
@@ -702,13 +824,13 @@ export default function AIStudioPage() {
                     onChange={(e) => setVideoPath(e.target.value)}
                     disabled={isRunning}
                     placeholder="e.g. D:\softwares\lecture.mp4"
-                    className="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-3 text-sm font-mono text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all disabled:opacity-50"
+                    className="w-full bg-zinc-950/70 border border-zinc-800 rounded-xl px-4 py-3 text-sm font-mono text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all disabled:opacity-50"
                   />
                 </div>
 
                 {/* Quick Presets */}
                 <div className="flex items-center gap-2 flex-wrap text-xs text-zinc-400 mt-1">
-                  <span>Quick Presets:</span>
+                  <span className="text-zinc-500 text-[11px] uppercase font-mono">Presets:</span>
                   <button
                     type="button"
                     onClick={() =>
@@ -716,14 +838,14 @@ export default function AIStudioPage() {
                         "D:\\softwares\\Time and Space Complexity explained in literally 5 minutes _ Big O _ Concepts made simple ep -1.mp4.mp4"
                       )
                     }
-                    className="px-2.5 py-1 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-purple-300 transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-zinc-950/60 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white transition-colors"
                   >
                     Time & Space Complexity (5m)
                   </button>
                   <button
                     type="button"
                     onClick={() => setVideoPath("D:\\softwares\\videoplayback.mp4")}
-                    className="px-2.5 py-1 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-purple-300 transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-zinc-950/60 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white transition-colors"
                   >
                     videoplayback.mp4 (25m)
                   </button>
@@ -734,7 +856,7 @@ export default function AIStudioPage() {
                 <label className="text-xs font-medium text-zinc-300">
                   Select Video File (MP4, MOV, MKV)
                 </label>
-                <div className="border-2 border-dashed border-white/15 hover:border-purple-500/50 rounded-xl p-6 text-center cursor-pointer transition-colors bg-black/30">
+                <div className="border border-dashed border-zinc-800 hover:border-cyan-500/50 rounded-xl p-6 text-center cursor-pointer transition-colors bg-zinc-950/30">
                   <input
                     type="file"
                     accept="video/*"
@@ -744,14 +866,16 @@ export default function AIStudioPage() {
                     id="video-upload-input"
                   />
                   <label htmlFor="video-upload-input" className="cursor-pointer flex flex-col items-center gap-2">
-                    <svg className="w-8 h-8 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
+                    <div className="w-10 h-10 rounded-xl bg-zinc-800/70 border border-zinc-700/50 flex items-center justify-center text-zinc-400">
+                      <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                    </div>
                     <span className="text-sm font-medium text-zinc-200">
                       {selectedFile ? selectedFile.name : "Click to select or drag video here"}
                     </span>
                     {selectedFile && (
-                      <span className="text-xs text-purple-300 font-mono">
+                      <span className="text-xs text-cyan-400 font-mono">
                         {(selectedFile.size / (1024 * 1024)).toFixed(1)} MB
                       </span>
                     )}
@@ -762,17 +886,17 @@ export default function AIStudioPage() {
 
             {/* AI Rendering Options (For video pipeline) */}
             {inputMode !== "ai_prompt" && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5 pt-5 border-t border-white/10 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 pt-4 border-t border-zinc-800/60 text-xs">
                 <div>
                   <label className="text-zinc-400 block mb-1.5 font-medium">Caption Style</label>
                   <select
                     value={captionStyle}
                     onChange={(e) => setCaptionStyle(e.target.value as any)}
                     disabled={isRunning}
-                    className="w-full bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-purple-500"
+                    className="w-full bg-zinc-950/70 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-cyan-500"
                   >
                     <option value="karaoke">✨ Karaoke (Word Pop)</option>
-                    <option value="minimal">Minimal Elegant</option>
+                    <option value="minimal">Minimal Clean</option>
                     <option value="bold">Bold Punchy</option>
                     <option value="neon">Neon Glow</option>
                   </select>
@@ -784,7 +908,7 @@ export default function AIStudioPage() {
                     value={compositionMode}
                     onChange={(e) => setCompositionMode(e.target.value as any)}
                     disabled={isRunning}
-                    className="w-full bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-purple-500"
+                    className="w-full bg-zinc-950/70 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-cyan-500"
                   >
                     <option value="adaptive">Dynamic Hybrid (CV)</option>
                     <option value="presenter">Presenter Focus</option>
@@ -800,11 +924,11 @@ export default function AIStudioPage() {
                     disabled={isRunning}
                     className={`w-full py-2 px-3 rounded-lg border font-medium transition-colors flex items-center justify-center gap-2 ${
                       subtitlesEnabled
-                        ? "bg-purple-600/20 border-purple-500/40 text-purple-300"
-                        : "bg-black/60 border-white/15 text-zinc-400"
+                        ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-300"
+                        : "bg-zinc-950/70 border-zinc-800 text-zinc-400"
                     }`}
                   >
-                    <span className={`w-2 h-2 rounded-full ${subtitlesEnabled ? "bg-purple-400" : "bg-zinc-500"}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full ${subtitlesEnabled ? "bg-cyan-400" : "bg-zinc-500"}`} />
                     {subtitlesEnabled ? "Enabled" : "Disabled"}
                   </button>
                 </div>
@@ -812,16 +936,16 @@ export default function AIStudioPage() {
             )}
 
             {/* Launch CTA */}
-            <div className="mt-6">
+            <div className="pt-2">
               <button
                 type="button"
                 onClick={inputMode === "ai_prompt" ? startRemotionGeneration : startAIPipeline}
                 disabled={isRunning}
-                className="w-full py-3.5 px-6 rounded-xl font-semibold text-sm bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white shadow-lg shadow-purple-600/30 transition-all transform active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-4 px-6 rounded-xl font-semibold text-sm bg-white text-zinc-950 hover:bg-zinc-100 shadow-xl shadow-purple-950/40 transition-all transform active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isRunning ? (
                   <>
-                    <svg className="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin w-4 h-4 text-zinc-950" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                     </svg>
@@ -831,9 +955,11 @@ export default function AIStudioPage() {
                   </>
                 ) : (
                   <>
-                    <span>⚡</span>
+                    <svg className="w-4 h-4 text-violet-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                    </svg>
                     {inputMode === "ai_prompt"
-                      ? "Generate Vertical 9:16 Reel by Command (Remotion)"
+                      ? "Generate Vertical 9:16 Reel by Command"
                       : "Generate AI Vertical Reel (Highlight + 9:16 Crop + Captions)"}
                   </>
                 )}
@@ -842,42 +968,45 @@ export default function AIStudioPage() {
           </div>
 
           {/* Card 2: Live Pipeline Progress Tracker */}
-          <div className="p-6 rounded-2xl bg-zinc-900/60 border border-white/10 backdrop-blur-md shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-pink-500 text-xs font-bold">2</span>
-                <h2 className="text-base font-semibold text-white">Live Pipeline Tracker</h2>
+          <div className="p-6 sm:p-7 rounded-3xl bg-[#160d36]/80 border border-violet-500/20 backdrop-blur-xl shadow-2xl shadow-purple-950/60 flex flex-col gap-4">
+            <div className="flex items-center justify-between pb-2 border-b border-violet-500/20">
+              <div className="flex items-center gap-2.5">
+                <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded bg-violet-950/80 text-violet-300 border border-violet-600/40">
+                  STEP 02
+                </span>
+                <h2 className="text-sm font-semibold text-white tracking-tight">Live Pipeline Tracker</h2>
               </div>
               {jobId && (
-                <span className="font-mono text-xs px-2.5 py-1 rounded bg-black/60 border border-white/10 text-zinc-400">
+                <span className="font-mono text-xs px-2.5 py-1 rounded-lg bg-[#0e0722] border border-violet-500/30 text-violet-300 select-all">
                   {jobId}
                 </span>
               )}
             </div>
 
             {/* Progress Bar */}
-            <div className="relative w-full h-3 bg-black/60 rounded-full overflow-hidden border border-white/10 mb-3">
+            <div className="relative w-full h-2 bg-[#0e0722] rounded-full overflow-hidden border border-violet-500/30">
               <div
                 className={`h-full transition-all duration-500 rounded-full ${
                   pipelineStage === "FAILED"
-                    ? "bg-red-500"
+                    ? "bg-rose-500"
                     : pipelineStage === "COMPLETED"
                     ? "bg-emerald-500"
-                    : "bg-gradient-to-r from-purple-500 via-pink-500 to-amber-400"
+                    : "bg-gradient-to-r from-violet-600 via-purple-500 to-indigo-500"
                 }`}
                 style={{ width: `${Math.max(3, pipelineProgress)}%` }}
               />
             </div>
 
-            <div className="flex items-center justify-between text-xs mb-6">
-              <span className="text-zinc-400 font-medium">
-                {stageMessage || "Waiting to launch pipeline..."}
-              </span>
-              <span className="font-mono font-bold text-white">{pipelineProgress}%</span>
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2 text-zinc-400">
+                {isRunning && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />}
+                <span>{stageMessage || "Ready to execute pipeline"}</span>
+              </div>
+              <span className="font-mono font-semibold text-zinc-200">{pipelineProgress}%</span>
             </div>
 
             {/* Pipeline Stage Pills */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs pt-1">
               {(inputMode === "ai_prompt"
                 ? [
                     { key: "REMOTION_SCRIPT", label: "1. Script Gen" },
@@ -930,12 +1059,12 @@ export default function AIStudioPage() {
                 return (
                   <div
                     key={`${st.label}-${idx}`}
-                    className={`px-3 py-2 rounded-xl border text-center transition-all ${
+                    className={`px-2.5 py-2 rounded-xl border text-center transition-all ${
                       isDone
-                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300 font-medium"
+                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-medium"
                         : isCurrent
-                        ? "bg-purple-600/20 border-purple-500 text-purple-200 font-semibold ring-1 ring-purple-500/50 animate-pulse"
-                        : "bg-black/40 border-white/5 text-zinc-500"
+                        ? "bg-cyan-500/15 border-cyan-500/60 text-cyan-200 font-medium ring-1 ring-cyan-500/30 shadow-xs"
+                        : "bg-zinc-950/40 border-zinc-800/60 text-zinc-500"
                     }`}
                   >
                     {st.label}
@@ -946,16 +1075,16 @@ export default function AIStudioPage() {
 
             {/* Highlight Summary Card if extracted or generated */}
             {highlightData && (
-              <div className="mt-5 p-4 rounded-xl bg-purple-950/20 border border-purple-500/20 flex flex-col gap-2">
+              <div className="mt-2 p-4 rounded-xl bg-zinc-950/80 border border-zinc-800 flex flex-col gap-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-purple-300 flex items-center gap-1.5">
+                  <span className="font-semibold text-cyan-300 flex items-center gap-1.5">
                     {inputMode === "ai_prompt" ? "✨ Generated Storyboard Reel" : "🎯 Selected Educational Moment"}
                   </span>
-                  <span className="font-mono text-zinc-300 bg-purple-900/40 px-2 py-0.5 rounded">
+                  <span className="font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded text-[11px]">
                     Score: {highlightData.pedagogical_score.toFixed(1)} / 100
                   </span>
                 </div>
-                <p className="text-xs text-zinc-300 italic line-clamp-2">
+                <p className="text-xs text-zinc-300 italic border-l-2 border-cyan-500/60 pl-2.5 py-0.5">
                   &ldquo;{highlightData.topic_summary}&rdquo;
                 </p>
                 <div className="flex items-center gap-4 text-[11px] text-zinc-400 font-mono mt-1">
@@ -981,23 +1110,25 @@ export default function AIStudioPage() {
 
         {/* Right Column: 9:16 Video Preview & Instagram Publishing */}
         <div className="lg:col-span-5 flex flex-col gap-6">
-          <div className="p-6 rounded-2xl bg-zinc-900/60 border border-white/10 backdrop-blur-md shadow-2xl flex flex-col items-center">
-            <div className="w-full flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-xs font-bold text-black">3</span>
-                <h2 className="text-base font-semibold text-white">9:16 Reel Preview</h2>
+          <div className="p-6 sm:p-7 rounded-3xl bg-[#160d36]/80 border border-violet-500/20 backdrop-blur-xl shadow-2xl shadow-purple-950/60 flex flex-col items-center">
+            <div className="w-full flex items-center justify-between mb-4 pb-2 border-b border-violet-500/20">
+              <div className="flex items-center gap-2.5">
+                <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded bg-violet-950/80 text-violet-300 border border-violet-600/40">
+                  STEP 03
+                </span>
+                <h2 className="text-sm font-semibold text-white tracking-tight">9:16 Reel Preview</h2>
               </div>
               {elapsedSec && (
-                <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
                   Ready in {elapsedSec}s
                 </span>
               )}
             </div>
 
             {/* Smartphone 9:16 Frame Player */}
-            <div className="relative w-[280px] h-[497px] rounded-[32px] bg-black p-2.5 border-[4px] border-zinc-800 shadow-2xl shadow-purple-950/40 overflow-hidden flex flex-col items-center justify-center">
+            <div className="relative w-[270px] sm:w-[285px] h-[480px] sm:h-[506px] rounded-[36px] bg-zinc-950 p-2 border border-zinc-800 shadow-2xl overflow-hidden flex flex-col items-center justify-center ring-1 ring-white/5">
               {/* Camera Notch */}
-              <div className="absolute top-4 w-20 h-4 bg-zinc-900 rounded-full z-20" />
+              <div className="absolute top-3.5 w-20 h-3.5 bg-black rounded-full z-20 border border-zinc-800/50" />
 
               {renderedVideoUrl ? (
                 <video
@@ -1006,14 +1137,14 @@ export default function AIStudioPage() {
                   controls
                   playsInline
                   loop
-                  className="w-full h-full object-cover rounded-[24px]"
+                  className="w-full h-full object-cover rounded-[28px]"
                 />
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center text-zinc-500 bg-zinc-950/60 rounded-[24px]">
+                <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center text-zinc-500 bg-zinc-950/80 rounded-[28px]">
                   {isRunning ? (
                     <div className="flex flex-col items-center gap-3">
-                      <div className="w-12 h-12 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
-                      <p className="text-xs text-purple-300 font-medium">
+                      <div className="w-10 h-10 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin" />
+                      <p className="text-xs text-cyan-300 font-medium">
                         Rendering vertical reel...
                       </p>
                       <span className="text-[11px] text-zinc-500 font-mono">
@@ -1022,10 +1153,12 @@ export default function AIStudioPage() {
                     </div>
                   ) : (
                     <>
-                      <svg className="w-12 h-12 text-zinc-700 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                      <p className="text-xs text-zinc-400">
+                      <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-600 mb-3">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <p className="text-xs text-zinc-400 max-w-[200px]">
                         Rendered vertical 9:16 reel will appear here for instant preview.
                       </p>
                     </>
@@ -1035,10 +1168,10 @@ export default function AIStudioPage() {
             </div>
 
             {/* Instagram Publish Section */}
-            <div className="w-full mt-6 pt-5 border-t border-white/10 flex flex-col gap-3">
-              <label className="text-xs font-semibold text-zinc-300 flex items-center justify-between">
-                <span>Instagram Caption</span>
-                <span className="text-[10px] text-zinc-500 font-normal">Editable</span>
+            <div className="w-full mt-6 pt-5 border-t border-violet-500/20 flex flex-col gap-3">
+              <label className="text-xs font-medium text-zinc-300 flex items-center justify-between">
+                <span>Instagram Caption &amp; Hashtags</span>
+                <span className="text-[10px] text-violet-300/70 font-mono">Editable</span>
               </label>
 
               <textarea
@@ -1046,24 +1179,24 @@ export default function AIStudioPage() {
                 onChange={(e) => setCustomCaption(e.target.value)}
                 rows={3}
                 placeholder="Write your reel caption and hashtags here..."
-                className="w-full bg-black/60 border border-white/15 rounded-xl p-3 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-pink-500 transition-all resize-none"
+                className="w-full bg-[#221447]/70 border border-violet-400/20 rounded-xl p-3 text-xs text-zinc-100 placeholder:text-violet-300/40 focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400 transition-all resize-none font-sans"
               />
 
               {publishMessage && (
                 <div
-                  className={`text-xs p-3 rounded-xl border ${
+                  className={`text-xs p-3.5 rounded-xl border ${
                     publishStage === "published"
-                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+                      ? "bg-emerald-950/20 border-emerald-800/30 text-emerald-300"
                       : publishStage === "publish-failed"
-                      ? "bg-red-500/10 border-red-500/30 text-red-300"
-                      : "bg-pink-500/10 border-pink-500/30 text-pink-300"
+                      ? "bg-rose-950/20 border-rose-800/30 text-rose-300"
+                      : "bg-violet-950/40 border-violet-600/30 text-violet-200"
                   }`}
                 >
                   <p className="font-medium">{publishMessage}</p>
                   {publishStage !== "idle" && publishStage !== "published" && publishStage !== "publish-failed" && (
-                    <div className="w-full h-1.5 bg-black/40 rounded-full mt-2 overflow-hidden">
+                    <div className="w-full h-1.5 bg-[#0e0722] rounded-full mt-2 overflow-hidden border border-violet-500/30">
                       <div
-                        className="h-full bg-pink-500 transition-all duration-300 rounded-full"
+                        className="h-full bg-gradient-to-r from-violet-600 via-purple-500 to-indigo-500 transition-all duration-300 rounded-full"
                         style={{ width: `${publishProgress}%` }}
                       />
                     </div>
@@ -1080,7 +1213,7 @@ export default function AIStudioPage() {
                 type="button"
                 onClick={uploadToSupabaseAndPublish}
                 disabled={!renderedVideoUrl || publishStage === "uploading-supabase" || publishStage === "processing-instagram"}
-                className="w-full py-3.5 px-6 rounded-xl font-semibold text-sm bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white shadow-lg shadow-pink-600/30 transition-all transform active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3.5 px-6 rounded-xl font-semibold text-sm bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-xl shadow-purple-950/50 transition-all transform active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
               >
                 {publishStage === "uploading-supabase" || publishStage === "processing-instagram" ? (
                   <>
@@ -1088,14 +1221,14 @@ export default function AIStudioPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                     </svg>
-                    Publishing to Instagram...
+                    <span>Publishing to Instagram...</span>
                   </>
                 ) : (
                   <>
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                     </svg>
-                    Upload to Supabase & Publish Instagram Reel
+                    <span>Upload to Supabase &amp; Publish Instagram Reel</span>
                   </>
                 )}
               </button>
@@ -1103,6 +1236,128 @@ export default function AIStudioPage() {
           </div>
         </div>
       </main>
+
+      {/* How AI Astra Works Section */}
+      <section id="how-it-works" className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-20 border-t border-violet-500/20 mt-16">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <span className="text-[11px] font-mono uppercase tracking-wider text-violet-300 bg-violet-950/70 border border-violet-600/40 px-3 py-1 rounded-full inline-block mb-3">
+            SYSTEM ARCHITECTURE
+          </span>
+          <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-white">
+            How Astra Studio Works
+          </h2>
+          <p className="text-sm text-violet-200/80 mt-2">
+            A fully autonomous 4-stage pipeline that converts raw, horizontal video lectures into captivating, production-ready vertical reels.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+          {/* Step 1 */}
+          <div className="p-5 rounded-2xl bg-zinc-900/40 border border-zinc-800/80 backdrop-blur-sm flex flex-col gap-3 group hover:border-cyan-500/40 transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-mono font-bold text-cyan-400 px-2 py-0.5 rounded bg-cyan-950/50 border border-cyan-800/40">
+                PHASE 01
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-cyan-300 transition-colors">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-sm font-semibold text-white">Audio Ingest &amp; Term Normalization</h3>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Extracts 16kHz mono audio, runs word-level Faster-Whisper ASR, and matches technical vocabulary via regex to preserve terms like O(n), PyTorch, and SQL.
+            </p>
+          </div>
+
+          {/* Step 2 */}
+          <div className="p-5 rounded-2xl bg-zinc-900/40 border border-zinc-800/80 backdrop-blur-sm flex flex-col gap-3 group hover:border-cyan-500/40 transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-mono font-bold text-cyan-400 px-2 py-0.5 rounded bg-cyan-950/50 border border-cyan-800/40">
+                PHASE 02
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-cyan-300 transition-colors">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-sm font-semibold text-white">Pedagogical Highlight Scoring</h3>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Evaluates candidate 30–60s windows across information density, self-containment, introductory hooks, and sentence closure to locate the single highest-value &ldquo;Aha!&rdquo; moment.
+            </p>
+          </div>
+
+          {/* Step 3 */}
+          <div className="p-5 rounded-2xl bg-zinc-900/40 border border-zinc-800/80 backdrop-blur-sm flex flex-col gap-3 group hover:border-cyan-500/40 transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-mono font-bold text-cyan-400 px-2 py-0.5 rounded bg-cyan-950/50 border border-cyan-800/40">
+                PHASE 03
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-cyan-300 transition-colors">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-sm font-semibold text-white">Computer Vision 9:16 Re-Framing</h3>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              OpenCV face detection and screen content analyzers track the speaker and active code typing, generating smoothed pan trajectories and dynamic 9:16 compositions.
+            </p>
+          </div>
+
+          {/* Step 4 */}
+          <div className="p-5 rounded-2xl bg-zinc-900/40 border border-zinc-800/80 backdrop-blur-sm flex flex-col gap-3 group hover:border-cyan-500/40 transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-mono font-bold text-cyan-400 px-2 py-0.5 rounded bg-cyan-950/50 border border-cyan-800/40">
+                PHASE 04
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-cyan-300 transition-colors">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-sm font-semibold text-white">Karaoke Captions &amp; Auto-Publish</h3>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Renders synchronized word-pop ASS subtitles, burns branding logos, and triggers direct Instagram Reel upload via resumable TUS and the Graph API.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-violet-900/30 bg-[#0a0518] backdrop-blur-md mt-20 py-12 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <img
+              src="/astra-logo.svg"
+              alt="Astra Studio Logo"
+              className="w-7 h-7 object-contain drop-shadow-[0_0_10px_rgba(167,139,250,0.8)]"
+            />
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-sm tracking-tight text-white">Astra Studio</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-violet-950/80 text-violet-300 border border-violet-700/50">
+                  PRO
+                </span>
+              </div>
+              <p className="text-xs text-violet-300/70">Autonomous AI Video Workstation for Technical Educators</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-6 text-xs text-violet-200/80 font-medium">
+            <a href="#studio-workspace" className="hover:text-white transition-colors">Studio</a>
+            <a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a>
+            <a href="/upload" className="hover:text-white transition-colors">Direct Publisher</a>
+          </div>
+
+          <div className="text-xs text-violet-400/60 text-center md:text-right font-mono">
+            <p>© 2026 Astra Studio. All rights reserved.</p>
+            <p className="text-[11px] text-violet-500/60 mt-0.5">Next.js 16 · Remotion 4.0 · Faster-Whisper · FFmpeg</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
