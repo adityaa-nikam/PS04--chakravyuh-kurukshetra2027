@@ -11,7 +11,7 @@ export async function generateJson<T extends z.ZodType>(schema: T, input: unknow
   const previous = lane; let release!: () => void;
   lane = new Promise<void>(resolve => { release = resolve; });
   const queued = Date.now(); await previous;
-  try { return inferenceProvider() === "ollama" ? await generateOllamaJson(schema, input, system, maxTokens, context) : await openRouterJson(schema, input, system, maxTokens, context, Date.now() - queued); }
+  try { return (context.provider ?? inferenceProvider()) === "ollama" ? await generateOllamaJson(schema, input, system, maxTokens, context) : await openRouterJson(schema, input, system, maxTokens, context, Date.now() - queued); }
   finally { release(); }
 }
 const completionSchema = z.object({ model: z.string(), choices: z.array(z.object({ finish_reason: z.string().nullable(), message: z.object({ content: z.string().nullable().optional() }) })).min(1), usage: z.object({ prompt_tokens: z.number().optional(), completion_tokens: z.number().optional(), completion_tokens_details: z.object({ reasoning_tokens: z.number().optional() }).optional() }).optional() });

@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Local video deliverables and manual test artifacts
 /artifacts/
+
+# Unique live website-generated scripts; reviewed Block 05 fixtures stay tracked
+/app/api/video_gen/fixtures/block05/generated-*.script.json

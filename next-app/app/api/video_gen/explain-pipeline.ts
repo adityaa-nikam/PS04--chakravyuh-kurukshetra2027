@@ -24,6 +24,8 @@ const receiptSchema = z.strictObject({
   inferenceDiagnostics: z.array(z.unknown()).optional(), visualAttempts: z.array(z.unknown()).optional(), planningFailure: z.string().optional(), plannerModel: z.string().optional(), plannedAt: z.string().datetime().optional(),
 });
 type Dependencies = {
+  provider?: "ollama" | "openrouter";
+  model?: string;
   generateScript: (request: ScriptRequest, context?: InferenceContext) => Promise<ExplainerScript>;
   planVisuals: (storyboard: Storyboard, options?: PlanningOptions) => Promise<ModelVisualPlan>;
   render: typeof renderStoryboard;
@@ -38,7 +40,7 @@ export class PendingExplanation extends Error {
 export async function explain(input: ExplainOptions, overrides: Partial<Dependencies> = {}) {
   const options = explainOptionsSchema.parse(input);
   const deps: Dependencies = {
-    generateScript: (request, context) => generateExplainerScript(request, { live: true, visualPlanning: true, onDiagnostic: context?.onDiagnostic }),
+    generateScript: (request, context) => generateExplainerScript(request, { live: true, visualPlanning: true, onDiagnostic: context?.onDiagnostic, provider: context?.provider }),
     planVisuals: generateModelVisualPlan, render: renderStoryboard, requestsDirectory: path.resolve("artifacts/requests"), ...overrides,
   };
   let receiptPath = options.resume ? path.resolve(options.resume) : undefined;
@@ -50,7 +52,7 @@ export async function explain(input: ExplainOptions, overrides: Partial<Dependen
   const paths = outputPaths(request.topic, options.output ?? saved?.output);
   // Collision check before either model call, followed by authoritative locked check at publication.
   if (existsSync(paths.video) || existsSync(paths.metadata) || existsSync(paths.lock)) throw new Error(`Output already exists or is locked: ${paths.video}. Use --output with a fresh path.`);
-  console.info(saved ? "[explain] resuming_saved_script" : "[explain] generating_live_script", { model: saved?.model ?? inferenceModel() });
+  console.info(saved ? "[explain] resuming_saved_script" : "[explain] generating_live_script", { model: saved?.model ?? (deps.model ?? inferenceModel()) });
   const renderOptions = renderOptionsSchema.parse({ width: options.width ?? saved?.renderOptions?.width, height: options.height ?? saved?.renderOptions?.height, fps: options.fps ?? saved?.renderOptions?.fps, approveOverrun: options.approveOverrun });
   const explicitPath = options.visuals ? path.resolve(options.visuals) : saved?.visuals;
   const browser = options.browser ?? saved?.browser;
@@ -62,13 +64,13 @@ export async function explain(input: ExplainOptions, overrides: Partial<Dependen
       writeFileSync(receiptPath, JSON.stringify(saved, null, 2));
     }
   };
-  const script = explainerScriptSchema.parse(saved?.script ?? await deps.generateScript(request, { onDiagnostic }));
+  const script = explainerScriptSchema.parse(saved?.script ?? await deps.generateScript(request, { onDiagnostic, provider: deps.provider }));
   if (script.estimatedDurationSeconds !== request.durationSeconds) throw new Error("INVALID_OUTPUT: model's declared duration must equal the requested target. Retry generation; the duration policy was not changed.");
   const storyboard = buildStoryboard(script);
   if (!saved) {
     mkdirSync(deps.requestsDirectory, { recursive: true });
     receiptPath = path.join(mkdtempSync(path.join(deps.requestsDirectory, "request-")), "request.json");
-    saved = { version: 1, planner: actionMode ? "actions-v1" : "graph", request, script, provider: inferenceProvider(), inferenceDiagnostics, model: inferenceModel(), generatedAt: new Date().toISOString(), output: paths.video, renderOptions: { ...renderOptions, approveOverrun: false }, visuals: explicitPath, browser };
+    saved = { version: 1, planner: actionMode ? "actions-v1" : "graph", request, script, provider: deps.provider ?? inferenceProvider(), inferenceDiagnostics, model: (deps.model ?? inferenceModel()), generatedAt: new Date().toISOString(), output: paths.video, renderOptions: { ...renderOptions, approveOverrun: false }, visuals: explicitPath, browser };
     writeFileSync(receiptPath, JSON.stringify(saved, null, 2), { flag: "wx" });
   }
   if (storyboard.durationPolicy.classification === "requires_revision" && !options.approveOverrun) throw new PendingExplanation(receiptPath!, storyboard.durationPolicy.reason ?? "Generated narration exceeds the target.");
@@ -83,9 +85,9 @@ export async function explain(input: ExplainOptions, overrides: Partial<Dependen
   const reusedPlan = Boolean(saved.visualPlan);
   let visualPlan: ModelVisualPlan;
   try {
-    console.info(reusedPlan ? "[explain] reusing_saved_visual_plan" : "[explain] generating_live_visual_plan", { model: saved.plannerModel ?? inferenceModel() });
+    console.info(reusedPlan ? "[explain] reusing_saved_visual_plan" : "[explain] generating_live_visual_plan", { model: saved.plannerModel ?? (deps.model ?? inferenceModel()) });
     const planningOptions: PlanningOptions = {
-      completed: saved.completedScenes, onDiagnostic,
+      completed: saved.completedScenes, onDiagnostic, provider: deps.provider,
       onResponse: report => {
         const directory = path.join(path.dirname(receiptPath!), "diagnostics");
         mkdirSync(directory, { recursive: true });
@@ -121,7 +123,7 @@ export async function explain(input: ExplainOptions, overrides: Partial<Dependen
       if (saved.visualPlan && JSON.stringify(saved.visualPlan) !== JSON.stringify(visualPlan)) throw new Error("Saved action/render plans differ; use --replan --inspect.");
       saved = { ...saved, actionPlan: actions, completedActions: undefined };
     } else visualPlan = validateModelVisualPlan(saved.visualPlan ?? await deps.planVisuals(storyboard, planningOptions), storyboard);
-    saved = { ...saved, output: paths.video, renderOptions: { ...renderOptions, approveOverrun: false }, visuals: explicitPath, browser, visualPlan, completedScenes: undefined, planningFailure: undefined, inferenceDiagnostics, plannerProvider: saved.plannerProvider ?? (reusedPlan ? "ollama" : inferenceProvider()), plannerModel: saved.plannerModel ?? (reusedPlan ? saved.model : inferenceModel()), plannedAt: saved.plannedAt ?? new Date().toISOString() };
+    saved = { ...saved, output: paths.video, renderOptions: { ...renderOptions, approveOverrun: false }, visuals: explicitPath, browser, visualPlan, completedScenes: undefined, planningFailure: undefined, inferenceDiagnostics, plannerProvider: saved.plannerProvider ?? (reusedPlan ? "ollama" : (deps.provider ?? inferenceProvider())), plannerModel: saved.plannerModel ?? (reusedPlan ? saved.model : (deps.model ?? inferenceModel())), plannedAt: saved.plannedAt ?? new Date().toISOString() };
     // Only this internal receipt is updated; final deliverables remain exclusive.
     writeFileSync(receiptPath!, JSON.stringify(saved, null, 2));
     const explicit = explicitPath ? z.record(z.string(), z.unknown()).parse(JSON.parse(readFileSync(explicitPath, "utf8"))) : {};

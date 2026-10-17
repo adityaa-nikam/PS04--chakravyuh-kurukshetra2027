@@ -1,4 +1,28 @@
-# Current model: NVIDIA Nemotron 3 Super through OpenRouter
+# Block 09: authenticated local website jobs
+
+The homepage now submits disk-backed jobs to `POST /api/generate`, polls
+`GET /api/jobs/[id]`, and previews/downloads the finalized MP4 through
+`GET /api/jobs/[id]/video`. Failed jobs can explicitly resume saved checkpoints.
+These website jobs **force the existing local Ollama/Qwen provider** for script
+and visual planning, as requested in Block 09. The CLI's configured provider and
+the legacy script-only API's model defaults below remain unchanged.
+
+Configure a private `ASTRA_ACCESS_TOKEN` (24+ characters) in `.env.local` before
+using the site. All generation/status/video routes, including the older
+`/api/video_gen` endpoint, now require `Authorization: Bearer <server-token>`.
+This is a separate access token, never your model API key. Earlier unauthenticated
+curl examples below need this header. The default server binds loopback only;
+`npm run dev:lan` explicitly enables trusted LAN access.
+
+See [Block 09 setup and manual review](manual-block09-checks.md) for the inspected
+architecture, exact changed files, API contract, laptop/LAN configuration,
+fixture/log inspection, download/playback, and failure/recovery commands.
+Automated checks passed; no live inference or video render was performed for
+this integration. Manual website/LAN/video review is pending.
+
+---
+
+# Current CLI model: NVIDIA Nemotron 3 Super through OpenRouter
 
 The latest selected default is **`nvidia/nemotron-3-super-120b-a12b:free`**.
 This supersedes the earlier `openrouter/free` router selection described below.

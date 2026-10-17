@@ -1,6 +1,8 @@
+import { access, failure } from "../jobs/security";
 import { generateExplainerScript, ScriptGenerationError } from "./script-generator";
 
 export async function POST(request: Request) {
+  try { access(request); } catch (error) { return failure(request, error); }
   // Bound actual bytes even when Content-Length is absent or incorrect.
   const reader = request.body?.getReader();
   let body = "";

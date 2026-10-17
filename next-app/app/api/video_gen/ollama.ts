@@ -22,7 +22,7 @@ export type InferenceDiagnostic = {
   promptTokens?: number; loadMs?: number; promptEvalMs?: number; evalMs?: number;
   status: string; reason?: string; planningAttempt?: number;
 };
-export type InferenceContext = { stage?: "script" | "visual"; sceneId?: string; planningAttempt?: number; onDiagnostic?: (event: InferenceDiagnostic) => void; onResponse?: (report: OutputReport) => void };
+export type InferenceContext = { provider?: "ollama" | "openrouter"; stage?: "script" | "visual"; sceneId?: string; planningAttempt?: number; onDiagnostic?: (event: InferenceDiagnostic) => void; onResponse?: (report: OutputReport) => void };
 export function inferenceLimit(name: string, fallback: number, min: number, max: number) {
   const raw = process.env[name];
   const value = raw === undefined ? fallback : Number(raw);
