@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "filename": "videoplayback.mp4",
+    "duration_sec": 1491.185,
+    "audio_sample_rate": 44100,
+    "video_width": 640,
+    "video_height": 360,
+    "fps": 25.0
+  },
+  "start_sec": 901.6,
+  "end_sec": 943.86,
+  "duration_sec": 42.26,
+  "score": 67.05,
+  "reason": "defines core concept; explains mechanism",
+  "transcript_excerpt": "Why? Because, shuru, shuru, me, chise, asan, lakti, shuru, shuru, me, kele, koi, be programming language, seeking it. AVI series, sikna, jithna, hai, asan, lakti, hai, interest, vy, ata, shuru, shuru, me, hai, amara, motivation, vkavizadha, hai, hai, eutai. But, uscibat jesse, jesse, second, weak, me, ndarke, tenh, third, weak, ndarke, tenh, what is a difficult concept, start, otay? Mahapayame, ndar, the bhahd difficult jesse, ham, distracted, ham, distracted, jatthar, bhahapiyam, quit, karti, And the problem with quitting is His bad You can take the 100 days challenge. Up company is 100 days challenge, our initial 100 days.",
+  "score_breakdown": {
+    "information_value": 57.0,
+    "self_contained": 70.0,
+    "opening_hook": 70.0,
+    "ending_quality": 85.0,
+    "speech_density": 100.0,
+    "confidence": 49.48,
+    "duration_penalty": 0.73
+  },
+  "word_start_id": 1247,
+  "word_end_id": 1344,
+  "selection_method": "transcript_heuristic_v1"
+}

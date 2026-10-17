@@ -9,7 +9,7 @@ async function main() {
   if (!input) throw new Error("Usage: npm run render:storyboard -- storyboard.json [output.mp4] [--visuals specifications.json] [--approve-overrun] [--width 720] [--height 1280] [--fps 15] [--browser /usr/bin/google-chrome]");
   const options: RenderOptions = {};
   let visualSpecs: unknown = {};
-  let browser = process.env.REMOTION_BROWSER_EXECUTABLE || "/usr/bin/google-chrome";
+  let browser = process.env.REMOTION_BROWSER_EXECUTABLE || (process.platform === "win32" ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" : "/usr/bin/google-chrome");
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === "--visuals" && args[i + 1]) visualSpecs = JSON.parse(readFileSync(args[++i], "utf8"));

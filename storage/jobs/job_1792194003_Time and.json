@@ -1,0 +1,833 @@
+{
+  "job_id": "job_1792194003_Time and",
+  "created_at": 1792194003.3399515,
+  "status": "FAILED",
+  "progress_pct": 0,
+  "stage_message": "Error: Unknown composition_mode 'adaptive'. Must be one of: ['adaptive_hybrid', 'crop_only', 'presentation_fit_blur', 'content_only']",
+  "updated_at": 1792194043.253092,
+  "media_metadata": {
+    "filename": "Time and Space Complexity explained in literally 5 minutes _ Big O _ Concepts made simple ep -1.mp4.mp4",
+    "filepath": "D:\\softwares\\Time and Space Complexity explained in literally 5 minutes _ Big O _ Concepts made simple ep -1.mp4.mp4",
+    "duration_sec": 342.61,
+    "width": 640,
+    "height": 360,
+    "fps": 29.97,
+    "has_audio": true,
+    "audio_sample_rate": 44100,
+    "audio_channels": 2,
+    "video_codec": "h264",
+    "audio_codec": "aac"
+  },
+  "transcript_words": [
+    {
+      "word": "Time",
+      "start_abs_sec": 0.0,
+      "end_abs_sec": 0.26,
+      "confidence": 0.614,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "or",
+      "start_abs_sec": 0.26,
+      "end_abs_sec": 0.56,
+      "confidence": 0.898,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "space",
+      "start_abs_sec": 0.56,
+      "end_abs_sec": 0.9,
+      "confidence": 0.688,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "complexity",
+      "start_abs_sec": 0.9,
+      "end_abs_sec": 1.42,
+      "confidence": 0.982,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "can",
+      "start_abs_sec": 1.42,
+      "end_abs_sec": 1.86,
+      "confidence": 0.763,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "now",
+      "start_abs_sec": 1.86,
+      "end_abs_sec": 2.22,
+      "confidence": 0.088,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "make",
+      "start_abs_sec": 2.22,
+      "end_abs_sec": 2.52,
+      "confidence": 0.344,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "complexity.",
+      "start_abs_sec": 2.52,
+      "end_abs_sec": 3.22,
+      "confidence": 0.557,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "To",
+      "start_abs_sec": 3.78,
+      "end_abs_sec": 4.04,
+      "confidence": 0.337,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "urge,",
+      "start_abs_sec": 4.04,
+      "end_abs_sec": 4.32,
+      "confidence": 0.118,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "I",
+      "start_abs_sec": 4.78,
+      "end_abs_sec": 4.84,
+      "confidence": 0.137,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "will",
+      "start_abs_sec": 4.84,
+      "end_abs_sec": 4.92,
+      "confidence": 0.126,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "stop",
+      "start_abs_sec": 4.92,
+      "end_abs_sec": 5.18,
+      "confidence": 0.396,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "the",
+      "start_abs_sec": 5.18,
+      "end_abs_sec": 5.34,
+      "confidence": 0.127,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "video",
+      "start_abs_sec": 5.34,
+      "end_abs_sec": 5.52,
+      "confidence": 0.071,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "and",
+      "start_abs_sec": 5.52,
+      "end_abs_sec": 5.78,
+      "confidence": 0.086,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "make",
+      "start_abs_sec": 5.78,
+      "end_abs_sec": 5.84,
+      "confidence": 0.072,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "a",
+      "start_abs_sec": 5.84,
+      "end_abs_sec": 5.86,
+      "confidence": 0.341,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "simple",
+      "start_abs_sec": 5.86,
+      "end_abs_sec": 6.08,
+      "confidence": 0.715,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "video.",
+      "start_abs_sec": 6.08,
+      "end_abs_sec": 6.34,
+      "confidence": 0.315,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "I",
+      "start_abs_sec": 6.78,
+      "end_abs_sec": 6.86,
+      "confidence": 0.285,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "will",
+      "start_abs_sec": 6.86,
+      "end_abs_sec": 7.0,
+      "confidence": 0.58,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "stop",
+      "start_abs_sec": 7.0,
+      "end_abs_sec": 7.26,
+      "confidence": 0.111,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "the",
+      "start_abs_sec": 7.26,
+      "end_abs_sec": 7.26,
+      "confidence": 0.484,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "video",
+      "start_abs_sec": 7.26,
+      "end_abs_sec": 7.26,
+      "confidence": 0.854,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "and",
+      "start_abs_sec": 7.26,
+      "end_abs_sec": 7.26,
+      "confidence": 0.224,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "make",
+      "start_abs_sec": 7.26,
+      "end_abs_sec": 7.26,
+      "confidence": 0.15,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "a",
+      "start_abs_sec": 7.26,
+      "end_abs_sec": 7.26,
+      "confidence": 0.468,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "simple",
+      "start_abs_sec": 7.26,
+      "end_abs_sec": 7.34,
+      "confidence": 0.203,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "video.",
+      "start_abs_sec": 7.34,
+      "end_abs_sec": 7.8,
+      "confidence": 0.805,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "I",
+      "start_abs_sec": 8.5,
+      "end_abs_sec": 8.68,
+      "confidence": 0.263,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "will",
+      "start_abs_sec": 8.68,
+      "end_abs_sec": 9.14,
+      "confidence": 0.67,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "stop",
+      "start_abs_sec": 9.14,
+      "end_abs_sec": 9.98,
+      "confidence": 0.26,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "the",
+      "start_abs_sec": 9.98,
+      "end_abs_sec": 10.04,
+      "confidence": 0.565,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "video",
+      "start_abs_sec": 10.04,
+      "end_abs_sec": 11.56,
+      "confidence": 0.865,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "and",
+      "start_abs_sec": 11.56,
+      "end_abs_sec": 11.8,
+      "confidence": 0.36,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "make",
+      "start_abs_sec": 11.8,
+      "end_abs_sec": 11.96,
+      "confidence": 0.266,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "a",
+      "start_abs_sec": 11.96,
+      "end_abs_sec": 12.18,
+      "confidence": 0.535,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "simple",
+      "start_abs_sec": 12.18,
+      "end_abs_sec": 12.58,
+      "confidence": 0.056,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "video.",
+      "start_abs_sec": 12.58,
+      "end_abs_sec": 12.58,
+      "confidence": 0.844,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "I",
+      "start_abs_sec": 12.58,
+      "end_abs_sec": 12.58,
+      "confidence": 0.242,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "will",
+      "start_abs_sec": 12.58,
+      "end_abs_sec": 12.58,
+      "confidence": 0.78,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "stop",
+      "start_abs_sec": 12.58,
+      "end_abs_sec": 12.58,
+      "confidence": 0.424,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "the",
+      "start_abs_sec": 12.58,
+      "end_abs_sec": 12.58,
+      "confidence": 0.64,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "video",
+      "start_abs_sec": 12.58,
+      "end_abs_sec": 12.58,
+      "confidence": 0.877,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "and",
+      "start_abs_sec": 12.58,
+      "end_abs_sec": 12.58,
+      "confidence": 0.415,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "make",
+      "start_abs_sec": 12.58,
+      "end_abs_sec": 12.58,
+      "confidence": 0.442,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "a",
+      "start_abs_sec": 12.58,
+      "end_abs_sec": 12.58,
+      "confidence": 0.643,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "simple",
+      "start_abs_sec": 12.58,
+      "end_abs_sec": 12.74,
+      "confidence": 0.133,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "video.",
+      "start_abs_sec": 12.74,
+      "end_abs_sec": 12.94,
+      "confidence": 0.896,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "Hello",
+      "start_abs_sec": 13.18,
+      "end_abs_sec": 13.34,
+      "confidence": 0.058,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "everyone,",
+      "start_abs_sec": 13.34,
+      "end_abs_sec": 15.18,
+      "confidence": 0.828,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "my",
+      "start_abs_sec": 15.84,
+      "end_abs_sec": 15.9,
+      "confidence": 0.799,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "name",
+      "start_abs_sec": 15.9,
+      "end_abs_sec": 16.04,
+      "confidence": 0.996,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "is",
+      "start_abs_sec": 16.04,
+      "end_abs_sec": 16.2,
+      "confidence": 0.989,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "Ygjotsek.",
+      "start_abs_sec": 16.2,
+      "end_abs_sec": 16.64,
+      "confidence": 0.302,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "I",
+      "start_abs_sec": 17.06,
+      "end_abs_sec": 17.2,
+      "confidence": 0.989,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "am",
+      "start_abs_sec": 17.2,
+      "end_abs_sec": 17.3,
+      "confidence": 0.716,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "a",
+      "start_abs_sec": 17.3,
+      "end_abs_sec": 17.36,
+      "confidence": 0.942,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "software",
+      "start_abs_sec": 17.36,
+      "end_abs_sec": 17.52,
+      "confidence": 0.966,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "developer",
+      "start_abs_sec": 17.52,
+      "end_abs_sec": 17.88,
+      "confidence": 0.983,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "with",
+      "start_abs_sec": 17.88,
+      "end_abs_sec": 18.26,
+      "confidence": 0.947,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "an",
+      "start_abs_sec": 18.26,
+      "end_abs_sec": 18.36,
+      "confidence": 0.967,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "experience",
+      "start_abs_sec": 18.36,
+      "end_abs_sec": 18.66,
+      "confidence": 0.989,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "of",
+      "start_abs_sec": 18.66,
+      "end_abs_sec": 19.0,
+      "confidence": 0.992,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "3",
+      "start_abs_sec": 19.0,
+      "end_abs_sec": 19.18,
+      "confidence": 0.642,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "years.",
+      "start_abs_sec": 19.18,
+      "end_abs_sec": 19.36,
+      "confidence": 0.958,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "Welcome",
+      "start_abs_sec": 19.8,
+      "end_abs_sec": 20.04,
+      "confidence": 0.98,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "to",
+      "start_abs_sec": 20.04,
+      "end_abs_sec": 20.32,
+      "confidence": 0.985,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "GeeksforGeeks,",
+      "start_abs_sec": 20.32,
+      "end_abs_sec": 20.9,
+      "confidence": 0.918,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "the",
+      "start_abs_sec": 21.28,
+      "end_abs_sec": 21.38,
+      "confidence": 0.888,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "one",
+      "start_abs_sec": 21.38,
+      "end_abs_sec": 21.66,
+      "confidence": 0.891,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "-stop",
+      "start_abs_sec": 21.66,
+      "end_abs_sec": 21.84,
+      "confidence": 0.86,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "solution",
+      "start_abs_sec": 21.84,
+      "end_abs_sec": 22.14,
+      "confidence": 0.989,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "for",
+      "start_abs_sec": 22.14,
+      "end_abs_sec": 22.56,
+      "confidence": 0.986,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "all",
+      "start_abs_sec": 22.56,
+      "end_abs_sec": 22.92,
+      "confidence": 0.972,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "your",
+      "start_abs_sec": 22.92,
+      "end_abs_sec": 23.06,
+      "confidence": 0.929,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "coding",
+      "start_abs_sec": 23.06,
+      "end_abs_sec": 23.24,
+      "confidence": 0.991,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "-related",
+      "start_abs_sec": 23.24,
+      "end_abs_sec": 23.54,
+      "confidence": 0.79,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "problems.",
+      "start_abs_sec": 23.54,
+      "end_abs_sec": 23.84,
+      "confidence": 0.99,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "Subsiparit,",
+      "start_abs_sec": 24.34,
+      "end_abs_sec": 24.82,
+      "confidence": 0.333,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "Time",
+      "start_abs_sec": 25.08,
+      "end_abs_sec": 25.22,
+      "confidence": 0.275,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "Complexity,",
+      "start_abs_sec": 25.22,
+      "end_abs_sec": 25.84,
+      "confidence": 0.755,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "is",
+      "start_abs_sec": 25.84,
+      "end_abs_sec": 26.1,
+      "confidence": 0.124,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "an",
+      "start_abs_sec": 26.1,
+      "end_abs_sec": 26.54,
+      "confidence": 0.401,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "example",
+      "start_abs_sec": 26.54,
+      "end_abs_sec": 26.62,
+      "confidence": 0.986,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "of",
+      "start_abs_sec": 26.62,
+      "end_abs_sec": 26.9,
+      "confidence": 0.243,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "something.",
+      "start_abs_sec": 26.9,
+      "end_abs_sec": 27.12,
+      "confidence": 0.085,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "You",
+      "start_abs_sec": 27.12,
+      "end_abs_sec": 27.78,
+      "confidence": 0.019,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "will",
+      "start_abs_sec": 27.78,
+      "end_abs_sec": 27.94,
+      "confidence": 0.04,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "get",
+      "start_abs_sec": 27.94,
+      "end_abs_sec": 28.04,
+      "confidence": 0.032,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "your",
+      "start_abs_sec": 28.04,
+      "end_abs_sec": 28.14,
+      "confidence": 0.031,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "own",
+      "start_abs_sec": 28.14,
+      "end_abs_sec": 28.34,
+      "confidence": 0.096,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "results.",
+      "start_abs_sec": 28.34,
+      "end_abs_sec": 29.28,
+      "confidence": 0.004,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "You",
+      "start_abs_sec": 30.4,
+      "end_abs_sec": 30.68,
+      "confidence": 0.108,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "will",
+      "start_abs_sec": 30.68,
+      "end_abs_sec": 30.84,
+      "confidence": 0.564,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "be",
+      "start_abs_sec": 30.84,
+      "end_abs_sec": 30.88,
+      "confidence": 0.136,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "able",
+      "start_abs_sec": 30.88,
+      "end_abs_sec": 30.88,
+      "confidence": 0.456,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "to",
+      "start_abs_sec": 30.88,
+      "end_abs_sec": 31.4,
+      "confidence": 0.988,
+      "is_technical_term": false,
+      "term_id": null
+    },
+    {
+      "word": "learn",
+      "start_abs_sec": 31.4,
+      "end_abs_sec": 31.4,
+      "confidence": 0.007,
+      "is_technical_term": false,
+      "term_id": null
+    }
+  ],
+  "selected_highlight": {
+    "clip_id": "Time and Space Complexity explained in literally 5 minutes _ Big O _ Concepts made simple ep -1.mp4_hl",
+    "start_time_sec": 132.44,
+    "end_time_sec": 177.78,
+    "duration_sec": 45.34,
+    "pedagogical_score": 63.84,
+    "topic_summary": "To SMA time, Jada Lagiga, right? Abhayam is a tank complexity in Matlab Jitna. He algorithm keeps efficient in terms of ",
+    "boundary_reasoning": "includes illustrative example/analogy"
+  },
+  "error_message": "Unknown composition_mode 'adaptive'. Must be one of: ['adaptive_hybrid', 'crop_only', 'presentation_fit_blur', 'content_only']"
+}

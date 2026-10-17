@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "filename": "Time and Space Complexity explained in literally 5 minutes _ Big O _ Concepts made simple ep -1.mp4.mp4",
+    "duration_sec": 342.61,
+    "audio_sample_rate": 44100,
+    "video_width": 640,
+    "video_height": 360,
+    "fps": 29.97
+  },
+  "start_sec": 132.44,
+  "end_sec": 177.78,
+  "duration_sec": 45.34,
+  "score": 63.84,
+  "reason": "includes illustrative example/analogy",
+  "transcript_excerpt": "To SMA time, Jada Lagiga, right? Abhayam is a tank complexity in Matlab Jitna. He algorithm keeps efficient in terms of time. Java Musko run cartes. Time ke bard, Abham bard cartes, space ke. Imagine Kurotome gharjana hai, and Tumaripas do bage. Iqbada or Iqchota or Tume, saari zurvat kitchi zha pek karni. We can concept a chuskaroga. Obvious, we bid a bad code. Jisme zha dasama aana zhaiga. Space complexity is equals to Kitna time left hai. Then you concept, koding muoth hai hai. Space complexity, kamat wa hai ke aakka code. Kitri memory, yafa storage, jus kara. Agar Tume, Chota data store karni hai. Chota memory coffee hai. And Jai Agar Tume, zha dada data store karni hai, zha dada memory chayogi. Jaseki, kopan essential atel saknicale, barda bag chayogi. Koding muoth hai, saari zurvat karni hai.",
+  "score_breakdown": {
+    "information_value": 45.0,
+    "self_contained": 70.0,
+    "opening_hook": 70.0,
+    "ending_quality": 85.0,
+    "speech_density": 100.0,
+    "confidence": 43.58,
+    "duration_penalty": 0.09
+  },
+  "word_start_id": 484,
+  "word_end_id": 622,
+  "selection_method": "transcript_heuristic_v1"
+}

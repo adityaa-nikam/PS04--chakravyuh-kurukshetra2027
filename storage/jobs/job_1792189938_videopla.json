@@ -1,0 +1,9 @@
+{
+  "job_id": "job_1792189938_videopla",
+  "created_at": 1792189938.2478838,
+  "status": "FAILED",
+  "progress_pct": 0,
+  "stage_message": "Error: AudioExtractorService.extract_audio() got an unexpected keyword argument 'source_video_path'",
+  "updated_at": 1792189939.9906678,
+  "error_message": "AudioExtractorService.extract_audio() got an unexpected keyword argument 'source_video_path'"
+}
