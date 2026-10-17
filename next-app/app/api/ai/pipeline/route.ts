@@ -15,6 +15,8 @@ export async function POST(req: NextRequest) {
     const contentType = req.headers.get("content-type") || "";
 
     let videoPath = "";
+    let youtubeUrl = "";
+    let downloadQuality: "360p" | "480p" | "720p" | "1080p" = "360p";
     let renderVideo = true;
     let subtitles = true;
     let captionStyle: "karaoke" | "minimal" | "bold" | "neon" = "karaoke";
@@ -27,7 +29,11 @@ export async function POST(req: NextRequest) {
       const formData = await req.formData();
       const file = formData.get("file") as File | null;
       const pathParam = formData.get("videoPath") as string | null;
+      const ytParam = (formData.get("youtubeUrl") || formData.get("youtube_url")) as string | null;
+      const qualParam = (formData.get("downloadQuality") || formData.get("download_quality")) as string | null;
 
+      if (ytParam) youtubeUrl = ytParam.trim();
+      if (qualParam && ["360p", "480p", "720p", "1080p"].includes(qualParam)) downloadQuality = qualParam as any;
       if (formData.has("renderVideo")) renderVideo = formData.get("renderVideo") === "true";
       if (formData.has("subtitles")) subtitles = formData.get("subtitles") === "true";
       if (formData.has("captionStyle")) captionStyle = formData.get("captionStyle") as any;
@@ -57,6 +63,11 @@ export async function POST(req: NextRequest) {
     } else {
       const body = await req.json();
       videoPath = body.videoPath || body.video_path || "";
+      youtubeUrl = body.youtubeUrl || body.youtube_url || "";
+      if (body.downloadQuality || body.download_quality) {
+        const q = body.downloadQuality || body.download_quality;
+        if (["360p", "480p", "720p", "1080p"].includes(q)) downloadQuality = q;
+      }
       if (body.renderVideo !== undefined) renderVideo = body.renderVideo;
       if (body.subtitles !== undefined) subtitles = body.subtitles;
       if (body.captionStyle) captionStyle = body.captionStyle;
@@ -68,15 +79,17 @@ export async function POST(req: NextRequest) {
       else if (body.max_clips !== undefined) maxClips = Math.max(1, Math.min(10, Number(body.max_clips) || 3));
     }
 
-    if (!videoPath) {
+    if (!videoPath && !youtubeUrl) {
       return NextResponse.json(
-        { error: "videoPath or file upload is required." },
+        { error: "videoPath, youtubeUrl, or file upload is required." },
         { status: 400 }
       );
     }
 
     const job = await PipelineClient.startPipelineJob({
-      videoPath,
+      videoPath: videoPath || undefined,
+      youtubeUrl: youtubeUrl || undefined,
+      downloadQuality,
       renderVideo,
       subtitles,
       captionStyle,

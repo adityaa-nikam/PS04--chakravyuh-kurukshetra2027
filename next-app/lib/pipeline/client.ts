@@ -6,7 +6,9 @@
 const AI_WORKER_URL = process.env.AI_WORKER_URL || "http://127.0.0.1:8000";
 
 export interface PipelineStartParams {
-  videoPath: string;
+  videoPath?: string;
+  youtubeUrl?: string;
+  downloadQuality?: "360p" | "480p" | "720p" | "1080p";
   renderVideo?: boolean;
   subtitles?: boolean;
   captionStyle?: "karaoke" | "minimal" | "bold" | "neon";
@@ -37,6 +39,8 @@ export interface PipelineJobStatus {
   job_id: string;
   status:
     | "PENDING"
+    | "DOWNLOADING"
+    | "INGESTING"
     | "EXTRACTING_AUDIO"
     | "TRANSCRIBING"
     | "NORMALIZING_TERMS"
@@ -49,6 +53,12 @@ export interface PipelineJobStatus {
   stage_message: string;
   created_at: number;
   updated_at: number;
+  youtube_metadata?: {
+    title?: string;
+    id?: string;
+    duration?: number;
+    quality?: string;
+  };
   media_metadata?: {
     filename: string;
     filepath: string;
@@ -88,7 +98,9 @@ export class PipelineClient {
    */
   static async startPipelineJob(params: PipelineStartParams) {
     const payload = {
-      video_path: params.videoPath,
+      video_path: params.videoPath || undefined,
+      youtube_url: params.youtubeUrl || undefined,
+      download_quality: params.downloadQuality || "360p",
       render_video: params.renderVideo ?? true,
       subtitles: params.subtitles ?? true,
       caption_style: params.captionStyle ?? "karaoke",

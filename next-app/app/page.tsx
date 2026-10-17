@@ -7,6 +7,8 @@ import { PipelineRenderedClip } from "@/lib/pipeline/client";
 type StageStep =
   | "idle"
   | "submitting"
+  | "DOWNLOADING"
+  | "INGESTING"
   | "EXTRACTING_AUDIO"
   | "TRANSCRIBING"
   | "NORMALIZING_TERMS"
@@ -1150,6 +1152,7 @@ export default function AIStudioPage() {
                     { key: "REMOTION_RENDER", label: "5. Chrome 9:16" },
                   ]
                 : [
+                    { key: "DOWNLOADING", label: "0. YT Stream" },
                     { key: "EXTRACTING_AUDIO", label: "1. Audio Extract" },
                     { key: "TRANSCRIBING", label: "2. GPU Whisper" },
                     { key: "SELECTING_MOMENT", label: "3. Best Highlight" },
@@ -1177,7 +1180,7 @@ export default function AIStudioPage() {
                       (idx === 2 && pipelineStage === "REMOTION_BUNDLE") ||
                       (idx === 3 && pipelineStage === "REMOTION_BUNDLE") ||
                       (idx === 4 && pipelineStage === "REMOTION_RENDER")
-                    : pipelineStage === st.key;
+                    : pipelineStage === st.key || (st.key === "DOWNLOADING" && pipelineStage === "INGESTING");
 
                 const isDone =
                   pipelineStage === "COMPLETED" ||
@@ -1185,10 +1188,12 @@ export default function AIStudioPage() {
                     ? remotionStepIdx > idx
                     : (pipelineStage === "RENDERING_VIDEO" && st.key !== "RENDERING_VIDEO") ||
                       (pipelineStage === "PLANNING_CROPS" &&
-                        ["EXTRACTING_AUDIO", "TRANSCRIBING", "SELECTING_MOMENT"].includes(st.key)) ||
+                        ["DOWNLOADING", "INGESTING", "EXTRACTING_AUDIO", "TRANSCRIBING", "SELECTING_MOMENT"].includes(st.key)) ||
                       (pipelineStage === "SELECTING_MOMENT" &&
-                        ["EXTRACTING_AUDIO", "TRANSCRIBING"].includes(st.key)) ||
-                      (pipelineStage === "TRANSCRIBING" && st.key === "EXTRACTING_AUDIO"));
+                        ["DOWNLOADING", "INGESTING", "EXTRACTING_AUDIO", "TRANSCRIBING"].includes(st.key)) ||
+                      (pipelineStage === "TRANSCRIBING" && ["DOWNLOADING", "INGESTING", "EXTRACTING_AUDIO"].includes(st.key)) ||
+                      (pipelineStage === "EXTRACTING_AUDIO" && ["DOWNLOADING", "INGESTING"].includes(st.key)) ||
+                      (pipelineStage === "INGESTING" && st.key === "DOWNLOADING"));
 
                 return (
                   <div

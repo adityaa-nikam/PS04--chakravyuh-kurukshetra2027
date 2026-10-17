@@ -32,6 +32,7 @@ from app.services.highlight_selector import HighlightSelectorService
 from app.services.crop_planner import CropPlannerService
 from app.services.caption_generator import CaptionGeneratorService, CaptionOptions
 from app.services.video_renderer import VideoRendererService, RenderOptions
+from app.services.youtube_downloader import YoutubeDownloaderService
 
 # Configure logging
 logging.basicConfig(
@@ -66,7 +67,9 @@ job_store: Dict[str, Dict[str, Any]] = {}
 # ============================================================================
 
 class PipelineStartRequest(BaseModel):
-    video_path: str = Field(..., description="Path to the input video file (.mp4, .mkv)")
+    video_path: Optional[str] = Field(None, description="Path to the input video file (.mp4, .mkv)")
+    youtube_url: Optional[str] = Field(None, description="Direct YouTube video URL or ID to download and ingest.")
+    download_quality: str = Field("360p", description="YouTube download quality: '360p', '480p', '720p', '1080p'. Default 360p.")
     job_id: Optional[str] = Field(None, description="Optional custom job ID. Generated if omitted.")
     render_video: bool = Field(True, description="Whether to render the final vertical reel MP4.")
     subtitles: bool = Field(True, description="Whether to burn in synchronized captions.")
@@ -145,26 +148,68 @@ def update_job_status(
 
 def execute_pipeline_worker(
     job_id: str,
-    video_path_str: str,
-    render_video: bool,
-    subtitles: bool,
-    caption_style: str,
-    composition_mode: str,
-    model_size: str,
+    video_path_str: Optional[str] = None,
+    render_video: bool = True,
+    subtitles: bool = True,
+    caption_style: str = "karaoke",
+    composition_mode: str = "adaptive_hybrid",
+    model_size: str = "base.en",
     max_clips: int = 3,
+    youtube_url: Optional[str] = None,
+    download_quality: str = "360p",
 ) -> None:
     """Executes the full AI pipeline asynchronously in a background thread."""
     start_time = time.time()
-    video_path = Path(video_path_str).resolve()
 
     try:
-        # Resolve path if relative to workspace storage/raw
-        if not video_path.exists():
-            alt_path = settings.RAW_DIR / Path(video_path_str).name
-            if alt_path.exists():
-                video_path = alt_path
-            else:
-                raise FileNotFoundError(f"Source video file not found at: {video_path_str}")
+        # Check if input is a YouTube URL or explicit youtube_url parameter
+        target_yt = youtube_url or (video_path_str if video_path_str and YoutubeDownloaderService.is_youtube_url(video_path_str) else None)
+
+        if target_yt:
+            update_job_status(
+                job_id,
+                "DOWNLOADING",
+                3,
+                f"Connecting to YouTube stream ({download_quality})...",
+            )
+
+            def _dl_progress(pct: float, msg: str):
+                # Scale download progress to 3% - 15% of pipeline
+                overall = int(3 + (pct / 100.0) * 12)
+                update_job_status(job_id, "DOWNLOADING", overall, msg)
+
+            dl_result = YoutubeDownloaderService.download_video(
+                url_or_id=target_yt,
+                output_dir=settings.RAW_DIR,
+                quality=download_quality,
+                progress_callback=_dl_progress,
+            )
+            video_path = dl_result["filepath"]
+            video_title = dl_result.get("title", "YouTube Video")
+            update_job_status(
+                job_id,
+                "INGESTING",
+                15,
+                f"YouTube stream ready ({download_quality}). Ingesting '{video_title}' for AI analysis...",
+                {
+                    "youtube_metadata": {
+                        "title": video_title,
+                        "id": dl_result.get("id"),
+                        "duration": dl_result.get("duration"),
+                        "quality": download_quality,
+                    }
+                }
+            )
+        else:
+            if not video_path_str:
+                raise ValueError("Neither video_path nor youtube_url was supplied.")
+            video_path = Path(video_path_str).resolve()
+            if not video_path.exists():
+                alt_path = settings.RAW_DIR / Path(video_path_str).name
+                if alt_path.exists():
+                    video_path = alt_path
+                else:
+                    raise FileNotFoundError(f"Source video file not found at: {video_path_str}")
 
         stem = video_path.stem
 
@@ -459,8 +504,18 @@ def root():
 @app.post("/api/v1/pipeline/start", status_code=status.HTTP_202_ACCEPTED, response_model=PipelineStartResponse)
 def start_pipeline_job(request: PipelineStartRequest, background_tasks: BackgroundTasks):
     """Starts the full Reel Studio AI pipeline in the background."""
-    job_id = request.job_id or f"job_{int(time.time())}_{Path(request.video_path).stem[:8]}"
-    
+    if not request.video_path and not request.youtube_url:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Either video_path or youtube_url must be provided."
+        )
+
+    yt_id = YoutubeDownloaderService.extract_video_id(
+        request.youtube_url or (request.video_path if request.video_path and YoutubeDownloaderService.is_youtube_url(request.video_path) else "")
+    )
+    stem_prefix = f"yt_{yt_id}" if yt_id else (Path(request.video_path).stem[:8] if request.video_path else "job")
+    job_id = request.job_id or f"job_{int(time.time())}_{stem_prefix}"
+
     # Initialize pending record
     update_job_status(job_id, "PENDING", 0, "Job received, initializing background execution...")
 
@@ -475,6 +530,8 @@ def start_pipeline_job(request: PipelineStartRequest, background_tasks: Backgrou
         composition_mode=request.composition_mode,
         model_size=request.model_size,
         max_clips=request.max_clips,
+        youtube_url=request.youtube_url,
+        download_quality=request.download_quality,
     )
 
     return PipelineStartResponse(
