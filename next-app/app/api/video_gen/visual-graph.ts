@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const iconSchema = z.enum(["leaf", "sun", "water", "gas", "sugar", "chip", "memory", "fetch", "decode", "execute", "force", "item", "browser", "server", "document", "database"]);
+export const iconSchema = z.enum(["leaf", "sun", "water", "gas", "sugar", "chip", "memory", "fetch", "decode", "execute", "force", "item", "browser", "server", "document", "database", "book", "search", "model", "vector-store", "query", "resolver", "graphql", "json", "xml", "question", "answer", "pages", "index"]);
 export const graphActionStructureSchema = z.strictObject({
   kind: z.enum(["reveal", "highlight", "hide", "transfer"]),
   target: z.string().min(1).max(66),
@@ -14,7 +14,7 @@ export const recordExampleStructureSchema = z.strictObject({
 });
 export const recordExampleSchema = recordExampleStructureSchema.refine(e => new Set(e.fields.map(f => f.key)).size === e.fields.length, "Example keys must be unique.");
 export const graphStructureSchema = z.strictObject({
-  topic: z.enum(["photosynthesis", "cpu", "general"]),
+  topic: z.enum(["photosynthesis", "cpu", "general", "rag", "graphql", "book", "json", "xml"]),
   layout: z.enum(["flow", "sequence", "cycle", "comparison", "cause", "bars", "overview"]),
   nodes: z.array(z.strictObject({
     id: z.string().regex(/^[a-z][a-z0-9-]{0,31}$/),
@@ -58,12 +58,32 @@ export function graphPositions(graph: VisualGraph) {
     if (graph.layout === "flow") {
       const peers = graph.nodes.filter(p => p.role === n.role).length;
       const row = counts[n.role]++;
-      return { x: n.role === "input" ? 95 : n.role === "output" ? 545 : 320, y: 250 + (row - (peers - 1) / 2) * 160 };
+      return { x: n.role === "input" ? 95 : n.role === "output" ? 545 : 320, y: peers === 3 ? 50 + row * 172 : peers === 2 ? 164 + row * 172 : 250 };
     }
     if (graph.layout === "comparison") return { x: 170 + i * 300, y: 245 };
     if (graph.layout === "bars") return { x: 90, y: 90 + i * (360 / Math.max(1, graph.nodes.length - 1)) };
     if (graph.nodes.length <= 3) return { x: 320, y: graph.nodes.length === 1 ? 260 : 70 + i * (330 / Math.max(1, graph.nodes.length - 1)) };
-    return { x: i % 2 === 0 ? 170 : 470, y: 70 + Math.floor(i / 2) * 165 };
+    return { x: i % 2 === 0 ? 170 : 470, y: 50 + Math.floor(i / 2) * 172 };
+  });
+}
+
+// Labels get the space available in their actual layout, rather than the same
+// narrow box for a single-column diagram and a three-column flow.
+export function graphNodeLayouts(graph: VisualGraph) {
+  const positions = graphPositions(graph);
+  const fixed = ["flow", "comparison", "bars"].includes(graph.layout);
+  const dense = !fixed && graph.nodes.length > 3;
+  return positions.map((p, index) => {
+    const compact = dense || graph.layout === "flow" && graph.nodes.filter(n => n.role === graph.nodes[index].role).length > 1;
+    const width = graph.layout === "bars" ? 500 : dense || graph.layout === "comparison" ? 244 : graph.layout === "flow" ? 190 : 480;
+    return {
+      ...p, symbolScale: compact ? 0.74 : 1,
+      label: {
+        x: graph.layout === "bars" ? 75 : p.x - width / 2,
+        y: graph.layout === "bars" ? p.y - 22 : p.y + (compact ? 44 : 56),
+        width, height: dense || graph.layout === "flow" || graph.layout === "comparison" ? 78 : 60,
+      },
+    };
   });
 }
 

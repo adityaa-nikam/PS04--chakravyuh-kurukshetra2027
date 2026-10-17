@@ -1,21 +1,26 @@
 import type { ActionEvidence } from "./action-catalog";
-import { mkdtempSync, rmSync, existsSync } from "node:fs";
+import { mkdtempSync, rmSync, existsSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { outputPaths, reserveOutput, publishOutput } from "./output-path";
 import { prepareRender, type RenderOptions, type RenderPlan } from "./render-plan";
+import { prepareLocalNarration, muxLocalNarration } from "./local-narration";
+import { runRenderWorker } from "./render-worker";
 
 export type VideoEncoder = (plan: RenderPlan, temporaryVideo: string, workDirectory: string, browser: string) => Promise<void>;
 const encodeRemotion: VideoEncoder = async (plan, output, directory, browser) => {
   if (!existsSync(browser)) throw new Error("Browser not found; set REMOTION_BROWSER_EXECUTABLE or --browser to an installed Chrome binary. Nothing is downloaded.");
-  const [{ bundle }, { selectComposition, renderMedia }] = await Promise.all([import("@remotion/bundler"), import("@remotion/renderer")]);
   const entryPoint = existsSync(path.resolve("app/api/video_gen/remotion/index.tsx"))
     ? path.resolve("app/api/video_gen/remotion/index.tsx")
     : path.resolve("next-app/app/api/video_gen/remotion/index.tsx");
-  const serveUrl = await bundle({ entryPoint, outDir: path.join(directory, "bundle"), webpackOverride: config => ({ ...config, cache: false }) });
-  const inputProps = { plan };
-  const composition = await selectComposition({ serveUrl, id: "Explainer", inputProps, browserExecutable: browser, chromeMode: "chrome-for-testing" });
-  await renderMedia({ composition, serveUrl, inputProps, browserExecutable: browser, chromeMode: "chrome-for-testing", codec: "h264", pixelFormat: "yuv420p", outputLocation: output, concurrency: 1, muted: true });
+  const audio = await prepareLocalNarration(plan, directory);
+  // Remotion encodes the visual track; FFmpeg attaches complete scene speech
+  // before publishOutput can expose the final MP4.
+  const visualOutput = audio ? path.join(directory, "silent.mp4") : output;
+  const job = path.join(directory, "render-job.json");
+  writeFileSync(job, JSON.stringify({ plan, output: visualOutput, directory, browser, entryPoint }), { mode: 0o600 });
+  await runRenderWorker([job]);
+  if (audio) await muxLocalNarration(plan, audio, visualOutput, output);
 };
 
 export async function renderStoryboard(input: unknown, options: RenderOptions = {}, specifications: unknown = {}, requestedOutput?: string,

@@ -1,12 +1,15 @@
 import React from "react";
 import type { VisualScene } from "../visual-plan";
-import { graphMotion, graphPositions, plannedMotion, recordRepresentations, type GraphNode } from "../visual-graph";
+import { graphMotion, graphPositions, graphNodeLayouts, plannedMotion, recordRepresentations, type GraphNode } from "../visual-graph";
 import { FitText } from "./FitText";
+import { PlantVisual, plantRoutes } from "./PlantVisual";
 import { RecordComparison } from "./RecordComparison";
+import { TechSymbol, techSymbolIcons } from "./TechSymbols";
 const cyan = "#63e4ec", gold = "#ffcc66";
 
 // Authored symbols only. Source strings never become tag names, paths, or styles.
 function Symbol({ icon, phase }: { icon: GraphNode["icon"]; phase: number }) {
+  if (techSymbolIcons.has(icon)) return <TechSymbol icon={icon} phase={phase} />;
   switch (icon) {
     case "leaf": return <g data-component="leaf"><path d="M-42 26 Q-55 -46 45 -39 Q55 25 -42 26Z" fill="#286c4a" stroke="#8aefad" strokeWidth="4" /><path d="M-45 36 L29 -24 M-11 8 L-22 -16 M9 -9 L30 5" stroke="#8aefad" strokeWidth="3" /></g>;
     case "sun": return <g data-component="sun"><circle r="23" fill={gold} />{Array.from({ length: 8 }, (_, i) => <path key={i} d="M0 -32 V-43" stroke={gold} strokeWidth="4" transform={`rotate(${i * 45})`} />)}</g>;
@@ -26,8 +29,10 @@ function Symbol({ icon, phase }: { icon: GraphNode["icon"]; phase: number }) {
 export function GraphVisual({ visual, frame, fps, scale, durationInFrames = 180 }: { visual: VisualScene; frame: number; fps: number; scale: number; durationInFrames?: number }) {
   if (visual.renderer !== "graph") return null;
   const graph = visual.graph;
+  if (graph.topic === "photosynthesis" && graph.layout === "flow" && graph.nodes.some(n => n.id === "plant") && graph.nodes.every(n => ["plant", "sunlight", "water", "carbon-dioxide", "sugar", "oxygen"].includes(n.id)) && graph.edges.every(e => Object.hasOwn(plantRoutes, `${e.from}->${e.to}`))) return <PlantVisual visual={visual} frame={frame} durationInFrames={durationInFrames} scale={scale} />;
   if (graph.example && graph.comparisonFocus) return <RecordComparison graph={graph} sceneId={visual.sceneId} frame={frame} durationInFrames={durationInFrames} scale={scale} />;
   const positions = graphPositions(graph);
+  const nodeLayouts = graphNodeLayouts(graph);
   const bar = graph.layout === "bars";
   const motion = (id: string, i: number) => {
     const fallback = graphMotion(frame, fps, i);
@@ -65,8 +70,10 @@ export function GraphVisual({ visual, frame, fps, scale, durationInFrames = 180 
         const b = positions[graph.nodes.findIndex(n => n.id === edge.to)];
         const m = motion(`${edge.from}->${edge.to}`, i + 1);
         const angle = Math.atan2(b.y - a.y, b.x - a.x);
-        const start = { x: a.x + Math.cos(angle) * 73, y: a.y + Math.sin(angle) * 73 };
-        const end = { x: b.x - Math.cos(angle) * 73, y: b.y - Math.sin(angle) * 73 };
+        const fromScale = nodeLayouts[graph.nodes.findIndex(n => n.id === edge.from)].symbolScale;
+        const toScale = nodeLayouts[graph.nodes.findIndex(n => n.id === edge.to)].symbolScale;
+        const start = { x: a.x + Math.cos(angle) * 73 * fromScale, y: a.y + Math.sin(angle) * 73 * fromScale };
+        const end = { x: b.x - Math.cos(angle) * 73 * toScale, y: b.y - Math.sin(angle) * 73 * toScale };
         const returning = edge.meaning === "cycle";
         const path = returning ? `M${a.x + 75} ${a.y} Q635 ${a.y} 600 260 Q635 ${b.y} ${b.x + 75} ${b.y}` : `M${start.x} ${start.y} L${end.x} ${end.y}`;
         return <g key={`${edge.from}-${edge.to}`} data-component="connection" data-meaning={edge.meaning} opacity={m.reveal}>
@@ -82,8 +89,12 @@ export function GraphVisual({ visual, frame, fps, scale, durationInFrames = 180 
           return <g key={n.id} data-component="data-bar" opacity={m.reveal}><path d={`M80 ${p.y + 45} H580`} stroke="#284352" strokeWidth="25" /><path d={`M80 ${p.y + 45} h${v.value / 100 * 500 * m.reveal}`} stroke={i % 2 ? gold : cyan} strokeWidth="25" /></g>;
         }
         return <g key={n.id} transform={`translate(${p.x} ${p.y})`} opacity={m.reveal}>
-          <rect x="-70" y="-50" width="140" height="100" rx={graph.layout === "comparison" ? 8 : 28} fill="#123040" stroke={m.highlight ? gold : n.role === "core" ? "#8aefad" : "#31576b"} strokeWidth="2" />
+          <g transform={`scale(${nodeLayouts[i].symbolScale})`}>
+          {techSymbolIcons.has(n.icon)
+            ? <ellipse rx={64} ry={54} fill="#123040" stroke={m.highlight ? gold : "none"} strokeWidth={2} />
+            : <rect x="-70" y="-50" width="140" height="100" rx={graph.layout === "comparison" ? 8 : 28} fill="#123040" stroke={m.highlight ? gold : n.role === "core" ? "#8aefad" : "#31576b"} strokeWidth="2" />}
           <Symbol icon={n.icon} phase={m.packet} />
+          </g>
         </g>;
       })}
     </svg>
@@ -95,9 +106,9 @@ export function GraphVisual({ visual, frame, fps, scale, durationInFrames = 180 
       </div>;
     })}
     {graph.nodes.map((n, i) => {
-      const p = positions[i], m = motion(n.id, i);
+      const box = nodeLayouts[i].label, m = motion(n.id, i);
       const value = graph.values.find(v => v.nodeId === n.id);
-      return <div key={n.id} style={{ position: "absolute", left: `${(bar ? 75 : p.x - 86) / 640 * 100}%`, top: `${(bar ? p.y - 22 : p.y + 52) / 520 * 100}%`, width: `${(bar ? 500 : 172) / 640 * 100}%`, height: `${(graph.layout === "flow" ? 56 : 60) / 520 * 100}%`, textAlign: bar ? "left" : "center", opacity: m.reveal }}>
+      return <div key={n.id} data-node-label={n.id} style={{ position: "absolute", left: `${box.x / 640 * 100}%`, top: `${box.y / 520 * 100}%`, width: `${box.width / 640 * 100}%`, height: `${box.height / 520 * 100}%`, textAlign: bar ? "left" : "center", opacity: m.reveal }}>
         <FitText text={value ? `${n.label}: ${value.value}%` : n.label} sceneId={visual.sceneId} role="label" scale={scale} preferredSize={23 * scale} minimumSize={Math.max(16, 20 * scale)} />
       </div>;
     })}

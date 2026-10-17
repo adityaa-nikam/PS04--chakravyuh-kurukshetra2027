@@ -1,4 +1,84 @@
+# Local narration and plant illustration
+
+Final exports now use local Piper narration by default. OpenRouter still handles
+script and visual planning. Piper runs on CPU with one voice loaded per render;
+no speech API key or paid speech service is used. It speaks the complete validated
+scene narration and measures each WAV with ffprobe. Scene allocations retain their
+existing reading time and extend if speech plus a 350ms pause needs more frames.
+An extension requires the existing `--approve-overrun` approval. The final MP4
+contains H.264 video and AAC audio; a speech failure prevents publication rather
+than silently exporting without narration. Existing MP4s are unchanged.
+
+Initial setup from `next-app` (installed locally for this workspace):
+
+```sh
+python3 -m venv .venv-tts
+.venv-tts/bin/pip install piper-tts==1.4.2
+.venv-tts/bin/python -m piper.download_voices en_US-lessac-medium --data-dir artifacts/voices
+```
+
+`PIPER_PYTHON` and `PIPER_MODEL` may override the executable and ONNX paths.
+`VIDEO_GEN_TTS=off` explicitly requests a silent export; the default is `piper`.
+FFmpeg and ffprobe must be available. Include `piper-worker.py` and the local
+voice/environment in deployments. See [Piper installation and voices](https://github.com/OHF-Voice/piper1-gpl/blob/main/docs/CLI.md).
+
+Photosynthesis flow plans now use `remotion/PlantVisual.tsx`: a full plant with
+leaves, stem and roots, stable resource positions, and authored transport routes.
+Only source-backed graph edges enable movement. Water travels through roots and
+stem; light reaches the leaf; product paths lead out from the plant. Labels remain
+visible after introduction. Unsupported/negated relationships add no transfer.
+Other subjects keep their existing renderers. This does not invent new teaching
+steps or replace the saved script; a short saved script still has few scenes.
+
+Offline verification: `npm run test:animation` and `npm run test:tech`.
+Manual review of the latest saved photosynthesis request, without any model call:
+
+```sh
+npm run explain -- --resume artifacts/requests/request-y7KAtY/request.json --approve-overrun --output artifacts/videos/photosynthesis-local-voice-review/final.mp4
+node app/api/video_gen/inspect-render.mjs artifacts/videos/photosynthesis-local-voice-review/final.mp4 artifacts/tests/photosynthesis-local-voice-review --progress
+ffplay -autoexit artifacts/videos/photosynthesis-local-voice-review/final.mp4
+```
+
+Review every scene for readable labels, visible inputs/products, source-correct
+transfer direction, full narration, pauses, and scene changes after the spoken
+sentence. No live OpenRouter call or explainer MP4 render was run for this change.
+
 # Active configuration: OpenRouter for script and all visual planning
+
+The [technical component library](./TECH_COMPONENT_LIBRARY.md) adds reusable RAG,
+GraphQL, book, JSON and XML illustrations alongside the existing subjects. It
+documents the saved components, supported prompt semantics, inspection/render
+commands, limits and extension process. Run `npm run test:tech` for its offline
+tests; all generation stages continue to use the configured OpenRouter provider.
+
+The compact visual-action planner now supports `subject_scene` for physical
+bridges, photosynthesis and CPU instructions. These choices reuse the authored
+bridge/plant/processor graphics from the earlier Block 05 videos. The model is
+given only the subjects supported by the scene's narration/title; a generic
+overview response is retried when a supported illustration is available.
+Illustration directions alone cannot enable a subject or factual relationship.
+Source-backed graph connections receive ordered transfer animations and retain
+the existing model-plan/render-plan evidence and uncertainty validation.
+XML/JSON comparisons retain their dedicated progressive record animation.
+New requests can use these choices immediately. Complete saved plans are replayed
+unchanged; to improve an older plan, explicitly fork it with:
+
+```sh
+npm run explain -- --resume artifacts/requests/request-ID/request.json --visual-actions --replan --inspect --output artifacts/videos/subject-review/final.mp4
+```
+
+This uses OpenRouter for visual planning only and preserves the saved narration.
+Review the new receipt and resolved plan before rendering. Unknown subjects remain
+honest conceptual overviews until an authored illustration is available.
+
+Rendering now runs in `remotion-worker.mjs`, launched by `render-worker.ts` with a
+private validated job file and a separate child environment. Console Ninja entries
+are removed from `LD_PRELOAD`, and inherited `NODE_OPTIONS` bootstrap hooks are
+omitted for this child only. The Next server's environment is unchanged. This
+prevents Node-only native hooks from reaching `setpriv`, Chrome and the encoder.
+The worker reuses one browser for composition selection and rendering and closes
+it on completion/failure. Existing output locks/publication/cleanup still apply.
+The worker source must be included alongside the application when deploying.
 
 Use the existing OpenRouter configuration for both the website and CLI. Script,
 graph-plan and compact-action generation all use `inference.ts`; no Ollama process
