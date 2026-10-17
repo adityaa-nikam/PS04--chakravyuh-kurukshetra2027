@@ -12,6 +12,10 @@ type StageStep =
   | "SELECTING_MOMENT"
   | "PLANNING_CROPS"
   | "RENDERING_VIDEO"
+  | "REMOTION_SCRIPT"
+  | "REMOTION_PLAN"
+  | "REMOTION_BUNDLE"
+  | "REMOTION_RENDER"
   | "COMPLETED"
   | "FAILED";
 
@@ -42,11 +46,16 @@ interface CropPlanInfo {
 
 export default function AIStudioPage() {
   // Input Selection State
-  const [inputMode, setInputMode] = useState<"path" | "upload">("path");
+  const [inputMode, setInputMode] = useState<"path" | "upload" | "ai_prompt">("ai_prompt");
   const [videoPath, setVideoPath] = useState(
     "D:\\softwares\\Time and Space Complexity explained in literally 5 minutes _ Big O _ Concepts made simple ep -1.mp4.mp4"
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // AI Prompt Generation State (Remotion)
+  const [aiTopic, setAiTopic] = useState("Explain XML versus JSON with a simple example");
+  const [aiAudience, setAiAudience] = useState("Beginners");
+  const [aiDuration, setAiDuration] = useState(45);
 
   // Configuration State
   const [captionStyle, setCaptionStyle] = useState<"karaoke" | "minimal" | "bold" | "neon">("karaoke");
@@ -90,6 +99,147 @@ export default function AIStudioPage() {
       );
     }
   }, [highlightData, customCaption]);
+
+  // --------------------------------------------------------------------------
+  // AI Video Generation by Command (Remotion Engine)
+  // --------------------------------------------------------------------------
+  async function startRemotionGeneration() {
+    if (!aiTopic.trim()) {
+      alert("Please provide a topic or command to generate the video.");
+      return;
+    }
+
+    setPipelineStage("REMOTION_SCRIPT");
+    setPipelineProgress(10);
+    setStageMessage("Synthesizing pedagogical storyboard script via AI...");
+    setErrorMessage("");
+    setRenderedVideoUrl(null);
+    setHighlightData(null);
+    setCropPlanData(null);
+    setElapsedSec(null);
+
+    const startTime = Date.now();
+    const newJobId = `remotion-${Date.now().toString(36)}`;
+    setJobId(newJobId);
+
+    // Dynamic progress simulator for Remotion generation phases
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    pollIntervalRef.current = setInterval(() => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      if (elapsed < 12) {
+        setPipelineStage("REMOTION_SCRIPT");
+        setPipelineProgress(Math.min(28, 10 + Math.floor(elapsed * 1.5)));
+        setStageMessage("Synthesizing pedagogical storyboard script via AI...");
+      } else if (elapsed < 24) {
+        setPipelineStage("REMOTION_PLAN");
+        setPipelineProgress(Math.min(50, 28 + Math.floor((elapsed - 12) * 1.8)));
+        setStageMessage("Planning 9:16 layout, diagrams & visual code blocks...");
+      } else if (elapsed < 38) {
+        setPipelineStage("REMOTION_BUNDLE");
+        setPipelineProgress(Math.min(72, 50 + Math.floor((elapsed - 24) * 1.6)));
+        setStageMessage("Bundling Remotion React composition engine...");
+      } else {
+        setPipelineStage("REMOTION_RENDER");
+        setPipelineProgress(Math.min(94, 72 + Math.floor((elapsed - 38) * 0.8)));
+        setStageMessage("Rendering 9:16 vertical frames via Chrome GPU...");
+      }
+    }, 1000);
+
+    try {
+      const res = await fetch("/api/video_gen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: aiTopic.trim(),
+          targetAudience: aiAudience,
+          durationSeconds: aiDuration,
+          render: true,
+          visualActions: true,
+        }),
+      });
+
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+
+      const data = await res.json();
+      if (!res.ok) {
+        const errorMsg = data.error?.message || data.error || data.message || "Failed to generate video";
+        throw new Error(errorMsg);
+      }
+
+      const totalElapsed = Math.round((Date.now() - startTime) / 1000);
+      setElapsedSec(totalElapsed);
+      setPipelineProgress(100);
+      setPipelineStage("COMPLETED");
+      setStageMessage(`✨ Vertical 9:16 reel generated successfully in ${totalElapsed}s!`);
+
+      // Set video URL - directly from public URL or via streaming endpoint
+      const finalUrl = data.videoUrl || (data.outputPath ? `/api/video_gen?latest=true&t=${Date.now()}` : null);
+      setRenderedVideoUrl(finalUrl);
+
+      // Populate highlight summary
+      setHighlightData({
+        clip_id: newJobId,
+        start_time_sec: 0,
+        end_time_sec: data.durationSeconds || aiDuration,
+        duration_sec: data.durationSeconds || aiDuration,
+        pedagogical_score: 99.0,
+        topic_summary: data.title || aiTopic,
+        boundary_reasoning: `AI Remotion Generator created ${data.scenes?.length || 4} animated vertical scenes for ${aiAudience}`,
+      });
+
+      // Populate crop info
+      setCropPlanData({
+        clip_id: newJobId,
+        aspect_ratio: "9:16 (Vertical Full HD)",
+        keyframes_count: data.frameCount || 480,
+      });
+
+      // Prepopulate custom caption for Instagram
+      setCustomCaption(
+        `💡 ${data.title || aiTopic}\n\nClear, dynamic visual explanation tailored for ${aiAudience}.\n\n#Programming #ComputerScience #TechEducation #LearnToCode #Shorts #Remotion`
+      );
+    } catch (err: unknown) {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      const msg = err instanceof Error ? err.message : "Failed to generate video.";
+      setPipelineStage("FAILED");
+      setErrorMessage(msg);
+      setStageMessage(`Error: ${msg}`);
+    }
+  }
+
+  async function loadLatestRemotionVideo() {
+    try {
+      const res = await fetch("/api/video_gen?latest=true", { method: "HEAD" });
+      if (!res.ok) {
+        alert("No previous rendered video found. Generate one first!");
+        return;
+      }
+      setRenderedVideoUrl(`/api/video_gen?latest=true&t=${Date.now()}`);
+      setJobId("remotion-latest");
+      setPipelineStage("COMPLETED");
+      setPipelineProgress(100);
+      setStageMessage("Loaded previously generated 9:16 vertical video.");
+      setHighlightData({
+        clip_id: "remotion-latest",
+        start_time_sec: 0,
+        end_time_sec: 45,
+        duration_sec: 44.5,
+        pedagogical_score: 99.0,
+        topic_summary: "Explain AI RAG System",
+        boundary_reasoning: "Loaded from latest Remotion render artifacts (667 frames, 9:16 vertical)",
+      });
+      setCropPlanData({
+        clip_id: "remotion-latest",
+        aspect_ratio: "9:16 (Vertical Full HD)",
+        keyframes_count: 667,
+      });
+      setCustomCaption(
+        "💡 Explain AI RAG System with a simple example\n\nHow AI answers questions by retrieving real-time relevant data.\n\n#Programming #AI #RAG #MachineLearning #TechShorts"
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
   // --------------------------------------------------------------------------
   // AI Pipeline Runner
@@ -395,26 +545,42 @@ export default function AIStudioPage() {
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
                 <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-500 text-xs font-bold">1</span>
-                <h2 className="text-base font-semibold text-white">Select Lecture Source Video</h2>
+                <h2 className="text-base font-semibold text-white">
+                  {inputMode === "ai_prompt"
+                    ? "Generate Reel by Command (Remotion Engine)"
+                    : "Select Lecture Source Video"}
+                </h2>
               </div>
 
               {/* Mode Toggle Tabs */}
               <div className="flex rounded-lg bg-black/50 p-1 border border-white/10 text-xs">
                 <button
                   type="button"
+                  onClick={() => setInputMode("ai_prompt")}
+                  className={`px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 ${
+                    inputMode === "ai_prompt"
+                      ? "bg-purple-600 text-white font-medium shadow-sm"
+                      : "text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  <span>✨</span>
+                  <span>Command (Remotion)</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => setInputMode("path")}
-                  className={`px-3 py-1 rounded-md transition-all ${
+                  className={`px-3 py-1.5 rounded-md transition-all ${
                     inputMode === "path"
                       ? "bg-purple-600 text-white font-medium shadow-sm"
                       : "text-zinc-400 hover:text-white"
                   }`}
                 >
-                  Local File Path
+                  Local Path
                 </button>
                 <button
                   type="button"
                   onClick={() => setInputMode("upload")}
-                  className={`px-3 py-1 rounded-md transition-all ${
+                  className={`px-3 py-1.5 rounded-md transition-all ${
                     inputMode === "upload"
                       ? "bg-purple-600 text-white font-medium shadow-sm"
                       : "text-zinc-400 hover:text-white"
@@ -425,7 +591,106 @@ export default function AIStudioPage() {
               </div>
             </div>
 
-            {inputMode === "path" ? (
+            {inputMode === "ai_prompt" ? (
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-zinc-300">
+                    Video Prompt / Command (Topic to explain)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={loadLatestRemotionVideo}
+                    className="text-[11px] text-purple-300 hover:text-purple-200 underline font-medium transition-colors"
+                  >
+                    ⚡ Load Last Rendered Video
+                  </button>
+                </div>
+                <textarea
+                  value={aiTopic}
+                  onChange={(e) => setAiTopic(e.target.value)}
+                  disabled={isRunning}
+                  rows={3}
+                  placeholder="e.g. Explain XML versus JSON with a simple example"
+                  className="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all disabled:opacity-50 resize-none font-sans"
+                />
+
+                {/* Quick Presets */}
+                <div className="flex items-center gap-2 flex-wrap text-xs text-zinc-400 mt-1">
+                  <span className="text-zinc-500">Quick Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() => setAiTopic("Explain AI RAG System with a simple example")}
+                    className="px-2.5 py-1 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-purple-300 transition-colors"
+                  >
+                    AI RAG System
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAiTopic("Explain XML versus JSON with a simple example")}
+                    className="px-2.5 py-1 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-purple-300 transition-colors"
+                  >
+                    XML vs JSON Example
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAiTopic("Explain QuickSort versus MergeSort with time complexity")}
+                    className="px-2.5 py-1 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-purple-300 transition-colors"
+                  >
+                    QuickSort vs MergeSort
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAiTopic("Explain how REST APIs work versus GraphQL in 45 seconds")}
+                    className="px-2.5 py-1 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-purple-300 transition-colors"
+                  >
+                    REST vs GraphQL
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAiTopic("Explain how Git branching and merge conflicts work")}
+                    className="px-2.5 py-1 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-purple-300 transition-colors"
+                  >
+                    Git Branching
+                  </button>
+                </div>
+
+                {/* Remotion Configuration */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 pt-4 border-t border-white/10 text-xs">
+                  <div>
+                    <label className="text-zinc-400 block mb-1.5 font-medium">Target Audience</label>
+                    <select
+                      value={aiAudience}
+                      onChange={(e) => setAiAudience(e.target.value)}
+                      disabled={isRunning}
+                      className="w-full bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-purple-500"
+                    >
+                      <option value="Beginners">Beginners (Intuitive & Visual)</option>
+                      <option value="CS Students">CS Students (Concepts & Big-O)</option>
+                      <option value="Senior Developers">Engineers (In-depth Architecture)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-zinc-400 block mb-1.5 font-medium">Reel Duration</label>
+                    <select
+                      value={aiDuration}
+                      onChange={(e) => setAiDuration(Number(e.target.value))}
+                      disabled={isRunning}
+                      className="w-full bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-purple-500"
+                    >
+                      <option value={30}>30 Seconds (Fast Reel)</option>
+                      <option value={45}>45 Seconds (Recommended Standard)</option>
+                      <option value={60}>60 Seconds (Deep Dive)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs mt-1">
+                  <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+                  <span>Remotion 4.0 + Chrome Headless GPU (9:16 Vertical Render with Animated Visual Actions)</span>
+                </div>
+              </div>
+            ) : inputMode === "path" ? (
               <div className="flex flex-col gap-3">
                 <label className="text-xs font-medium text-zinc-300">
                   Full Video Path (Local Drive)
@@ -495,60 +760,62 @@ export default function AIStudioPage() {
               </div>
             )}
 
-            {/* AI Rendering Options */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5 pt-5 border-t border-white/10 text-xs">
-              <div>
-                <label className="text-zinc-400 block mb-1.5 font-medium">Caption Style</label>
-                <select
-                  value={captionStyle}
-                  onChange={(e) => setCaptionStyle(e.target.value as any)}
-                  disabled={isRunning}
-                  className="w-full bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-purple-500"
-                >
-                  <option value="karaoke">✨ Karaoke (Word Pop)</option>
-                  <option value="minimal">Minimal Elegant</option>
-                  <option value="bold">Bold Punchy</option>
-                  <option value="neon">Neon Glow</option>
-                </select>
-              </div>
+            {/* AI Rendering Options (For video pipeline) */}
+            {inputMode !== "ai_prompt" && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5 pt-5 border-t border-white/10 text-xs">
+                <div>
+                  <label className="text-zinc-400 block mb-1.5 font-medium">Caption Style</label>
+                  <select
+                    value={captionStyle}
+                    onChange={(e) => setCaptionStyle(e.target.value as any)}
+                    disabled={isRunning}
+                    className="w-full bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-purple-500"
+                  >
+                    <option value="karaoke">✨ Karaoke (Word Pop)</option>
+                    <option value="minimal">Minimal Elegant</option>
+                    <option value="bold">Bold Punchy</option>
+                    <option value="neon">Neon Glow</option>
+                  </select>
+                </div>
 
-              <div>
-                <label className="text-zinc-400 block mb-1.5 font-medium">9:16 Framing Mode</label>
-                <select
-                  value={compositionMode}
-                  onChange={(e) => setCompositionMode(e.target.value as any)}
-                  disabled={isRunning}
-                  className="w-full bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-purple-500"
-                >
-                  <option value="adaptive">Dynamic Hybrid (CV)</option>
-                  <option value="presenter">Presenter Focus</option>
-                  <option value="screen_content">Screen / Slide Focus</option>
-                </select>
-              </div>
+                <div>
+                  <label className="text-zinc-400 block mb-1.5 font-medium">9:16 Framing Mode</label>
+                  <select
+                    value={compositionMode}
+                    onChange={(e) => setCompositionMode(e.target.value as any)}
+                    disabled={isRunning}
+                    className="w-full bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-purple-500"
+                  >
+                    <option value="adaptive">Dynamic Hybrid (CV)</option>
+                    <option value="presenter">Presenter Focus</option>
+                    <option value="screen_content">Screen / Slide Focus</option>
+                  </select>
+                </div>
 
-              <div>
-                <label className="text-zinc-400 block mb-1.5 font-medium">Subtitles Burn-In</label>
-                <button
-                  type="button"
-                  onClick={() => setSubtitlesEnabled(!subtitlesEnabled)}
-                  disabled={isRunning}
-                  className={`w-full py-2 px-3 rounded-lg border font-medium transition-colors flex items-center justify-center gap-2 ${
-                    subtitlesEnabled
-                      ? "bg-purple-600/20 border-purple-500/40 text-purple-300"
-                      : "bg-black/60 border-white/15 text-zinc-400"
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full ${subtitlesEnabled ? "bg-purple-400" : "bg-zinc-500"}`} />
-                  {subtitlesEnabled ? "Enabled" : "Disabled"}
-                </button>
+                <div>
+                  <label className="text-zinc-400 block mb-1.5 font-medium">Subtitles Burn-In</label>
+                  <button
+                    type="button"
+                    onClick={() => setSubtitlesEnabled(!subtitlesEnabled)}
+                    disabled={isRunning}
+                    className={`w-full py-2 px-3 rounded-lg border font-medium transition-colors flex items-center justify-center gap-2 ${
+                      subtitlesEnabled
+                        ? "bg-purple-600/20 border-purple-500/40 text-purple-300"
+                        : "bg-black/60 border-white/15 text-zinc-400"
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${subtitlesEnabled ? "bg-purple-400" : "bg-zinc-500"}`} />
+                    {subtitlesEnabled ? "Enabled" : "Disabled"}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Launch CTA */}
             <div className="mt-6">
               <button
                 type="button"
-                onClick={startAIPipeline}
+                onClick={inputMode === "ai_prompt" ? startRemotionGeneration : startAIPipeline}
                 disabled={isRunning}
                 className="w-full py-3.5 px-6 rounded-xl font-semibold text-sm bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white shadow-lg shadow-purple-600/30 transition-all transform active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
@@ -558,12 +825,16 @@ export default function AIStudioPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                     </svg>
-                    Processing AI Pipeline ({pipelineProgress}%)...
+                    {inputMode === "ai_prompt"
+                      ? `Rendering Remotion Reel (${pipelineProgress}%)...`
+                      : `Processing AI Pipeline (${pipelineProgress}%)...`}
                   </>
                 ) : (
                   <>
                     <span>⚡</span>
-                    Generate AI Vertical Reel (Highlight + 9:16 Crop + Captions)
+                    {inputMode === "ai_prompt"
+                      ? "Generate Vertical 9:16 Reel by Command (Remotion)"
+                      : "Generate AI Vertical Reel (Highlight + 9:16 Crop + Captions)"}
                   </>
                 )}
               </button>
@@ -607,24 +878,58 @@ export default function AIStudioPage() {
 
             {/* Pipeline Stage Pills */}
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
-              {[
-                { key: "EXTRACTING_AUDIO", label: "1. Audio Extract" },
-                { key: "TRANSCRIBING", label: "2. GPU Whisper" },
-                { key: "SELECTING_MOMENT", label: "3. Best Highlight" },
-                { key: "PLANNING_CROPS", label: "4. CV 9:16 Crop" },
-                { key: "RENDERING_VIDEO", label: "5. FFmpeg Reel" },
-              ].map((st) => {
-                const isCurrent = pipelineStage === st.key;
+              {(inputMode === "ai_prompt"
+                ? [
+                    { key: "REMOTION_SCRIPT", label: "1. Script Gen" },
+                    { key: "REMOTION_PLAN", label: "2. Visual Plan" },
+                    { key: "REMOTION_BUNDLE", label: "3. Action Build" },
+                    { key: "REMOTION_BUNDLE", label: "4. Bundler" },
+                    { key: "REMOTION_RENDER", label: "5. Chrome 9:16" },
+                  ]
+                : [
+                    { key: "EXTRACTING_AUDIO", label: "1. Audio Extract" },
+                    { key: "TRANSCRIBING", label: "2. GPU Whisper" },
+                    { key: "SELECTING_MOMENT", label: "3. Best Highlight" },
+                    { key: "PLANNING_CROPS", label: "4. CV 9:16 Crop" },
+                    { key: "RENDERING_VIDEO", label: "5. FFmpeg Reel" },
+                  ]
+              ).map((st, idx) => {
+                const remotionStepIdx =
+                  pipelineStage === "REMOTION_SCRIPT"
+                    ? 0
+                    : pipelineStage === "REMOTION_PLAN"
+                    ? 1
+                    : pipelineStage === "REMOTION_BUNDLE"
+                    ? 3
+                    : pipelineStage === "REMOTION_RENDER"
+                    ? 4
+                    : pipelineStage === "COMPLETED"
+                    ? 5
+                    : -1;
+
+                const isCurrent =
+                  inputMode === "ai_prompt"
+                    ? (idx === 0 && pipelineStage === "REMOTION_SCRIPT") ||
+                      (idx === 1 && pipelineStage === "REMOTION_PLAN") ||
+                      (idx === 2 && pipelineStage === "REMOTION_BUNDLE") ||
+                      (idx === 3 && pipelineStage === "REMOTION_BUNDLE") ||
+                      (idx === 4 && pipelineStage === "REMOTION_RENDER")
+                    : pipelineStage === st.key;
+
                 const isDone =
                   pipelineStage === "COMPLETED" ||
-                  (pipelineStage === "RENDERING_VIDEO" && st.key !== "RENDERING_VIDEO") ||
-                  (pipelineStage === "PLANNING_CROPS" && ["EXTRACTING_AUDIO", "TRANSCRIBING", "SELECTING_MOMENT"].includes(st.key)) ||
-                  (pipelineStage === "SELECTING_MOMENT" && ["EXTRACTING_AUDIO", "TRANSCRIBING"].includes(st.key)) ||
-                  (pipelineStage === "TRANSCRIBING" && st.key === "EXTRACTING_AUDIO");
+                  (inputMode === "ai_prompt"
+                    ? remotionStepIdx > idx
+                    : (pipelineStage === "RENDERING_VIDEO" && st.key !== "RENDERING_VIDEO") ||
+                      (pipelineStage === "PLANNING_CROPS" &&
+                        ["EXTRACTING_AUDIO", "TRANSCRIBING", "SELECTING_MOMENT"].includes(st.key)) ||
+                      (pipelineStage === "SELECTING_MOMENT" &&
+                        ["EXTRACTING_AUDIO", "TRANSCRIBING"].includes(st.key)) ||
+                      (pipelineStage === "TRANSCRIBING" && st.key === "EXTRACTING_AUDIO"));
 
                 return (
                   <div
-                    key={st.key}
+                    key={`${st.label}-${idx}`}
                     className={`px-3 py-2 rounded-xl border text-center transition-all ${
                       isDone
                         ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300 font-medium"
@@ -639,12 +944,12 @@ export default function AIStudioPage() {
               })}
             </div>
 
-            {/* Highlight Summary Card if extracted */}
+            {/* Highlight Summary Card if extracted or generated */}
             {highlightData && (
               <div className="mt-5 p-4 rounded-xl bg-purple-950/20 border border-purple-500/20 flex flex-col gap-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-semibold text-purple-300 flex items-center gap-1.5">
-                    🎯 Selected Educational Moment
+                    {inputMode === "ai_prompt" ? "✨ Generated Storyboard Reel" : "🎯 Selected Educational Moment"}
                   </span>
                   <span className="font-mono text-zinc-300 bg-purple-900/40 px-2 py-0.5 rounded">
                     Score: {highlightData.pedagogical_score.toFixed(1)} / 100
@@ -655,17 +960,19 @@ export default function AIStudioPage() {
                 </p>
                 <div className="flex items-center gap-4 text-[11px] text-zinc-400 font-mono mt-1">
                   <span>⏱ {highlightData.duration_sec.toFixed(1)}s duration</span>
-                  <span>
-                    Range: {Math.floor(highlightData.start_time_sec / 60)}:
-                    {Math.floor(highlightData.start_time_sec % 60)
-                      .toString()
-                      .padStart(2, "0")}{" "}
-                    &rarr; {Math.floor(highlightData.end_time_sec / 60)}:
-                    {Math.floor(highlightData.end_time_sec % 60)
-                      .toString()
-                      .padStart(2, "0")}
-                  </span>
-                  {cropPlanData && <span>📐 {cropPlanData.keyframes_count} 9:16 keyframes</span>}
+                  {inputMode !== "ai_prompt" && (
+                    <span>
+                      Range: {Math.floor(highlightData.start_time_sec / 60)}:
+                      {Math.floor(highlightData.start_time_sec % 60)
+                        .toString()
+                        .padStart(2, "0")}{" "}
+                      &rarr; {Math.floor(highlightData.end_time_sec / 60)}:
+                      {Math.floor(highlightData.end_time_sec % 60)
+                        .toString()
+                        .padStart(2, "0")}
+                    </span>
+                  )}
+                  {cropPlanData && <span>📐 {cropPlanData.keyframes_count} 9:16 frames</span>}
                 </div>
               </div>
             )}

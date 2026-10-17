@@ -15,16 +15,16 @@
     "explain": "node app/api/video_gen/run-storyboard.mjs explain"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.118.0",
     "@remotion/bundler": "4.0.536",
     "@remotion/renderer": "4.0.536",
+    "@supabase/supabase-js": "^2.118.0",
     "ai": "7.0.142",
     "next": "16.4.2",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "remotion": "4.0.536",
-    "zod": "4.6.7",
-    "tus-js-client": "^4.3.1"
+    "tus-js-client": "^4.3.1",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",

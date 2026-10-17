@@ -23,7 +23,8 @@ async function openRouterJson<T extends z.ZodType>(schema: T, input: unknown, sy
   const outputLimit = inferenceLimit(stage === "visual" ? "OPENROUTER_VISUAL_MAX_TOKENS" : "OPENROUTER_SCRIPT_MAX_TOKENS", maxTokens, 256, 8192);
   const format = z.toJSONSchema(schema, { io: "input" }), user = JSON.stringify(input);
   const body = JSON.stringify({ model, stream: false, temperature: 0, max_tokens: outputLimit, reasoning: { enabled: false }, provider: { require_parameters: true }, response_format: { type: "json_schema", json_schema: { name: "explainer_output", strict: true, schema: format } }, messages: [{ role: "system", content: system }, { role: "user", content: user }] });
-  for (let attempt = 1; attempt <= 2; attempt++) {
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const started = Date.now(), timeout = AbortSignal.timeout(timeoutMs);
     const event: InferenceDiagnostic = { provider: "openrouter", stage, sceneId: context.sceneId, planningAttempt: context.planningAttempt, model, attempt, queueMs, inputBytes: Buffer.byteLength(system + user), schemaBytes: Buffer.byteLength(JSON.stringify(format)), estimatedInputTokens: Math.ceil(Buffer.byteLength(system + user) / 4), outputLimit, timeoutMs, elapsedMs: 0, status: "started" };
     const report: OutputReport = { schema: format, phase: "envelope", sceneId: context.sceneId, planningAttempt: context.planningAttempt, transportAttempt: attempt };
@@ -59,14 +60,16 @@ async function openRouterJson<T extends z.ZodType>(schema: T, input: unknown, sy
         transient = false;
         failure = new ScriptGenerationError(502, "INVALID_OUTPUT", `OpenRouter returned invalid output (${report.phase}).${error instanceof z.ZodError ? " Invalid fields: " + error.issues.map(i => `${i.path.join(".")}: ${i.message}`).join("; ").slice(0, 900) : " Malformed JSON."}`, { phase: report.phase, issues: report.issues, parserMessage: report.parserMessage });
       } else { transient = error instanceof TypeError; failure = new ScriptGenerationError(502, "PROVIDER_FAILURE", "Could not communicate with OpenRouter. Check connectivity."); }
-      event.status = transient && attempt === 1 ? "retry" : "failed"; event.reason = failure.code;
-      if (!transient || attempt === 2) throw new ScriptGenerationError(failure.status, failure.code, `${stage}${context.sceneId ? ` ${context.sceneId}` : ""}: ${failure.message}`, failure.details);
+      event.status = transient && attempt < maxAttempts ? "retry" : "failed"; event.reason = failure.code;
+      if (!transient || attempt === maxAttempts) throw new ScriptGenerationError(failure.status, failure.code, `${stage}${context.sceneId ? ` ${context.sceneId}` : ""}: ${failure.message}`, failure.details);
     } finally {
       event.elapsedMs = Date.now() - started; console.info("[video_gen] inference_end", event);
       if (report.rawOutput !== undefined) context.onResponse?.(redactDiagnostics(report) as OutputReport);
       context.onDiagnostic?.(event);
     }
-    await new Promise(resolve => setTimeout(resolve, 250));
+    const backoffMs = Math.min(5000, attempt * 2000);
+    console.info(`[video_gen] transient provider issue, retrying after ${backoffMs}ms (attempt ${attempt + 1}/${maxAttempts})...`);
+    await new Promise(resolve => setTimeout(resolve, backoffMs));
   }
   throw new Error("Unreachable provider state");
 }

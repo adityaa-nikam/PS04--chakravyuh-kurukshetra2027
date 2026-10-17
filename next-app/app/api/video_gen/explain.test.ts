@@ -103,7 +103,7 @@ test("unfamiliar topic uses model overview without fabricated relationships or v
 
 test("live generator path bypasses development fixtures; prompt stays user data; malformed provider results fail", async () => {
   const old = { node: process.env.NODE_ENV, fixture: process.env.VIDEO_GEN_USE_FIXTURE };
-  process.env.NODE_ENV = "development"; process.env.VIDEO_GEN_USE_FIXTURE = "true";
+  (process.env as any).NODE_ENV = "development"; process.env.VIDEO_GEN_USE_FIXTURE = "true";
   const prompt = 'Explain data; $(touch /tmp/never-run) <script>alert(1)</script>';
   const fetchMock = mock.method(globalThis, "fetch", async (_url: string | URL | Request, init?: RequestInit) => {
     const body = JSON.parse(String(init?.body));
@@ -129,7 +129,7 @@ test("live generator path bypasses development fixtures; prompt stays user data;
     } finally { timer.mock.restore(); }
   } finally {
     fetchMock.mock.restore();
-    if (old.node === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = old.node;
+    if (old.node === undefined) delete (process.env as any).NODE_ENV; else (process.env as any).NODE_ENV = old.node;
     if (old.fixture === undefined) delete process.env.VIDEO_GEN_USE_FIXTURE; else process.env.VIDEO_GEN_USE_FIXTURE = old.fixture;
   }
 });
@@ -221,8 +221,8 @@ test("CLI environment loader reads .env.local and preserves shell precedence", a
     const program = `require(${JSON.stringify(require.resolve("./cli-environment"))}).loadCliEnvironment(${JSON.stringify(root)});process.stdout.write(process.env.EXPLAIN_ENV_TEST_VALUE)`;
     const env = { ...process.env, NODE_ENV: "development" };
     delete (env as Record<string, string | undefined>).EXPLAIN_ENV_TEST_VALUE;
-    assert.equal(execFileSync(process.execPath, ["-e", program], { env, encoding: "utf8" }), "local");
-    assert.equal(execFileSync(process.execPath, ["-e", program], { env: { ...env, EXPLAIN_ENV_TEST_VALUE: "shell" }, encoding: "utf8" }), "shell");
+    assert.equal(execFileSync(process.execPath, ["-e", program], { env: env as NodeJS.ProcessEnv, encoding: "utf8" }), "local");
+    assert.equal(execFileSync(process.execPath, ["-e", program], { env: { ...env, EXPLAIN_ENV_TEST_VALUE: "shell" } as NodeJS.ProcessEnv, encoding: "utf8" }), "shell");
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
