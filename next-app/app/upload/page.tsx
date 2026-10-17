@@ -471,13 +471,13 @@ export default function UploadPage() {
         </div>
 
         {/* Publisher Workstation Card */}
-        <div className="rounded-3xl bg-[#160d36]/80 border border-violet-500/20 p-6 sm:p-7 backdrop-blur-xl shadow-2xl shadow-purple-950/60 flex flex-col gap-5">
+        <div className="rounded-3xl bg-white/95 backdrop-blur-2xl border border-white p-6 sm:p-7 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.4)] text-zinc-900 flex flex-col gap-5">
           {/* File Ingest */}
           <div className="flex flex-col gap-2">
-            <label htmlFor="video" className="text-xs font-medium text-zinc-300 flex items-center justify-between">
+            <label htmlFor="video" className="text-xs font-bold text-zinc-700 flex items-center justify-between">
               <span>Source Video Reel</span>
               {file && (
-                <span className="text-[11px] font-mono text-violet-400">
+                <span className="text-[11px] font-mono text-violet-600 font-semibold">
                   {(file.size / (1024 * 1024)).toFixed(1)} MB
                 </span>
               )}
@@ -508,19 +508,19 @@ export default function UploadPage() {
             {!file ? (
               <label
                 htmlFor="video"
-                className={`border border-dashed rounded-xl p-6 text-center transition-all flex flex-col items-center justify-center gap-2.5 ${
+                className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all flex flex-col items-center justify-center gap-2.5 ${
                   busy
-                    ? "border-zinc-800 bg-zinc-950/30 opacity-50 cursor-not-allowed"
-                    : "border-zinc-800 hover:border-violet-500/60 hover:bg-zinc-950/40 bg-zinc-950/20 cursor-pointer"
+                    ? "border-zinc-200 bg-zinc-50 opacity-50 cursor-not-allowed"
+                    : "border-zinc-300 hover:border-violet-500 hover:bg-violet-50/40 bg-zinc-50/70 cursor-pointer"
                 }`}
               >
-                <div className="w-10 h-10 rounded-xl bg-zinc-800/70 border border-zinc-700/50 flex items-center justify-center text-zinc-400">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-12 h-12 rounded-2xl bg-violet-100 border border-violet-200 flex items-center justify-center text-violet-600">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
                 </div>
                 <div>
-                  <span className="text-sm font-medium text-zinc-200">
+                  <span className="text-sm font-bold text-zinc-900">
                     Click to select vertical video reel
                   </span>
                   <p className="text-xs text-zinc-500 mt-0.5">
@@ -529,16 +529,16 @@ export default function UploadPage() {
                 </div>
               </label>
             ) : (
-              <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-4 flex items-center justify-between">
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3 overflow-hidden">
-                  <div className="w-9 h-9 rounded-lg bg-violet-500/10 border border-violet-500/20 text-violet-400 flex items-center justify-center shrink-0">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="w-10 h-10 rounded-xl bg-violet-100 border border-violet-200 text-violet-700 flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
                   </div>
                   <div className="overflow-hidden">
-                    <p className="text-sm font-medium text-zinc-200 truncate">{file.name}</p>
-                    <p className="text-xs text-zinc-500 font-mono">
+                    <p className="text-sm font-bold text-zinc-900 truncate">{file.name}</p>
+                    <p className="text-xs text-zinc-500 font-mono font-medium">
                       {(file.size / (1024 * 1024)).toFixed(1)} MB · Ready for upload
                     </p>
                   </div>
@@ -547,7 +547,7 @@ export default function UploadPage() {
                 {!busy && (
                   <label
                     htmlFor="video"
-                    className="text-xs text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg border border-zinc-800 hover:bg-zinc-800 cursor-pointer transition-colors shrink-0"
+                    className="text-xs font-semibold text-zinc-700 hover:text-zinc-950 px-3 py-1.5 rounded-lg border border-zinc-300 hover:bg-zinc-100 cursor-pointer transition-colors shrink-0"
                   >
                     Change
                   </label>
@@ -559,8 +559,8 @@ export default function UploadPage() {
           {/* Caption Input */}
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <label htmlFor="caption" className="text-xs font-medium text-zinc-300">
-                Instagram Caption & Hashtags
+              <label htmlFor="caption" className="text-xs font-bold text-zinc-700">
+                Instagram Caption &amp; Hashtags
               </label>
               <span className="text-[11px] font-mono text-zinc-500">
                 {caption.length} / 2200
@@ -574,20 +574,20 @@ export default function UploadPage() {
               disabled={busy}
               onChange={(event) => updateCaption(event.target.value)}
               placeholder="Write your reel caption, topic breakdown, and relevant hashtags..."
-              className="w-full bg-zinc-950/70 border border-zinc-800 rounded-xl p-3.5 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all disabled:opacity-50 resize-none font-sans"
+              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/15 transition-all disabled:opacity-50 resize-none font-sans font-medium"
             />
           </div>
 
           {/* Progress Indicator */}
           {(busy || progress > 0) && (
-            <div className="flex flex-col gap-2 p-3.5 rounded-xl bg-zinc-950/70 border border-zinc-800/80">
+            <div className="flex flex-col gap-2 p-3.5 rounded-xl bg-zinc-50 border border-zinc-200">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-zinc-400 font-medium">Supabase TUS Upload</span>
-                <span className="font-mono text-white font-medium">{progress}%</span>
+                <span className="text-zinc-600 font-semibold">Supabase TUS Upload</span>
+                <span className="font-mono text-zinc-900 font-bold">{progress}%</span>
               </div>
-              <div className="w-full h-2 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800/60">
+              <div className="w-full h-2 bg-zinc-200 rounded-full overflow-hidden border border-zinc-300">
                 <div
-                  className="h-full bg-gradient-to-r from-violet-600 to-indigo-500 transition-all duration-300 rounded-full"
+                  className="h-full bg-gradient-to-r from-violet-600 to-indigo-600 transition-all duration-300 rounded-full"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -596,8 +596,8 @@ export default function UploadPage() {
 
           {/* Live Status Message & Alerts */}
           {stage === "publishing" && (
-            <div className="flex items-center gap-3 rounded-xl bg-violet-950/20 border border-violet-800/30 p-4 text-violet-300 text-sm">
-              <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-violet-400 border-t-transparent" />
+            <div className="flex items-center gap-3 rounded-xl bg-violet-50 border border-violet-200 p-4 text-violet-900 text-sm font-medium">
+              <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-violet-600 border-t-transparent" />
               <span>{message || "Instagram is processing and encoding your video reel..."}</span>
             </div>
           )}
@@ -608,38 +608,38 @@ export default function UploadPage() {
               aria-live="polite"
               className={`rounded-xl p-4 text-sm border flex items-start gap-3 break-words ${
                 stage === "success"
-                  ? "bg-emerald-950/20 border-emerald-800/30 text-emerald-300"
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-800"
                   : stage === "upload-failed" ||
                     stage === "publish-failed" ||
                     stage === "unknown"
-                  ? "bg-rose-950/20 border-rose-800/30 text-rose-300"
-                  : "bg-zinc-950 border-zinc-800 text-zinc-300"
+                  ? "bg-rose-50 border-rose-200 text-rose-800"
+                  : "bg-zinc-50 border-zinc-200 text-zinc-800"
               }`}
             >
               {stage === "success" ? (
-                <svg className="w-5 h-5 shrink-0 text-emerald-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 shrink-0 text-emerald-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               ) : stage === "upload-failed" || stage === "publish-failed" || stage === "unknown" ? (
-                <svg className="w-5 h-5 shrink-0 text-rose-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 shrink-0 text-rose-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               ) : (
-                <svg className="w-5 h-5 shrink-0 text-zinc-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 shrink-0 text-zinc-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               )}
               <div className="flex-1">
-                <p className="font-medium">{message}</p>
+                <p className="font-semibold">{message}</p>
               </div>
             </div>
           )}
 
           {/* Published ID Callout */}
           {publishedId && (
-            <div className="rounded-xl bg-emerald-950/30 border border-emerald-800/40 p-4 text-xs font-mono text-emerald-300 flex items-center justify-between">
+            <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-xs font-mono text-emerald-800 flex items-center justify-between font-bold">
               <span>Instagram Media ID:</span>
-              <span className="font-bold text-emerald-200">{publishedId}</span>
+              <span className="font-bold text-emerald-900">{publishedId}</span>
             </div>
           )}
 
@@ -647,7 +647,7 @@ export default function UploadPage() {
           <button
             onClick={uploadVideo}
             disabled={!file || busy || stage === "success" || stage === "unknown"}
-            className="w-full py-3.5 px-6 rounded-xl font-medium text-sm bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3.5 px-6 rounded-xl font-bold text-sm bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 active:bg-violet-700 text-white shadow-xl shadow-violet-600/25 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
           >
             {stage === "uploading" ? (
               <>

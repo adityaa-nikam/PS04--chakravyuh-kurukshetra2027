@@ -80,9 +80,37 @@ export default function AIStudioPage() {
   const [publishMessage, setPublishMessage] = useState("");
   const [instagramMediaId, setInstagramMediaId] = useState("");
 
+  // Video player custom controls
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [isVideoMuted, setIsVideoMuted] = useState(false);
+
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const pollingInstagram = useRef(false);
+
+  const toggleVideoPlayback = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current
+        .play()
+        .then(() => setIsVideoPlaying(true))
+        .catch(() => {});
+    } else {
+      videoRef.current.pause();
+      setIsVideoPlaying(false);
+    }
+  };
+
+  const toggleVideoMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    videoRef.current.muted = !videoRef.current.muted;
+    setIsVideoMuted(videoRef.current.muted);
+  };
+
+  useEffect(() => {
+    setIsVideoPlaying(false);
+  }, [renderedVideoUrl]);
 
   // Clean up polling timer on unmount
   useEffect(() => {
@@ -656,13 +684,13 @@ export default function AIStudioPage() {
         {/* Left Column: Input, Pipeline Controls & Live Status */}
         <div className="lg:col-span-7 flex flex-col gap-6">
           {/* Card 1: Video Input & Creation Controls */}
-          <div className="p-6 sm:p-7 rounded-3xl bg-[#160d36]/80 border border-violet-500/20 backdrop-blur-xl shadow-2xl shadow-purple-950/60 relative overflow-hidden flex flex-col gap-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-violet-500/20">
+          <div className="p-6 sm:p-7 rounded-3xl bg-white/95 backdrop-blur-2xl border border-white text-zinc-900 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.4)] relative overflow-hidden flex flex-col gap-5 transition-all">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-200/80">
               <div className="flex items-center gap-2.5">
-                <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded bg-violet-950/80 text-violet-300 border border-violet-600/40">
+                <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200">
                   STEP 01
                 </span>
-                <h2 className="text-sm font-semibold text-white tracking-tight">
+                <h2 className="text-sm font-bold text-zinc-950 tracking-tight">
                   {inputMode === "ai_prompt"
                     ? "Generate Reel by Command (Remotion)"
                     : "Select Lecture Source Video"}
@@ -670,17 +698,17 @@ export default function AIStudioPage() {
               </div>
 
               {/* Mode Toggle Tabs */}
-              <div className="flex rounded-lg bg-[#0e0722] border border-violet-500/30 p-1 text-xs self-start sm:self-auto">
+              <div className="flex rounded-xl bg-zinc-100/90 border border-zinc-200/80 p-1 text-xs self-start sm:self-auto">
                 <button
                   type="button"
                   onClick={() => setInputMode("ai_prompt")}
-                  className={`px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
                     inputMode === "ai_prompt"
-                      ? "bg-[#281858] text-white font-medium shadow-xs"
-                      : "text-violet-300/70 hover:text-white"
+                      ? "bg-white text-zinc-950 font-semibold shadow-xs"
+                      : "text-zinc-500 hover:text-zinc-900"
                   }`}
                 >
-                  <svg className="w-3.5 h-3.5 text-violet-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg className="w-3.5 h-3.5 text-violet-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                   </svg>
                   <span>AI Explainer</span>
@@ -688,10 +716,10 @@ export default function AIStudioPage() {
                 <button
                   type="button"
                   onClick={() => setInputMode("path")}
-                  className={`px-3 py-1.5 rounded-md transition-all ${
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
                     inputMode === "path"
-                      ? "bg-zinc-800 text-white font-medium shadow-xs"
-                      : "text-zinc-400 hover:text-white"
+                      ? "bg-white text-zinc-950 font-semibold shadow-xs"
+                      : "text-zinc-500 hover:text-zinc-900"
                   }`}
                 >
                   Local Path
@@ -699,10 +727,10 @@ export default function AIStudioPage() {
                 <button
                   type="button"
                   onClick={() => setInputMode("upload")}
-                  className={`px-3 py-1.5 rounded-md transition-all ${
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
                     inputMode === "upload"
-                      ? "bg-zinc-800 text-white font-medium shadow-xs"
-                      : "text-zinc-400 hover:text-white"
+                      ? "bg-white text-zinc-950 font-semibold shadow-xs"
+                      : "text-zinc-500 hover:text-zinc-900"
                   }`}
                 >
                   Upload File
@@ -713,13 +741,13 @@ export default function AIStudioPage() {
             {inputMode === "ai_prompt" ? (
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium text-zinc-300">
+                  <label className="text-xs font-semibold text-zinc-700">
                     Video Prompt / Command (Topic to explain)
                   </label>
                   <button
                     type="button"
                     onClick={loadLatestRemotionVideo}
-                    className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-medium transition-colors"
+                    className="text-xs text-violet-600 hover:text-violet-700 flex items-center gap-1 font-semibold transition-colors"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -733,58 +761,58 @@ export default function AIStudioPage() {
                   disabled={isRunning}
                   rows={3}
                   placeholder="e.g. Explain XML versus JSON with a simple example"
-                  className="w-full bg-[#221447]/70 border border-violet-400/20 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder:text-violet-300/40 focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400 transition-all disabled:opacity-50 resize-none font-sans"
+                  className="w-full bg-white border border-zinc-200/90 rounded-xl px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/15 shadow-xs transition-all disabled:opacity-50 resize-none font-sans"
                 />
 
                 {/* Quick Presets */}
-                <div className="flex items-center gap-1.5 flex-wrap text-xs text-zinc-400 mt-0.5">
-                  <span className="text-zinc-500 text-[11px] uppercase font-mono mr-1">Presets:</span>
+                <div className="flex items-center gap-1.5 flex-wrap text-xs text-zinc-600 mt-0.5">
+                  <span className="text-zinc-400 text-[11px] uppercase font-mono mr-1">Presets:</span>
                   <button
                     type="button"
                     onClick={() => setAiTopic("Explain AI RAG System with a simple example")}
-                    className="px-2.5 py-1 rounded-lg bg-zinc-950/60 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200/80 border border-zinc-200 text-zinc-700 hover:text-zinc-950 font-medium transition-colors"
                   >
                     AI RAG System
                   </button>
                   <button
                     type="button"
                     onClick={() => setAiTopic("Explain XML versus JSON with a simple example")}
-                    className="px-2.5 py-1 rounded-lg bg-zinc-950/60 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200/80 border border-zinc-200 text-zinc-700 hover:text-zinc-950 font-medium transition-colors"
                   >
                     XML vs JSON
                   </button>
                   <button
                     type="button"
                     onClick={() => setAiTopic("Explain QuickSort versus MergeSort with time complexity")}
-                    className="px-2.5 py-1 rounded-lg bg-zinc-950/60 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200/80 border border-zinc-200 text-zinc-700 hover:text-zinc-950 font-medium transition-colors"
                   >
                     QuickSort vs MergeSort
                   </button>
                   <button
                     type="button"
                     onClick={() => setAiTopic("Explain how REST APIs work versus GraphQL in 45 seconds")}
-                    className="px-2.5 py-1 rounded-lg bg-zinc-950/60 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200/80 border border-zinc-200 text-zinc-700 hover:text-zinc-950 font-medium transition-colors"
                   >
                     REST vs GraphQL
                   </button>
                   <button
                     type="button"
                     onClick={() => setAiTopic("Explain how Git branching and merge conflicts work")}
-                    className="px-2.5 py-1 rounded-lg bg-zinc-950/60 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200/80 border border-zinc-200 text-zinc-700 hover:text-zinc-950 font-medium transition-colors"
                   >
                     Git Branching
                   </button>
                 </div>
 
                 {/* Remotion Configuration */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 pt-3 border-t border-zinc-800/60 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 pt-3 border-t border-zinc-200/80 text-xs">
                   <div>
-                    <label className="text-zinc-400 block mb-1.5 font-medium">Target Audience</label>
+                    <label className="text-zinc-700 block mb-1.5 font-semibold">Target Audience</label>
                     <select
                       value={aiAudience}
                       onChange={(e) => setAiAudience(e.target.value)}
                       disabled={isRunning}
-                      className="w-full bg-zinc-950/70 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-cyan-500"
+                      className="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/15 shadow-xs"
                     >
                       <option value="Beginners">Beginners (Intuitive & Visual)</option>
                       <option value="CS Students">CS Students (Concepts & Big-O)</option>
@@ -793,12 +821,12 @@ export default function AIStudioPage() {
                   </div>
 
                   <div>
-                    <label className="text-zinc-400 block mb-1.5 font-medium">Reel Duration</label>
+                    <label className="text-zinc-700 block mb-1.5 font-semibold">Reel Duration</label>
                     <select
                       value={aiDuration}
                       onChange={(e) => setAiDuration(Number(e.target.value))}
                       disabled={isRunning}
-                      className="w-full bg-zinc-950/70 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-cyan-500"
+                      className="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/15 shadow-xs"
                     >
                       <option value={30}>30 Seconds (Fast Reel)</option>
                       <option value={45}>45 Seconds (Standard Recommended)</option>
@@ -807,14 +835,14 @@ export default function AIStudioPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800/80 text-zinc-400 text-xs mt-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-violet-50/80 border border-violet-200/80 text-violet-800 text-xs mt-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-violet-600 animate-pulse" />
                   <span>Remotion 4.0 · Chrome Headless GPU (9:16 Vertical Render with Animated Code Blocks)</span>
                 </div>
               </div>
             ) : inputMode === "path" ? (
               <div className="flex flex-col gap-3">
-                <label className="text-xs font-medium text-zinc-300">
+                <label className="text-xs font-semibold text-zinc-700">
                   Full Video Path (Local Drive)
                 </label>
                 <div className="relative">
@@ -824,13 +852,13 @@ export default function AIStudioPage() {
                     onChange={(e) => setVideoPath(e.target.value)}
                     disabled={isRunning}
                     placeholder="e.g. D:\softwares\lecture.mp4"
-                    className="w-full bg-zinc-950/70 border border-zinc-800 rounded-xl px-4 py-3 text-sm font-mono text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all disabled:opacity-50"
+                    className="w-full bg-white border border-zinc-200/90 rounded-xl px-4 py-3 text-sm font-mono text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/15 shadow-xs transition-all disabled:opacity-50"
                   />
                 </div>
 
                 {/* Quick Presets */}
-                <div className="flex items-center gap-2 flex-wrap text-xs text-zinc-400 mt-1">
-                  <span className="text-zinc-500 text-[11px] uppercase font-mono">Presets:</span>
+                <div className="flex items-center gap-2 flex-wrap text-xs text-zinc-600 mt-1">
+                  <span className="text-zinc-400 text-[11px] uppercase font-mono">Presets:</span>
                   <button
                     type="button"
                     onClick={() =>
@@ -838,14 +866,14 @@ export default function AIStudioPage() {
                         "D:\\softwares\\Time and Space Complexity explained in literally 5 minutes _ Big O _ Concepts made simple ep -1.mp4.mp4"
                       )
                     }
-                    className="px-2.5 py-1 rounded-lg bg-zinc-950/60 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200/80 border border-zinc-200 text-zinc-700 hover:text-zinc-950 font-medium transition-colors"
                   >
                     Time & Space Complexity (5m)
                   </button>
                   <button
                     type="button"
                     onClick={() => setVideoPath("D:\\softwares\\videoplayback.mp4")}
-                    className="px-2.5 py-1 rounded-lg bg-zinc-950/60 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200/80 border border-zinc-200 text-zinc-700 hover:text-zinc-950 font-medium transition-colors"
                   >
                     videoplayback.mp4 (25m)
                   </button>
@@ -853,10 +881,10 @@ export default function AIStudioPage() {
               </div>
             ) : (
               <div className="flex flex-col gap-3">
-                <label className="text-xs font-medium text-zinc-300">
+                <label className="text-xs font-semibold text-zinc-700">
                   Select Video File (MP4, MOV, MKV)
                 </label>
-                <div className="border border-dashed border-zinc-800 hover:border-cyan-500/50 rounded-xl p-6 text-center cursor-pointer transition-colors bg-zinc-950/30">
+                <div className="border-2 border-dashed border-zinc-300 hover:border-violet-500 rounded-2xl p-6 text-center cursor-pointer transition-colors bg-zinc-50/60">
                   <input
                     type="file"
                     accept="video/*"
@@ -866,16 +894,16 @@ export default function AIStudioPage() {
                     id="video-upload-input"
                   />
                   <label htmlFor="video-upload-input" className="cursor-pointer flex flex-col items-center gap-2">
-                    <div className="w-10 h-10 rounded-xl bg-zinc-800/70 border border-zinc-700/50 flex items-center justify-center text-zinc-400">
-                      <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="w-10 h-10 rounded-xl bg-violet-50 border border-violet-200 flex items-center justify-center text-violet-600">
+                      <svg className="w-5 h-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
                     </div>
-                    <span className="text-sm font-medium text-zinc-200">
+                    <span className="text-sm font-semibold text-zinc-800">
                       {selectedFile ? selectedFile.name : "Click to select or drag video here"}
                     </span>
                     {selectedFile && (
-                      <span className="text-xs text-cyan-400 font-mono">
+                      <span className="text-xs text-violet-600 font-mono font-medium">
                         {(selectedFile.size / (1024 * 1024)).toFixed(1)} MB
                       </span>
                     )}
@@ -886,14 +914,14 @@ export default function AIStudioPage() {
 
             {/* AI Rendering Options (For video pipeline) */}
             {inputMode !== "ai_prompt" && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 pt-4 border-t border-zinc-800/60 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 pt-4 border-t border-zinc-200/80 text-xs">
                 <div>
-                  <label className="text-zinc-400 block mb-1.5 font-medium">Caption Style</label>
+                  <label className="text-zinc-700 block mb-1.5 font-semibold">Caption Style</label>
                   <select
                     value={captionStyle}
                     onChange={(e) => setCaptionStyle(e.target.value as any)}
                     disabled={isRunning}
-                    className="w-full bg-zinc-950/70 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/15 shadow-xs"
                   >
                     <option value="karaoke">✨ Karaoke (Word Pop)</option>
                     <option value="minimal">Minimal Clean</option>
@@ -903,12 +931,12 @@ export default function AIStudioPage() {
                 </div>
 
                 <div>
-                  <label className="text-zinc-400 block mb-1.5 font-medium">9:16 Framing Mode</label>
+                  <label className="text-zinc-700 block mb-1.5 font-semibold">9:16 Framing Mode</label>
                   <select
                     value={compositionMode}
                     onChange={(e) => setCompositionMode(e.target.value as any)}
                     disabled={isRunning}
-                    className="w-full bg-zinc-950/70 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/15 shadow-xs"
                   >
                     <option value="adaptive">Dynamic Hybrid (CV)</option>
                     <option value="presenter">Presenter Focus</option>
@@ -917,18 +945,18 @@ export default function AIStudioPage() {
                 </div>
 
                 <div>
-                  <label className="text-zinc-400 block mb-1.5 font-medium">Subtitles Burn-In</label>
+                  <label className="text-zinc-700 block mb-1.5 font-semibold">Subtitles Burn-In</label>
                   <button
                     type="button"
                     onClick={() => setSubtitlesEnabled(!subtitlesEnabled)}
                     disabled={isRunning}
                     className={`w-full py-2 px-3 rounded-lg border font-medium transition-colors flex items-center justify-center gap-2 ${
                       subtitlesEnabled
-                        ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-300"
-                        : "bg-zinc-950/70 border-zinc-800 text-zinc-400"
+                        ? "bg-violet-50 border-violet-300 text-violet-700"
+                        : "bg-zinc-100 border-zinc-200 text-zinc-500"
                     }`}
                   >
-                    <span className={`w-1.5 h-1.5 rounded-full ${subtitlesEnabled ? "bg-cyan-400" : "bg-zinc-500"}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full ${subtitlesEnabled ? "bg-violet-600" : "bg-zinc-400"}`} />
                     {subtitlesEnabled ? "Enabled" : "Disabled"}
                   </button>
                 </div>
@@ -941,11 +969,11 @@ export default function AIStudioPage() {
                 type="button"
                 onClick={inputMode === "ai_prompt" ? startRemotionGeneration : startAIPipeline}
                 disabled={isRunning}
-                className="w-full py-4 px-6 rounded-xl font-semibold text-sm bg-white text-zinc-950 hover:bg-zinc-100 shadow-xl shadow-purple-950/40 transition-all transform active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-4 px-6 rounded-xl font-bold text-sm bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-xl shadow-violet-600/30 transition-all transform active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isRunning ? (
                   <>
-                    <svg className="animate-spin w-4 h-4 text-zinc-950" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                     </svg>
@@ -955,7 +983,7 @@ export default function AIStudioPage() {
                   </>
                 ) : (
                   <>
-                    <svg className="w-4 h-4 text-violet-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                     </svg>
                     {inputMode === "ai_prompt"
@@ -968,41 +996,41 @@ export default function AIStudioPage() {
           </div>
 
           {/* Card 2: Live Pipeline Progress Tracker */}
-          <div className="p-6 sm:p-7 rounded-3xl bg-[#160d36]/80 border border-violet-500/20 backdrop-blur-xl shadow-2xl shadow-purple-950/60 flex flex-col gap-4">
-            <div className="flex items-center justify-between pb-2 border-b border-violet-500/20">
+          <div className="p-6 sm:p-7 rounded-3xl bg-white/95 backdrop-blur-2xl border border-white text-zinc-900 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.4)] flex flex-col gap-4 transition-all">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-200/80">
               <div className="flex items-center gap-2.5">
-                <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded bg-violet-950/80 text-violet-300 border border-violet-600/40">
+                <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200">
                   STEP 02
                 </span>
-                <h2 className="text-sm font-semibold text-white tracking-tight">Live Pipeline Tracker</h2>
+                <h2 className="text-sm font-bold text-zinc-950 tracking-tight">Live Pipeline Tracker</h2>
               </div>
               {jobId && (
-                <span className="font-mono text-xs px-2.5 py-1 rounded-lg bg-[#0e0722] border border-violet-500/30 text-violet-300 select-all">
+                <span className="font-mono text-xs px-2.5 py-1 rounded-lg bg-zinc-100 border border-zinc-200 text-violet-700 font-semibold select-all">
                   {jobId}
                 </span>
               )}
             </div>
 
             {/* Progress Bar */}
-            <div className="relative w-full h-2 bg-[#0e0722] rounded-full overflow-hidden border border-violet-500/30">
+            <div className="relative w-full h-2.5 bg-zinc-100 rounded-full overflow-hidden border border-zinc-200/80">
               <div
                 className={`h-full transition-all duration-500 rounded-full ${
                   pipelineStage === "FAILED"
                     ? "bg-rose-500"
                     : pipelineStage === "COMPLETED"
                     ? "bg-emerald-500"
-                    : "bg-gradient-to-r from-violet-600 via-purple-500 to-indigo-500"
+                    : "bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-500 shadow-sm"
                 }`}
                 style={{ width: `${Math.max(3, pipelineProgress)}%` }}
               />
             </div>
 
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2 text-zinc-400">
-                {isRunning && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />}
+            <div className="flex items-center justify-between text-xs font-medium">
+              <div className="flex items-center gap-2 text-zinc-600">
+                {isRunning && <span className="w-1.5 h-1.5 rounded-full bg-violet-600 animate-pulse" />}
                 <span>{stageMessage || "Ready to execute pipeline"}</span>
               </div>
-              <span className="font-mono font-semibold text-zinc-200">{pipelineProgress}%</span>
+              <span className="font-mono font-bold text-zinc-900">{pipelineProgress}%</span>
             </div>
 
             {/* Pipeline Stage Pills */}
@@ -1061,10 +1089,10 @@ export default function AIStudioPage() {
                     key={`${st.label}-${idx}`}
                     className={`px-2.5 py-2 rounded-xl border text-center transition-all ${
                       isDone
-                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-medium"
+                        ? "bg-emerald-50 border-emerald-200 text-emerald-700 font-semibold shadow-2xs"
                         : isCurrent
-                        ? "bg-cyan-500/15 border-cyan-500/60 text-cyan-200 font-medium ring-1 ring-cyan-500/30 shadow-xs"
-                        : "bg-zinc-950/40 border-zinc-800/60 text-zinc-500"
+                        ? "bg-violet-100 border-violet-400 text-violet-900 font-bold ring-2 ring-violet-500/20 shadow-xs animate-pulse"
+                        : "bg-zinc-100/80 border-zinc-200 text-zinc-500 font-medium"
                     }`}
                   >
                     {st.label}
@@ -1075,19 +1103,19 @@ export default function AIStudioPage() {
 
             {/* Highlight Summary Card if extracted or generated */}
             {highlightData && (
-              <div className="mt-2 p-4 rounded-xl bg-zinc-950/80 border border-zinc-800 flex flex-col gap-2">
+              <div className="mt-2 p-4 rounded-2xl bg-zinc-50/90 border border-zinc-200/90 flex flex-col gap-2 shadow-xs">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-cyan-300 flex items-center gap-1.5">
+                  <span className="font-bold text-violet-900 flex items-center gap-1.5">
                     {inputMode === "ai_prompt" ? "✨ Generated Storyboard Reel" : "🎯 Selected Educational Moment"}
                   </span>
-                  <span className="font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded text-[11px]">
+                  <span className="font-mono text-emerald-700 bg-emerald-100/90 border border-emerald-300 px-2.5 py-0.5 rounded text-[11px] font-bold">
                     Score: {highlightData.pedagogical_score.toFixed(1)} / 100
                   </span>
                 </div>
-                <p className="text-xs text-zinc-300 italic border-l-2 border-cyan-500/60 pl-2.5 py-0.5">
+                <p className="text-xs text-zinc-700 italic border-l-2 border-violet-600 pl-2.5 py-0.5 font-medium">
                   &ldquo;{highlightData.topic_summary}&rdquo;
                 </p>
-                <div className="flex items-center gap-4 text-[11px] text-zinc-400 font-mono mt-1">
+                <div className="flex items-center gap-4 text-[11px] text-zinc-600 font-mono mt-1 font-semibold">
                   <span>⏱ {highlightData.duration_sec.toFixed(1)}s duration</span>
                   {inputMode !== "ai_prompt" && (
                     <span>
@@ -1110,68 +1138,212 @@ export default function AIStudioPage() {
 
         {/* Right Column: 9:16 Video Preview & Instagram Publishing */}
         <div className="lg:col-span-5 flex flex-col gap-6">
-          <div className="p-6 sm:p-7 rounded-3xl bg-[#160d36]/80 border border-violet-500/20 backdrop-blur-xl shadow-2xl shadow-purple-950/60 flex flex-col items-center">
-            <div className="w-full flex items-center justify-between mb-4 pb-2 border-b border-violet-500/20">
+          <div className="p-6 sm:p-7 rounded-3xl bg-white/95 backdrop-blur-2xl border border-white text-zinc-900 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.4)] flex flex-col items-center transition-all">
+            <div className="w-full flex items-center justify-between mb-4 pb-3 border-b border-zinc-200/80">
               <div className="flex items-center gap-2.5">
-                <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded bg-violet-950/80 text-violet-300 border border-violet-600/40">
+                <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200">
                   STEP 03
                 </span>
-                <h2 className="text-sm font-semibold text-white tracking-tight">9:16 Reel Preview</h2>
+                <h2 className="text-sm font-bold text-zinc-950 tracking-tight">9:16 Reel Preview</h2>
               </div>
               {elapsedSec && (
-                <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                <span className="text-xs font-mono text-emerald-700 bg-emerald-100/90 px-2.5 py-0.5 rounded-full border border-emerald-300 font-bold">
                   Ready in {elapsedSec}s
                 </span>
               )}
             </div>
 
-            {/* Smartphone 9:16 Frame Player */}
-            <div className="relative w-[270px] sm:w-[285px] h-[480px] sm:h-[506px] rounded-[36px] bg-zinc-950 p-2 border border-zinc-800 shadow-2xl overflow-hidden flex flex-col items-center justify-center ring-1 ring-white/5">
-              {/* Camera Notch */}
-              <div className="absolute top-3.5 w-20 h-3.5 bg-black rounded-full z-20 border border-zinc-800/50" />
+            {/* 3D Realistic Smartphone Mockup Chassis */}
+            <div className="relative group/phone select-none my-2">
+              {/* Outer Physical Hardware Buttons - Left (Action Button + Volume Rockers) */}
+              <div className="absolute -left-[3px] top-20 w-[3px] h-6 bg-gradient-to-r from-zinc-600 via-zinc-500 to-zinc-700 rounded-l-sm shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] z-10" />
+              <div className="absolute -left-[3px] top-32 w-[3px] h-11 bg-gradient-to-r from-zinc-600 via-zinc-500 to-zinc-700 rounded-l-sm shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] z-10" />
+              <div className="absolute -left-[3px] top-48 w-[3px] h-11 bg-gradient-to-r from-zinc-600 via-zinc-500 to-zinc-700 rounded-l-sm shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] z-10" />
 
-              {renderedVideoUrl ? (
-                <video
-                  ref={videoRef}
-                  src={renderedVideoUrl}
-                  controls
-                  playsInline
-                  loop
-                  className="w-full h-full object-cover rounded-[28px]"
-                />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center text-zinc-500 bg-zinc-950/80 rounded-[28px]">
-                  {isRunning ? (
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-10 h-10 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin" />
-                      <p className="text-xs text-cyan-300 font-medium">
-                        Rendering vertical reel...
-                      </p>
-                      <span className="text-[11px] text-zinc-500 font-mono">
-                        {pipelineProgress}% completed
-                      </span>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-600 mb-3">
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
+              {/* Outer Physical Hardware Button - Right (Power / Lock Button) */}
+              <div className="absolute -right-[3px] top-36 w-[3px] h-16 bg-gradient-to-l from-zinc-600 via-zinc-500 to-zinc-700 rounded-r-sm shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] z-10" />
+
+              {/* 3D Phone Chassis (Brushed Titanium / Dark Slate Frame with Dual Bevel) */}
+              <div className="relative w-[280px] sm:w-[295px] h-[500px] sm:h-[530px] rounded-[52px] p-[8px] sm:p-[9px] bg-gradient-to-b from-[#4e4e5e] via-[#242430] to-[#121218] shadow-[0_35px_80px_-15px_rgba(0,0,0,0.65),0_15px_30px_-8px_rgba(0,0,0,0.5),inset_0_2px_3px_rgba(255,255,255,0.45),inset_0_-2px_4px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.14)] transition-transform duration-300 group-hover/phone:scale-[1.01]">
+                
+                {/* Metallic Antenna Cutouts */}
+                <div className="absolute top-20 -left-[1px] w-[2px] h-[3px] bg-zinc-900/90" />
+                <div className="absolute top-20 -right-[1px] w-[2px] h-[3px] bg-zinc-900/90" />
+                <div className="absolute bottom-24 -left-[1px] w-[2px] h-[3px] bg-zinc-900/90" />
+                <div className="absolute bottom-24 -right-[1px] w-[2px] h-[3px] bg-zinc-900/90" />
+
+                {/* Inner Black OLED Bezel */}
+                <div className="relative w-full h-full rounded-[44px] p-[3px] bg-black ring-1 ring-white/10 shadow-inner overflow-hidden flex flex-col">
+                  
+                  {/* Screen Body */}
+                  <div className="relative w-full h-full rounded-[40px] bg-[#07060d] overflow-hidden flex flex-col">
+                    
+                    {/* 3D Diagonal Glass Sheen Reflection Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/[0.09] via-white/[0.01] to-transparent pointer-events-none z-30" />
+                    
+                    {/* Top Speaker Slit */}
+                    <div className="absolute top-2 left-1/2 -translate-x-1/2 w-14 h-1 bg-zinc-800/90 rounded-full z-40" />
+
+                    {/* Dynamic Island with Camera Glint */}
+                    <div className="absolute top-3.5 left-1/2 -translate-x-1/2 z-40 h-[26px] w-[105px] bg-black rounded-full border border-zinc-800/80 shadow-[0_3px_10px_rgba(0,0,0,0.9),inset_0_1px_1px_rgba(255,255,255,0.1)] flex items-center justify-between px-2.5">
+                      {/* Left: Camera Lens with Blue Reflection Glint */}
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#0a0d1e] border border-blue-900/60 flex items-center justify-center relative">
+                        <div className="w-1 h-1 rounded-full bg-blue-500/80" />
                       </div>
-                      <p className="text-xs text-zinc-400 max-w-[200px]">
-                        Rendered vertical 9:16 reel will appear here for instant preview.
-                      </p>
-                    </>
-                  )}
+                      {/* Center: Live indicator dot if pipeline is active */}
+                      {isRunning && (
+                        <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
+                      )}
+                      {/* Right: Proximity sensor */}
+                      <div className="w-2 h-2 rounded-full bg-[#0e0f18]" />
+                    </div>
+
+                    {/* Top iOS Status Bar (Time & Signal Icons) */}
+                    <div className="absolute top-4 inset-x-0 px-6 flex items-center justify-between z-35 text-[11px] font-semibold text-white/80 pointer-events-none">
+                      <span>9:41</span>
+                      <div className="flex items-center gap-1.5 text-white/80">
+                        {/* Cellular Signal */}
+                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M2 18h3v3H2zm5-4h3v7H7zm5-4h3v11h-3zm5-5h3v16h-3z" />
+                        </svg>
+                        {/* Battery Icon */}
+                        <div className="w-5 h-2.5 rounded-[3px] border border-white/70 p-0.5 flex items-center">
+                          <div className="w-full h-full bg-white/90 rounded-[1px]" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Main Screen Player Content */}
+                    {renderedVideoUrl ? (
+                      <div className="relative w-full h-full group/video flex items-center justify-center">
+                        <video
+                          ref={videoRef}
+                          src={renderedVideoUrl}
+                          playsInline
+                          loop
+                          muted={isVideoMuted}
+                          onPlay={() => setIsVideoPlaying(true)}
+                          onPause={() => setIsVideoPlaying(false)}
+                          onEnded={() => setIsVideoPlaying(false)}
+                          onClick={toggleVideoPlayback}
+                          className="w-full h-full object-cover cursor-pointer"
+                        />
+
+                        {/* BIG CENTRAL PLAY BUTTON */}
+                        {!isVideoPlaying && (
+                          <div
+                            onClick={toggleVideoPlayback}
+                            className="absolute inset-0 flex flex-col items-center justify-center z-25 bg-black/40 backdrop-blur-[2px] transition-all cursor-pointer group/btn"
+                          >
+                            {/* Outer Pulsing Glow Halo */}
+                            <div className="relative flex items-center justify-center">
+                              <div className="absolute w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-violet-600/40 blur-xl animate-pulse" />
+                              
+                              {/* Glassmorphic Play Plate */}
+                              <div className="relative w-20 h-20 sm:w-22 sm:h-22 rounded-full bg-white/25 backdrop-blur-xl border-2 border-white/90 shadow-[0_15px_35px_rgba(0,0,0,0.6),0_0_35px_rgba(139,92,246,0.7)] flex items-center justify-center group-hover/btn:scale-110 active:scale-95 transition-all duration-300">
+                                
+                                {/* Inner Vibrant Gradient Orb */}
+                                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-tr from-violet-600 via-purple-600 to-indigo-500 shadow-inner flex items-center justify-center group-hover/btn:from-violet-500 group-hover/btn:to-indigo-400">
+                                  {/* Triangle Play Icon */}
+                                  <svg className="w-8 h-8 text-white ml-1 fill-current drop-shadow-md" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z" />
+                                  </svg>
+                                </div>
+                              </div>
+                            </div>
+
+                            <span className="mt-3.5 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/20 text-[11px] font-bold text-white tracking-wider uppercase shadow-md flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                              Click to Play 9:16 Reel
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Top-Right Quick Audio Mute/Unmute Pill */}
+                        <button
+                          type="button"
+                          onClick={toggleVideoMute}
+                          className="absolute top-12 right-3.5 z-35 p-2 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white transition-all hover:scale-105 active:scale-95 shadow-md"
+                          title={isVideoMuted ? "Unmute Audio" : "Mute Audio"}
+                        >
+                          {isVideoMuted ? (
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                            </svg>
+                          ) : (
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                            </svg>
+                          )}
+                        </button>
+
+                        {/* Bottom Overlay Bar on Hover when playing */}
+                        {isVideoPlaying && (
+                          <div
+                            onClick={toggleVideoPlayback}
+                            className="absolute bottom-6 inset-x-4 z-30 flex items-center justify-between p-2 rounded-2xl bg-black/60 backdrop-blur-md border border-white/15 opacity-0 group-hover/video:opacity-100 transition-opacity duration-200 cursor-pointer text-white"
+                          >
+                            <div className="flex items-center gap-2 text-xs font-medium pl-1">
+                              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                              </svg>
+                              <span>Tap to pause</span>
+                            </div>
+                            <span className="text-[10px] font-mono text-violet-300 pr-1">9:16 Vertical</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      /* Standby / Empty / Rendering Screen */
+                      <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1f1442] via-[#0b061c] to-[#04020a]">
+                        {isRunning ? (
+                          <div className="flex flex-col items-center gap-3.5">
+                            <div className="relative flex items-center justify-center">
+                              <div className="w-14 h-14 rounded-full border-3 border-violet-500/20 border-t-violet-400 animate-spin" />
+                              <div className="absolute w-8 h-8 rounded-full bg-violet-600/30 blur-md animate-pulse" />
+                            </div>
+                            <p className="text-xs text-violet-200 font-bold tracking-tight">
+                              Rendering 9:16 Vertical Reel...
+                            </p>
+                            <span className="text-[11px] text-violet-300/90 font-mono bg-violet-950/70 px-2.5 py-0.5 rounded-full border border-violet-700/40">
+                              {pipelineProgress}% completed
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center">
+                            {/* Glowing 3D Glass Studio Emblem */}
+                            <div className="relative mb-4 group/icon">
+                              <div className="absolute -inset-1.5 rounded-3xl bg-gradient-to-r from-violet-600 to-indigo-600 opacity-30 blur-md" />
+                              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-b from-white/15 via-white/5 to-transparent border border-white/20 backdrop-blur-md shadow-xl flex items-center justify-center text-violet-300 shadow-[0_10px_25px_rgba(0,0,0,0.5)]">
+                                <svg className="w-7 h-7 drop-shadow-[0_2px_8px_rgba(167,139,250,0.6)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                              </div>
+                            </div>
+                            <p className="text-xs font-semibold text-zinc-200 max-w-[210px] leading-relaxed">
+                              Rendered vertical 9:16 reel will appear here for instant preview.
+                            </p>
+                            <span className="text-[10px] text-zinc-400 font-mono mt-2 bg-zinc-900/80 px-2.5 py-1 rounded-full border border-zinc-800">
+                              Ready for Render
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* iOS Home Indicator Bar */}
+                    <div className="w-28 h-1 bg-white/50 rounded-full mx-auto absolute bottom-2.5 left-1/2 -translate-x-1/2 z-40 pointer-events-none shadow-sm" />
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Instagram Publish Section */}
-            <div className="w-full mt-6 pt-5 border-t border-violet-500/20 flex flex-col gap-3">
-              <label className="text-xs font-medium text-zinc-300 flex items-center justify-between">
+            <div className="w-full mt-6 pt-5 border-t border-zinc-200/80 flex flex-col gap-3">
+              <label className="text-xs font-bold text-zinc-800 flex items-center justify-between">
                 <span>Instagram Caption &amp; Hashtags</span>
-                <span className="text-[10px] text-violet-300/70 font-mono">Editable</span>
+                <span className="text-[10px] text-violet-600 font-mono font-semibold">Editable</span>
               </label>
 
               <textarea
@@ -1179,30 +1351,30 @@ export default function AIStudioPage() {
                 onChange={(e) => setCustomCaption(e.target.value)}
                 rows={3}
                 placeholder="Write your reel caption and hashtags here..."
-                className="w-full bg-[#221447]/70 border border-violet-400/20 rounded-xl p-3 text-xs text-zinc-100 placeholder:text-violet-300/40 focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400 transition-all resize-none font-sans"
+                className="w-full bg-zinc-50/90 border border-zinc-200 rounded-xl p-3 text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/15 transition-all resize-none font-sans font-medium"
               />
 
               {publishMessage && (
                 <div
                   className={`text-xs p-3.5 rounded-xl border ${
                     publishStage === "published"
-                      ? "bg-emerald-950/20 border-emerald-800/30 text-emerald-300"
+                      ? "bg-emerald-50 border-emerald-200 text-emerald-800"
                       : publishStage === "publish-failed"
-                      ? "bg-rose-950/20 border-rose-800/30 text-rose-300"
-                      : "bg-violet-950/40 border-violet-600/30 text-violet-200"
+                      ? "bg-rose-50 border-rose-200 text-rose-800"
+                      : "bg-violet-50 border-violet-200 text-violet-900"
                   }`}
                 >
-                  <p className="font-medium">{publishMessage}</p>
+                  <p className="font-semibold">{publishMessage}</p>
                   {publishStage !== "idle" && publishStage !== "published" && publishStage !== "publish-failed" && (
-                    <div className="w-full h-1.5 bg-[#0e0722] rounded-full mt-2 overflow-hidden border border-violet-500/30">
+                    <div className="w-full h-1.5 bg-zinc-200 rounded-full mt-2 overflow-hidden border border-zinc-300">
                       <div
-                        className="h-full bg-gradient-to-r from-violet-600 via-purple-500 to-indigo-500 transition-all duration-300 rounded-full"
+                        className="h-full bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 transition-all duration-300 rounded-full"
                         style={{ width: `${publishProgress}%` }}
                       />
                     </div>
                   )}
                   {instagramMediaId && (
-                    <p className="text-[11px] font-mono mt-1 text-emerald-400">
+                    <p className="text-[11px] font-mono mt-1 text-emerald-700 font-bold">
                       Instagram Media ID: {instagramMediaId}
                     </p>
                   )}
@@ -1213,7 +1385,7 @@ export default function AIStudioPage() {
                 type="button"
                 onClick={uploadToSupabaseAndPublish}
                 disabled={!renderedVideoUrl || publishStage === "uploading-supabase" || publishStage === "processing-instagram"}
-                className="w-full py-3.5 px-6 rounded-xl font-semibold text-sm bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-xl shadow-purple-950/50 transition-all transform active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3.5 px-6 rounded-xl font-bold text-sm bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-xl shadow-violet-600/25 hover:shadow-violet-600/35 transition-all transform active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
               >
                 {publishStage === "uploading-supabase" || publishStage === "processing-instagram" ? (
                   <>
@@ -1253,73 +1425,73 @@ export default function AIStudioPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           {/* Step 1 */}
-          <div className="p-5 rounded-2xl bg-zinc-900/40 border border-zinc-800/80 backdrop-blur-sm flex flex-col gap-3 group hover:border-cyan-500/40 transition-colors">
+          <div className="p-6 rounded-3xl bg-white/95 backdrop-blur-xl border border-white text-zinc-900 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] hover:shadow-[0_24px_50px_-12px_rgba(0,0,0,0.4)] transition-all flex flex-col gap-3 group">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono font-bold text-cyan-400 px-2 py-0.5 rounded bg-cyan-950/50 border border-cyan-800/40">
+              <span className="text-[11px] font-mono font-bold text-violet-700 px-2.5 py-0.5 rounded-full bg-violet-100 border border-violet-200">
                 PHASE 01
               </span>
-              <div className="w-8 h-8 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-cyan-300 transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-violet-50 border border-violet-200/80 flex items-center justify-center text-violet-600 group-hover:bg-violet-600 group-hover:text-white transition-colors shadow-2xs">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
                 </svg>
               </div>
             </div>
-            <h3 className="text-sm font-semibold text-white">Audio Ingest &amp; Term Normalization</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <h3 className="text-sm font-bold text-zinc-950">Audio Ingest &amp; Term Normalization</h3>
+            <p className="text-xs text-zinc-600 leading-relaxed font-normal">
               Extracts 16kHz mono audio, runs word-level Faster-Whisper ASR, and matches technical vocabulary via regex to preserve terms like O(n), PyTorch, and SQL.
             </p>
           </div>
 
           {/* Step 2 */}
-          <div className="p-5 rounded-2xl bg-zinc-900/40 border border-zinc-800/80 backdrop-blur-sm flex flex-col gap-3 group hover:border-cyan-500/40 transition-colors">
+          <div className="p-6 rounded-3xl bg-white/95 backdrop-blur-xl border border-white text-zinc-900 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] hover:shadow-[0_24px_50px_-12px_rgba(0,0,0,0.4)] transition-all flex flex-col gap-3 group">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono font-bold text-cyan-400 px-2 py-0.5 rounded bg-cyan-950/50 border border-cyan-800/40">
+              <span className="text-[11px] font-mono font-bold text-violet-700 px-2.5 py-0.5 rounded-full bg-violet-100 border border-violet-200">
                 PHASE 02
               </span>
-              <div className="w-8 h-8 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-cyan-300 transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-violet-50 border border-violet-200/80 flex items-center justify-center text-violet-600 group-hover:bg-violet-600 group-hover:text-white transition-colors shadow-2xs">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
             </div>
-            <h3 className="text-sm font-semibold text-white">Pedagogical Highlight Scoring</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <h3 className="text-sm font-bold text-zinc-950">Pedagogical Highlight Scoring</h3>
+            <p className="text-xs text-zinc-600 leading-relaxed font-normal">
               Evaluates candidate 30–60s windows across information density, self-containment, introductory hooks, and sentence closure to locate the single highest-value &ldquo;Aha!&rdquo; moment.
             </p>
           </div>
 
           {/* Step 3 */}
-          <div className="p-5 rounded-2xl bg-zinc-900/40 border border-zinc-800/80 backdrop-blur-sm flex flex-col gap-3 group hover:border-cyan-500/40 transition-colors">
+          <div className="p-6 rounded-3xl bg-white/95 backdrop-blur-xl border border-white text-zinc-900 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] hover:shadow-[0_24px_50px_-12px_rgba(0,0,0,0.4)] transition-all flex flex-col gap-3 group">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono font-bold text-cyan-400 px-2 py-0.5 rounded bg-cyan-950/50 border border-cyan-800/40">
+              <span className="text-[11px] font-mono font-bold text-violet-700 px-2.5 py-0.5 rounded-full bg-violet-100 border border-violet-200">
                 PHASE 03
               </span>
-              <div className="w-8 h-8 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-cyan-300 transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-violet-50 border border-violet-200/80 flex items-center justify-center text-violet-600 group-hover:bg-violet-600 group-hover:text-white transition-colors shadow-2xs">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
               </div>
             </div>
-            <h3 className="text-sm font-semibold text-white">Computer Vision 9:16 Re-Framing</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <h3 className="text-sm font-bold text-zinc-950">Computer Vision 9:16 Re-Framing</h3>
+            <p className="text-xs text-zinc-600 leading-relaxed font-normal">
               OpenCV face detection and screen content analyzers track the speaker and active code typing, generating smoothed pan trajectories and dynamic 9:16 compositions.
             </p>
           </div>
 
           {/* Step 4 */}
-          <div className="p-5 rounded-2xl bg-zinc-900/40 border border-zinc-800/80 backdrop-blur-sm flex flex-col gap-3 group hover:border-cyan-500/40 transition-colors">
+          <div className="p-6 rounded-3xl bg-white/95 backdrop-blur-xl border border-white text-zinc-900 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] hover:shadow-[0_24px_50px_-12px_rgba(0,0,0,0.4)] transition-all flex flex-col gap-3 group">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono font-bold text-cyan-400 px-2 py-0.5 rounded bg-cyan-950/50 border border-cyan-800/40">
+              <span className="text-[11px] font-mono font-bold text-violet-700 px-2.5 py-0.5 rounded-full bg-violet-100 border border-violet-200">
                 PHASE 04
               </span>
-              <div className="w-8 h-8 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-cyan-300 transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-violet-50 border border-violet-200/80 flex items-center justify-center text-violet-600 group-hover:bg-violet-600 group-hover:text-white transition-colors shadow-2xs">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                 </svg>
               </div>
             </div>
-            <h3 className="text-sm font-semibold text-white">Karaoke Captions &amp; Auto-Publish</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <h3 className="text-sm font-bold text-zinc-950">Karaoke Captions &amp; Auto-Publish</h3>
+            <p className="text-xs text-zinc-600 leading-relaxed font-normal">
               Renders synchronized word-pop ASS subtitles, burns branding logos, and triggers direct Instagram Reel upload via resumable TUS and the Graph API.
             </p>
           </div>
