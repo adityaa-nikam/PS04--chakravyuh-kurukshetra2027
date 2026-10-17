@@ -112,8 +112,29 @@ export default function AIStudioPage() {
     setIsVideoPlaying(false);
   }, [renderedVideoUrl]);
 
-  // Clean up polling timer on unmount
+  // Clean up polling timer on unmount & read URL query parameters
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const mode = params.get("mode");
+      const topic = params.get("topic");
+      const autoStart = params.get("autoStart");
+
+      if (mode === "ai_prompt" || mode === "path" || mode === "upload") {
+        setInputMode(mode);
+      }
+      if (topic) {
+        setAiTopic(topic);
+      }
+      if (autoStart === "true" && topic) {
+        setTimeout(() => {
+          const el = document.getElementById("studio-workspace");
+          if (el) el.scrollIntoView({ behavior: "smooth" });
+          startRemotionGeneration(topic);
+        }, 500);
+      }
+    }
+
     return () => {
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     };
@@ -131,8 +152,9 @@ export default function AIStudioPage() {
   // --------------------------------------------------------------------------
   // AI Video Generation by Command (Remotion Engine)
   // --------------------------------------------------------------------------
-  async function startRemotionGeneration() {
-    if (!aiTopic.trim()) {
+  async function startRemotionGeneration(topicOverride?: string | React.MouseEvent) {
+    const topicToUse = (typeof topicOverride === "string" ? topicOverride : aiTopic).trim();
+    if (!topicToUse) {
       alert("Please provide a topic or command to generate the video.");
       return;
     }
@@ -178,7 +200,7 @@ export default function AIStudioPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          topic: aiTopic.trim(),
+          topic: topicToUse,
           targetAudience: aiAudience,
           durationSeconds: aiDuration,
           render: true,
