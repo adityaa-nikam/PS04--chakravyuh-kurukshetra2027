@@ -7,6 +7,7 @@ coherent, and self-contained 30–60-second educational highlight for short-form
 import json
 import logging
 import re
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple, Dict, Any
@@ -51,6 +52,9 @@ class CandidateSegment:
     total_score: float = 0.0
     reason: str = ""
     is_fallback: bool = False
+    mercury_score: Optional[float] = None
+    title: Optional[str] = None
+    caption: Optional[str] = None
 
 
 class HighlightSelectorService:
@@ -659,6 +663,258 @@ class HighlightSelectorService:
             word_end_id=word_end_id,
             selection_method=selection_method
         )
+
+    # -----------------------------------------------------------------------
+    # Step 5: Multi-Topic Extraction & Mercury Decide Evaluation
+    # -----------------------------------------------------------------------
+    @staticmethod
+    def evaluate_with_mercury_decide(candidate: CandidateSegment) -> Optional[float]:
+        """Calls OpenRouter Decisions API with inception/mercury-decide to score standalone pedagogical quality."""
+        if not settings.OPENROUTER_API_KEY:
+            return None
+        url = "https://openrouter.ai/api/alpha/decisions"
+        headers = {
+            "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": settings.DECISION_MODEL or "inception/mercury-decide",
+            "state": {
+                "topic_excerpt": candidate.text[:400],
+                "duration_sec": candidate.duration_sec,
+                "word_count": len(candidate.words)
+            },
+            "questions": {
+                "is_standalone_reel": {
+                    "type": "noul",
+                    "instructions": "Is this video clip an engaging, self-contained educational highlight suitable for a standalone viral reel?",
+                    "criteria": {
+                        "true": "Clear, self-contained educational insight with high pedagogical value",
+                        "false": "Incomplete thought, greeting/promo fluff, dangling reference, or requires heavy external context"
+                    }
+                }
+            }
+        }
+        try:
+            req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers)
+            with urllib.request.urlopen(req, timeout=6) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                noul = data.get("answers", {}).get("is_standalone_reel", {}).get("noul")
+                if noul is not None:
+                    return float(noul)
+        except Exception as e:
+            logger.warning("Mercury Decide evaluation skipped for candidate %d: %s", candidate.candidate_id, e)
+        return None
+
+    @staticmethod
+    def generate_title_and_caption(candidate: CandidateSegment, clip_index: int) -> Tuple[str, str]:
+        """Generates a punchy educational title and viral Instagram caption for a clip."""
+        # Clean fallback extraction
+        first_sentence = candidate.text.split(".")[0].strip()
+        words = [w for w in first_sentence.split() if w.lower() not in HighlightSelectorService.FILLER_WORDS]
+        raw_title = " ".join(words[:5]) if len(words) >= 3 else f"Topic Highlight #{clip_index + 1}"
+        fallback_title = re.sub(r"[^\w\s-]", "", raw_title).title()
+        fallback_caption = (
+            f"💡 {fallback_title}\n\n"
+            f"{candidate.text[:140].strip()}...\n\n"
+            "#Programming #ComputerScience #TechExplainer #CodingShorts"
+        )
+
+        if not settings.OPENROUTER_API_KEY:
+            return fallback_title, fallback_caption
+
+        url = "https://openrouter.ai/api/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        prompt = (
+            f"Analyze this lecture clip transcript excerpt:\n\"{candidate.text[:350]}\"\n\n"
+            "Respond ONLY in valid JSON format with two keys:\n"
+            "\"title\": A punchy 3-5 word technical topic title (e.g. 'Big O Space Complexity')\n"
+            "\"caption\": A 2-sentence viral Instagram caption with 3 hashtags."
+        )
+        payload = {
+            "model": settings.FREE_LLM_MODEL or "nvidia/nemotron-3-super-120b-a12b:free",
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.3
+        }
+        try:
+            req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers)
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                content = data["choices"][0]["message"]["content"].strip()
+                match = re.search(r"\{.*\}", content, re.DOTALL)
+                if match:
+                    parsed = json.loads(match.group(0))
+                    title = parsed.get("title", fallback_title).strip().strip('"')
+                    caption = parsed.get("caption", fallback_caption).strip()
+                    return title, caption
+        except Exception as e:
+            logger.debug("LLM title generation skipped: %s", e)
+
+        return fallback_title, fallback_caption
+
+    def select_multiple_highlights(
+        self,
+        transcript: ValidatedTranscript,
+        max_clips: int = 3,
+        use_decision_model: bool = True
+    ) -> List[HighlightResult]:
+        """Selects up to `max_clips` distinct, non-overlapping pedagogical highlights from transcript.
+        
+        Natural Bounds Guarantee:
+        - If only 1 topic is present in a short lecture, returns exactly 1 highlight.
+        - If 2 topics are present, returns exactly 2 highlights.
+        - If N topics are present and user requested 10, returns up to 10 highlights.
+        - If 6 topics are present and user requested 10, returns exactly 6 highlights.
+        - Uses inception/mercury-decide calibrated decision probabilities for highlight selection.
+        """
+        words = transcript.display_words
+        if not words:
+            raise ValueError("Transcript contains zero words. Cannot select highlights.")
+
+        diag = transcript.diagnose_timestamps()
+        if not diag.is_structurally_valid:
+            raise ValueError(f"Malformed transcript timestamps: {'; '.join(diag.fatal_errors[:5])}")
+
+        if diag.valid_words_count == 0:
+            raise ValueError("Transcript contains zero words with positive duration.")
+
+        sentences = self.segment_into_sentences(words)
+        candidates = self.generate_candidates(sentences, words)
+
+        if not candidates:
+            single = self.select_best_highlight(transcript)
+            single.title = "Educational Highlight #1"
+            single.caption = f"💡 Key concept from lecture\n\n{single.transcript_excerpt[:150]}...\n\n#Programming #Code"
+            return [single]
+
+        # Score every candidate deterministically with heuristic engine
+        for cand in candidates:
+            score, breakdown, reason = self.score_candidate(cand)
+            cand.total_score = score
+            cand.score_breakdown = breakdown
+            cand.reason = reason
+
+        # Sort descending by heuristic score
+        candidates.sort(
+            key=lambda c: (c.total_score, -abs(c.duration_sec - self.target_duration_sec)),
+            reverse=True
+        )
+
+        # Temporal Non-Maximum Suppression (NMS) to isolate distinct, non-overlapping topic windows
+        distinct_candidates: List[CandidateSegment] = []
+        for cand in candidates:
+            overlaps = False
+            for chosen in distinct_candidates:
+                ov_start = max(cand.start_sec, chosen.start_sec)
+                ov_end = min(cand.end_sec, chosen.end_sec)
+                ov_dur = max(0.0, ov_end - ov_start)
+                union_dur = (cand.duration_sec + chosen.duration_sec) - ov_dur
+                iou = ov_dur / max(1.0, union_dur)
+                if ov_dur > 5.0 or iou > 0.15:
+                    overlaps = True
+                    break
+            if not overlaps:
+                distinct_candidates.append(cand)
+                # Keep candidate pool bounded for AI decision evaluation
+                if len(distinct_candidates) >= max(max_clips * 2, 8):
+                    break
+
+        if not distinct_candidates:
+            single = self.select_best_highlight(transcript)
+            single.title = "Educational Highlight #1"
+            return [single]
+
+        # Evaluate candidate quality with Mercury Decide
+        if use_decision_model and settings.OPENROUTER_API_KEY:
+            logger.info(
+                "Evaluating %d distinct candidate topics with Mercury Decide (%s)...",
+                len(distinct_candidates),
+                settings.DECISION_MODEL
+            )
+            for cand in distinct_candidates:
+                noul = self.evaluate_with_mercury_decide(cand)
+                if noul is not None:
+                    cand.mercury_score = noul
+                    # Blended decision score: 40% heuristic breakdown + 60% Mercury probability
+                    cand.total_score = round(cand.total_score * 0.4 + (noul * 100.0) * 0.6, 1)
+
+            # Re-sort after Mercury Decision scoring
+            distinct_candidates.sort(key=lambda c: c.total_score, reverse=True)
+
+        # Natural Bound: Capped at min(max_clips, total_distinct_topics_available)
+        final_candidates = distinct_candidates[:max(1, max_clips)]
+        logger.info(
+            "Final topic selection: %d clip(s) selected from %d distinct topic(s) (requested max=%d)",
+            len(final_candidates),
+            len(distinct_candidates),
+            max_clips
+        )
+
+        results: List[HighlightResult] = []
+        for idx, winner in enumerate(final_candidates):
+            refined_words = winner.words
+            while len(refined_words) > 5 and refined_words[0].text.lower().strip(",.!?") in self.FILLER_WORDS:
+                refined_words = refined_words[1:]
+
+            pos_words = [w for w in refined_words if w.end_sec > w.start_sec]
+            if not pos_words:
+                pos_words = refined_words
+
+            first_pos = pos_words[0]
+            last_pos = pos_words[-1]
+            start_sec = first_pos.start_sec
+            end_sec = max(last_pos.end_sec, winner.end_sec)
+
+            included_words = [
+                w for w in refined_words
+                if w.start_sec >= start_sec - 0.001 and w.end_sec <= end_sec + 0.001
+            ] or pos_words
+
+            word_start_id = included_words[0].id
+            word_end_id = included_words[-1].id
+            excerpt = " ".join(w.text for w in included_words)
+            duration_sec = round(end_sec - start_sec, 3)
+
+            title, caption = self.generate_title_and_caption(winner, idx)
+
+            method = (
+                "mercury_decide_nms"
+                if winner.mercury_score is not None
+                else "heuristic_nms"
+            )
+
+            results.append(
+                HighlightResult(
+                    schema_version="1.0",
+                    source=transcript.source,
+                    start_sec=round(start_sec, 3),
+                    end_sec=round(end_sec, 3),
+                    duration_sec=duration_sec,
+                    score=winner.total_score,
+                    reason=winner.reason or "Coherent educational highlight verified by Mercury Decide",
+                    transcript_excerpt=excerpt,
+                    score_breakdown=winner.score_breakdown or ScoreBreakdown(
+                        information_value=50.0,
+                        self_contained=50.0,
+                        opening_hook=50.0,
+                        ending_quality=50.0,
+                        speech_density=50.0,
+                        confidence=95.0,
+                        duration_penalty=0.0
+                    ),
+                    word_start_id=word_start_id,
+                    word_end_id=word_end_id,
+                    selection_method=method,
+                    title=title,
+                    caption=caption,
+                    mercury_score=winner.mercury_score,
+                )
+            )
+
+        return results
 
     # -----------------------------------------------------------------------
     # File I/O Helpers

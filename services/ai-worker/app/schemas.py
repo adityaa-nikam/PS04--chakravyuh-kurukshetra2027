@@ -222,6 +222,9 @@ class HighlightResult(BaseModel):
     word_start_id: int
     word_end_id: int
     selection_method: str = "transcript_heuristic_v1"
+    title: Optional[str] = None
+    caption: Optional[str] = None
+    mercury_score: Optional[float] = None
 
 
 class SelectedHighlight(BaseModel):
@@ -232,6 +235,26 @@ class SelectedHighlight(BaseModel):
     pedagogical_score: float
     topic_summary: str
     boundary_reasoning: str
+    title: Optional[str] = None
+    caption: Optional[str] = None
+    mercury_score: Optional[float] = None
+
+
+class RenderedClipItem(BaseModel):
+    clip_index: int
+    clip_id: str
+    title: str
+    start_time_sec: float
+    end_time_sec: float
+    duration_sec: float
+    pedagogical_score: float
+    topic_summary: str
+    boundary_reasoning: str
+    rendered_video_path: Optional[str] = None
+    video_url: Optional[str] = None
+    download_filename: Optional[str] = None
+    mercury_score: Optional[float] = None
+    caption: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------

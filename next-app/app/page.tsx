@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as tus from "tus-js-client";
+import { PipelineRenderedClip } from "@/lib/pipeline/client";
 
 type StageStep =
   | "idle"
@@ -61,6 +62,9 @@ export default function AIStudioPage() {
   const [captionStyle, setCaptionStyle] = useState<"karaoke" | "minimal" | "bold" | "neon">("karaoke");
   const [compositionMode, setCompositionMode] = useState<"adaptive" | "presenter" | "screen_content">("adaptive");
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(true);
+  const [targetClips, setTargetClips] = useState<number>(3);
+  const [renderedClips, setRenderedClips] = useState<PipelineRenderedClip[]>([]);
+  const [selectedClipIndex, setSelectedClipIndex] = useState<number>(0);
 
   // AI Pipeline Execution State
   const [pipelineStage, setPipelineStage] = useState<StageStep>("idle");
@@ -262,6 +266,8 @@ export default function AIStudioPage() {
     setHighlightData(null);
     setCropPlanData(null);
     setElapsedSec(null);
+    setRenderedClips([]);
+    setSelectedClipIndex(0);
 
     try {
       let res: Response;
@@ -273,6 +279,7 @@ export default function AIStudioPage() {
         formData.append("subtitles", subtitlesEnabled ? "true" : "false");
         formData.append("captionStyle", captionStyle);
         formData.append("compositionMode", compositionMode);
+        formData.append("maxClips", targetClips.toString());
 
         setStageMessage("Uploading video to workspace storage...");
         res = await fetch("/api/ai/pipeline", {
@@ -289,6 +296,7 @@ export default function AIStudioPage() {
             subtitles: subtitlesEnabled,
             caption_style: captionStyle,
             composition_mode: compositionMode,
+            maxClips: targetClips,
           }),
         });
       }
@@ -335,12 +343,26 @@ export default function AIStudioPage() {
         if (job.crop_plan) {
           setCropPlanData(job.crop_plan);
         }
+        if (job.rendered_clips && job.rendered_clips.length > 0) {
+          setRenderedClips(job.rendered_clips);
+        }
 
         if (job.status === "COMPLETED") {
           if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
           setElapsedSec(job.elapsed_sec ?? null);
-          // Set streaming video URL
-          setRenderedVideoUrl(`/api/ai/video?jobId=${encodeURIComponent(activeJobId)}&t=${Date.now()}`);
+          if (job.rendered_clips && job.rendered_clips.length > 0) {
+            setRenderedClips(job.rendered_clips);
+            setSelectedClipIndex(0);
+            const first = job.rendered_clips[0];
+            const vUrl = first.video_url || `/api/ai/video?filename=${encodeURIComponent(first.download_filename || `${activeJobId}_reel_01.mp4`)}`;
+            setRenderedVideoUrl(`${vUrl}&t=${Date.now()}`);
+            if (first.caption) {
+              setCustomCaption(first.caption);
+            }
+          } else {
+            // Set streaming video URL
+            setRenderedVideoUrl(`/api/ai/video?jobId=${encodeURIComponent(activeJobId)}&t=${Date.now()}`);
+          }
         } else if (job.status === "FAILED") {
           if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
           setErrorMessage(job.error_message || job.stage_message || "Pipeline failed.");
@@ -349,6 +371,42 @@ export default function AIStudioPage() {
         console.warn("Polling error:", err);
       }
     }, 1500);
+  }
+
+  function handleSelectClip(index: number) {
+    setSelectedClipIndex(index);
+    const clip = renderedClips[index];
+    if (!clip) return;
+    const vUrl = clip.video_url || (clip.rendered_video_path ? `/api/ai/video?path=${encodeURIComponent(clip.rendered_video_path)}` : null);
+    if (vUrl) {
+      setRenderedVideoUrl(`${vUrl}&t=${Date.now()}`);
+    }
+    if (clip.caption) {
+      setCustomCaption(clip.caption);
+    }
+    setHighlightData({
+      clip_id: clip.clip_id,
+      start_time_sec: clip.start_time_sec,
+      end_time_sec: clip.end_time_sec,
+      duration_sec: clip.duration_sec,
+      pedagogical_score: clip.pedagogical_score,
+      topic_summary: clip.title || clip.topic_summary,
+      boundary_reasoning: clip.boundary_reasoning,
+    });
+  }
+
+  function handleDownloadClip(clip: PipelineRenderedClip) {
+    const rawUrl = clip.video_url
+      ? clip.video_url
+      : `/api/ai/video?path=${encodeURIComponent(clip.rendered_video_path || "")}`;
+    const dlName = clip.download_filename || `${clip.clip_id}.mp4`;
+    const downloadUrl = `${rawUrl}${rawUrl.includes("?") ? "&" : "?"}download=true&downloadName=${encodeURIComponent(dlName)}`;
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = dlName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 
   // --------------------------------------------------------------------------
@@ -762,51 +820,82 @@ export default function AIStudioPage() {
 
             {/* AI Rendering Options (For video pipeline) */}
             {inputMode !== "ai_prompt" && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5 pt-5 border-t border-white/10 text-xs">
-                <div>
-                  <label className="text-zinc-400 block mb-1.5 font-medium">Caption Style</label>
-                  <select
-                    value={captionStyle}
-                    onChange={(e) => setCaptionStyle(e.target.value as any)}
-                    disabled={isRunning}
-                    className="w-full bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-purple-500"
-                  >
-                    <option value="karaoke">✨ Karaoke (Word Pop)</option>
-                    <option value="minimal">Minimal Elegant</option>
-                    <option value="bold">Bold Punchy</option>
-                    <option value="neon">Neon Glow</option>
-                  </select>
+              <div className="mt-5 pt-5 border-t border-white/10 text-xs flex flex-col gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-zinc-300 font-semibold flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                        Target Clips
+                      </label>
+                      <span className="text-[10px] text-cyan-400 font-mono font-medium">Mercury Decide</span>
+                    </div>
+                    <select
+                      value={targetClips}
+                      onChange={(e) => setTargetClips(parseInt(e.target.value, 10))}
+                      disabled={isRunning}
+                      className="w-full bg-black/60 border border-cyan-500/30 rounded-lg px-3 py-2 text-cyan-100 font-medium focus:outline-none focus:border-cyan-400"
+                    >
+                      <option value={1}>1 Clip (Single)</option>
+                      <option value={2}>2 Clips</option>
+                      <option value={3}>3 Clips (Default)</option>
+                      <option value={5}>5 Clips</option>
+                      <option value={10}>10 Clips (Max)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-zinc-400 block mb-1.5 font-medium">Caption Style</label>
+                    <select
+                      value={captionStyle}
+                      onChange={(e) => setCaptionStyle(e.target.value as any)}
+                      disabled={isRunning}
+                      className="w-full bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-purple-500"
+                    >
+                      <option value="karaoke">✨ Karaoke (Word Pop)</option>
+                      <option value="minimal">Minimal Elegant</option>
+                      <option value="bold">Bold Punchy</option>
+                      <option value="neon">Neon Glow</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-zinc-400 block mb-1.5 font-medium">9:16 Framing Mode</label>
+                    <select
+                      value={compositionMode}
+                      onChange={(e) => setCompositionMode(e.target.value as any)}
+                      disabled={isRunning}
+                      className="w-full bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-purple-500"
+                    >
+                      <option value="adaptive">Dynamic Hybrid (CV)</option>
+                      <option value="presenter">Presenter Focus</option>
+                      <option value="screen_content">Screen / Slide Focus</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-zinc-400 block mb-1.5 font-medium">Subtitles Burn-In</label>
+                    <button
+                      type="button"
+                      onClick={() => setSubtitlesEnabled(!subtitlesEnabled)}
+                      disabled={isRunning}
+                      className={`w-full py-2 px-3 rounded-lg border font-medium transition-colors flex items-center justify-center gap-2 ${
+                        subtitlesEnabled
+                          ? "bg-purple-600/20 border-purple-500/40 text-purple-300"
+                          : "bg-black/60 border-white/15 text-zinc-400"
+                      }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full ${subtitlesEnabled ? "bg-purple-400" : "bg-zinc-500"}`} />
+                      {subtitlesEnabled ? "Enabled" : "Disabled"}
+                    </button>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-zinc-400 block mb-1.5 font-medium">9:16 Framing Mode</label>
-                  <select
-                    value={compositionMode}
-                    onChange={(e) => setCompositionMode(e.target.value as any)}
-                    disabled={isRunning}
-                    className="w-full bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-purple-500"
-                  >
-                    <option value="adaptive">Dynamic Hybrid (CV)</option>
-                    <option value="presenter">Presenter Focus</option>
-                    <option value="screen_content">Screen / Slide Focus</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-zinc-400 block mb-1.5 font-medium">Subtitles Burn-In</label>
-                  <button
-                    type="button"
-                    onClick={() => setSubtitlesEnabled(!subtitlesEnabled)}
-                    disabled={isRunning}
-                    className={`w-full py-2 px-3 rounded-lg border font-medium transition-colors flex items-center justify-center gap-2 ${
-                      subtitlesEnabled
-                        ? "bg-purple-600/20 border-purple-500/40 text-purple-300"
-                        : "bg-black/60 border-white/15 text-zinc-400"
-                    }`}
-                  >
-                    <span className={`w-2 h-2 rounded-full ${subtitlesEnabled ? "bg-purple-400" : "bg-zinc-500"}`} />
-                    {subtitlesEnabled ? "Enabled" : "Disabled"}
-                  </button>
+                <div className="flex items-center gap-2 text-[11px] text-zinc-400 bg-cyan-950/20 border border-cyan-500/15 rounded-lg px-3 py-2">
+                  <span className="text-cyan-400">💡</span>
+                  <span>
+                    <strong>Mercury Decide AI:</strong> Evaluates distinct topics across the lecture. If a video is short or only contains 1 or 2 topics, exactly that many clips are rendered (capped at your chosen limit).
+                  </span>
                 </div>
               </div>
             )}
@@ -994,6 +1083,89 @@ export default function AIStudioPage() {
               )}
             </div>
 
+            {/* Multi-Clip Options Deck (Mercury Decide Topic Selection) */}
+            {renderedClips.length > 0 && (
+              <div className="w-full mb-5 p-3.5 rounded-xl bg-[#030d22]/90 border border-cyan-500/30 shadow-lg shadow-cyan-950/20">
+                <div className="flex items-center justify-between mb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                    <span className="text-xs font-semibold uppercase tracking-wider text-cyan-300">
+                      Mercury Decide Options ({renderedClips.length} Generated)
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-zinc-400">
+                    Select 1 for Instagram, download any
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1">
+                  {renderedClips.map((clip, idx) => {
+                    const isSelected = selectedClipIndex === idx;
+                    return (
+                      <div
+                        key={clip.clip_id || idx}
+                        onClick={() => handleSelectClip(idx)}
+                        className={`p-2.5 rounded-lg border transition-all cursor-pointer flex flex-col gap-1.5 ${
+                          isSelected
+                            ? "bg-cyan-950/50 border-cyan-400 ring-1 ring-cyan-400/40"
+                            : "bg-black/40 border-white/10 hover:border-white/20 hover:bg-white/[0.03]"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase shrink-0 ${
+                              isSelected ? "bg-cyan-400 text-black" : "bg-white/10 text-zinc-300"
+                            }`}>
+                              Option #{idx + 1}
+                            </span>
+                            <span className="text-xs font-medium text-white truncate">
+                              {clip.title}
+                            </span>
+                          </div>
+
+                          <span className="text-[10px] font-mono text-cyan-300 shrink-0 bg-cyan-950 px-1.5 py-0.5 rounded border border-cyan-500/30">
+                            ⭐ {clip.pedagogical_score.toFixed(0)}%
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] text-zinc-400 pt-1 border-t border-white/5 font-mono">
+                          <div className="flex items-center gap-2.5">
+                            <span>⏱ {clip.duration_sec.toFixed(1)}s</span>
+                            <span>
+                              {Math.floor(clip.start_time_sec / 60)}:{Math.floor(clip.start_time_sec % 60).toString().padStart(2, "0")} &rarr; {Math.floor(clip.end_time_sec / 60)}:{Math.floor(clip.end_time_sec % 60).toString().padStart(2, "0")}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={() => handleSelectClip(idx)}
+                              className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors ${
+                                isSelected
+                                  ? "bg-cyan-400 text-black font-bold"
+                                  : "bg-white/10 text-zinc-200 hover:bg-cyan-500/20 hover:text-cyan-300"
+                              }`}
+                            >
+                              {isSelected ? "Active" : "Select"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadClip(clip)}
+                              title="Download this clip MP4"
+                              className="px-2 py-0.5 rounded text-[10px] bg-white/5 border border-white/10 text-zinc-300 hover:bg-white/10 hover:text-white flex items-center gap-1"
+                            >
+                              <span>⬇</span>
+                              <span>Download</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Smartphone 9:16 Frame Player */}
             <div className="relative w-[280px] h-[497px] rounded-[32px] bg-black p-2.5 border-[4px] border-zinc-800 shadow-2xl shadow-purple-950/40 overflow-hidden flex flex-col items-center justify-center">
               {/* Camera Notch */}
@@ -1033,6 +1205,35 @@ export default function AIStudioPage() {
                 </div>
               )}
             </div>
+
+            {renderedVideoUrl && (
+              <div className="w-full flex items-center justify-between mt-3 text-xs">
+                <span className="text-zinc-400 font-mono text-[11px]">
+                  {renderedClips.length > 0
+                    ? `Active: Option #${selectedClipIndex + 1} (${renderedClips[selectedClipIndex]?.title || "Clip"})`
+                    : "Active 9:16 Reel"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (renderedClips.length > 0 && renderedClips[selectedClipIndex]) {
+                      handleDownloadClip(renderedClips[selectedClipIndex]);
+                    } else if (renderedVideoUrl) {
+                      const a = document.createElement("a");
+                      a.href = `${renderedVideoUrl}&download=true`;
+                      a.download = `${jobId || "reel"}.mp4`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-cyan-500/40 text-cyan-300 hover:text-white flex items-center gap-1.5 transition-all text-xs font-medium"
+                >
+                  <span>⬇</span>
+                  <span>Download Active MP4</span>
+                </button>
+              </div>
+            )}
 
             {/* Instagram Publish Section */}
             <div className="w-full mt-6 pt-5 border-t border-white/10 flex flex-col gap-3">

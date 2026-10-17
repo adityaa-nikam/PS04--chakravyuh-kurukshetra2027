@@ -54,9 +54,11 @@ export async function GET(req: NextRequest) {
 
     const stat = fs.statSync(resolvedPath);
     const fileSize = stat.size;
+    const isDownload = searchParams.get("download") === "true";
+    const downloadName = searchParams.get("downloadName") || path.basename(resolvedPath);
     const rangeHeader = req.headers.get("range");
 
-    if (rangeHeader) {
+    if (rangeHeader && !isDownload) {
       const parts = rangeHeader.replace(/bytes=/, "").split("-");
       const start = parseInt(parts[0], 10);
       const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
@@ -92,7 +94,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Full file stream
+    // Full file stream (or download)
     const fileStream = fs.createReadStream(resolvedPath);
     const webStream = new ReadableStream({
       start(controller) {
@@ -102,14 +104,20 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    const responseHeaders: Record<string, string> = {
+      "Content-Length": fileSize.toString(),
+      "Content-Type": "video/mp4",
+      "Accept-Ranges": "bytes",
+      "Cache-Control": "no-cache",
+    };
+
+    if (isDownload) {
+      responseHeaders["Content-Disposition"] = `attachment; filename="${downloadName}"`;
+    }
+
     return new NextResponse(webStream, {
       status: 200,
-      headers: {
-        "Content-Length": fileSize.toString(),
-        "Content-Type": "video/mp4",
-        "Accept-Ranges": "bytes",
-        "Cache-Control": "no-cache",
-      },
+      headers: responseHeaders,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Error serving video";

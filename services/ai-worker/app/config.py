@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -68,10 +69,27 @@ class Settings(BaseSettings):
     CV_DEADBAND_THRESHOLD: float = 0.03
     CV_SMOOTHING_ALPHA: float = 0.15
 
+    # OpenRouter Decision & LLM Integration
+    OPENROUTER_API_KEY: Optional[str] = None
+    DECISION_MODEL: str = "inception/mercury-decide"
+    FREE_LLM_MODEL: str = "nvidia/nemotron-3-super-120b-a12b:free"
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
 settings = Settings()
+
+if not settings.OPENROUTER_API_KEY:
+    next_env = WORKSPACE_ROOT / "next-app" / ".env.local"
+    if next_env.exists():
+        try:
+            with open(next_env, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.startswith("OPENROUTER_API_KEY="):
+                        settings.OPENROUTER_API_KEY = line.split("=", 1)[1].strip().strip('"').strip("'")
+                        break
+        except Exception:
+            pass
 
 # Ensure all runtime storage directories exist
 for path in [
