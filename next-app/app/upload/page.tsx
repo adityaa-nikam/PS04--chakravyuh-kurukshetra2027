@@ -316,7 +316,10 @@ export default function UploadPage() {
         retryDelays: [0, 3000, 5000, 10000],
         chunkSize: 6 * 1024 * 1024,
         removeFingerprintOnSuccess: true,
-        headers: { apikey: key },
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+        },
         metadata: {
           bucketName: "videos",
           objectName: current.videoKey,

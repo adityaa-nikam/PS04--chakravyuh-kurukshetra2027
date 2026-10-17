@@ -166,6 +166,18 @@ def execute_pipeline_worker(
 
         stem = video_path.stem
 
+        # Normalize composition_mode aliases
+        comp_mode_map = {
+            "adaptive": "adaptive_hybrid",
+            "adaptive_hybrid": "adaptive_hybrid",
+            "crop_only": "crop_only",
+            "presenter": "crop_only",
+            "presentation_fit_blur": "presentation_fit_blur",
+            "content_only": "content_only",
+            "screen_content": "content_only",
+        }
+        composition_mode = comp_mode_map.get(str(composition_mode).lower(), "adaptive_hybrid")
+
         # --------------------------------------------------------------------
         # Stage 1: Media Probing & Audio Extraction
         # --------------------------------------------------------------------
