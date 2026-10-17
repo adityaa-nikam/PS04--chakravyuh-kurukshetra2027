@@ -7,7 +7,8 @@ import { rendererEnvironment } from "./render-worker";
 // All subprocess inputs are separate arguments; narration never becomes shell code.
 export function runLocalTool(command: string, args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { env: rendererEnvironment(process.env), stdio: ["ignore", "pipe", "pipe"] });
+    const env = { ...rendererEnvironment(process.env), PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1" };
+    const child = spawn(command, args, { env, stdio: ["ignore", "pipe", "pipe"] });
     let output = "", diagnostics = "";
     const timeout = setTimeout(() => { child.kill(); reject(new Error(`LOCAL_TTS: ${path.basename(command)} timed out.`)); }, 300_000);
     child.stdout.on("data", chunk => { output = (output + chunk).slice(-16000); });
@@ -36,7 +37,10 @@ export async function prepareLocalNarration(plan: RenderPlan, directory: string)
   if (provider === "off") return;
   if (provider !== "piper") throw new Error("LOCAL_TTS: VIDEO_GEN_TTS must be piper or off.");
   const app = existsSync(path.resolve("app/api/video_gen")) ? process.cwd() : path.resolve("next-app");
-  const python = process.env.PIPER_PYTHON || path.join(app, ".venv-tts/bin/python");
+  const defaultPython = process.platform === "win32"
+    ? (existsSync(path.join(app, ".venv-tts/Scripts/python.exe")) ? path.join(app, ".venv-tts/Scripts/python.exe") : path.join(app, ".venv-tts/bin/python"))
+    : (existsSync(path.join(app, ".venv-tts/bin/python")) ? path.join(app, ".venv-tts/bin/python") : path.join(app, ".venv-tts/Scripts/python.exe"));
+  const python = process.env.PIPER_PYTHON || defaultPython;
   const model = process.env.PIPER_MODEL || path.join(app, "artifacts/voices/en_US-lessac-medium.onnx");
   if (!existsSync(python) || !existsSync(model) || !existsSync(`${model}.json`)) throw new Error("LOCAL_TTS: Piper or its voice is missing. Run python3 -m venv .venv-tts, .venv-tts/bin/pip install piper-tts==1.4.2, then download en_US-lessac-medium into artifacts/voices. Set VIDEO_GEN_TTS=off only for an explicitly silent export.");
   const files = plan.storyboard.scenes.map(scene => path.join(directory, `${scene.id}.wav`));
