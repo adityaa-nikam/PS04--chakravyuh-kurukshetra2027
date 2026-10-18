@@ -19,6 +19,7 @@ export interface CompositionFrameContext {
   currentRelSec: number;
   captionGroups?: CaptionGroup[];
   captionOptions?: CaptionOptions;
+  zoomFactor?: number; // 1.0 = zoomed in on speaker, 0.0 = zoomed out to full presentation/board
 }
 
 export class FrameCompositor {
@@ -117,25 +118,44 @@ export class FrameCompositor {
     targetCtx.fillRect(0, 0, this.width, this.height);
 
     // -------------------------------------------------------------
-    // Layer 2: High-Definition Foreground Subject Crop
+    // Layer 2: Adaptive Foreground Subject Crop & Presentation Framing
     // -------------------------------------------------------------
-    // Draw cropped region centered on the 9:16 frame
-    const sx = Math.max(0, Math.min(cropBox.x, sourceWidth - 1));
-    const sy = Math.max(0, Math.min(cropBox.y, sourceHeight - 1));
-    const sw = Math.max(1, Math.min(cropBox.width, sourceWidth - sx));
-    const sh = Math.max(1, Math.min(cropBox.height, sourceHeight - sy));
+    const z = Math.max(0.0, Math.min(1.0, context.zoomFactor ?? 1.0));
 
-    // Full 9:16 frame fill with clean aspect mapping
+    // Full 16:9 uncropped bounds fitted inside 9:16 target (Board mode)
+    const s = Math.min(this.width / sourceWidth, this.height / sourceHeight);
+    const fg_w = Math.max(1, Math.round(sourceWidth * s));
+    const fg_h = Math.max(1, Math.round(sourceHeight * s));
+    const x_off = Math.max(0, Math.round((this.width - fg_w) / 2));
+    const y_off = Math.max(0, Math.round((this.height - fg_h) / 2));
+
+    // Person portrait crop box bounds (Speaker mode)
+    const p_sx = Math.max(0, Math.min(cropBox.x, sourceWidth - 1));
+    const p_sy = Math.max(0, Math.min(cropBox.y, sourceHeight - 1));
+    const p_sw = Math.max(1, Math.min(cropBox.width, sourceWidth - p_sx));
+    const p_sh = Math.max(1, Math.min(cropBox.height, sourceHeight - p_sy));
+
+    // Smoothly interpolate source and destination rectangles between Board (0) and Speaker (1)
+    const sx = (1.0 - z) * 0 + z * p_sx;
+    const sy = (1.0 - z) * 0 + z * p_sy;
+    const sw = (1.0 - z) * sourceWidth + z * p_sw;
+    const sh = (1.0 - z) * sourceHeight + z * p_sh;
+
+    const dx = (1.0 - z) * x_off + z * 0;
+    const dy = (1.0 - z) * y_off + z * 0;
+    const dw = (1.0 - z) * fg_w + z * this.width;
+    const dh = (1.0 - z) * fg_h + z * this.height;
+
     targetCtx.drawImage(
       sourceImage,
       sx,
       sy,
       sw,
       sh,
-      0,
-      0,
-      this.width,
-      this.height
+      dx,
+      dy,
+      dw,
+      dh
     );
 
     // -------------------------------------------------------------

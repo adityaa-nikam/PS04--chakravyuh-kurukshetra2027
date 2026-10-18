@@ -39,6 +39,9 @@ export class WebCodecsVideoPipeline {
   private compositor: FrameCompositor;
   private canvas: OffscreenCanvas | HTMLCanvasElement;
   private ctx: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D;
+  private analysisCanvas: HTMLCanvasElement | OffscreenCanvas | null = null;
+  private analysisCtx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null = null;
+  private currentZoomFactor: number = 1.0;
 
   constructor(config?: RenderPipelineConfig) {
     this.width = config?.width ?? 720;
@@ -58,6 +61,100 @@ export class WebCodecsVideoPipeline {
       this.ctx = this.canvas.getContext("2d")!;
     } else {
       throw new Error("Canvas context is not available in this environment.");
+    }
+  }
+
+  /**
+   * Computer Vision scene analyzer:
+   * Detects speaker presence vs high-density board/slide content.
+   * Returns zoom factor: 1.0 = zoom in to speaker, 0.0 = zoom out to full board.
+   */
+  private detectSceneZoom(source: CanvasImageSource): number {
+    if (!this.analysisCanvas) {
+      if (typeof document !== "undefined") {
+        this.analysisCanvas = document.createElement("canvas");
+      } else if (typeof OffscreenCanvas !== "undefined") {
+        this.analysisCanvas = new OffscreenCanvas(160, 90);
+      }
+      if (this.analysisCanvas) {
+        this.analysisCanvas.width = 160;
+        this.analysisCanvas.height = 90;
+        this.analysisCtx = this.analysisCanvas.getContext("2d", { willReadFrequently: true }) as any;
+      }
+    }
+
+    if (!this.analysisCtx || !this.analysisCanvas) {
+      return 1.0;
+    }
+
+    try {
+      this.analysisCtx.drawImage(source, 0, 0, 160, 90);
+      const imgData = this.analysisCtx.getImageData(0, 0, 160, 90);
+      const data = imgData.data;
+      const totalPixels = 160 * 90;
+
+      let skinPixels = 0;
+      let skinXSum = 0;
+      let edgeTransitions = 0;
+
+      for (let y = 0; y < 90; y++) {
+        for (let x = 0; x < 160; x++) {
+          const idx = (y * 160 + x) * 4;
+          const r = data[idx];
+          const g = data[idx + 1];
+          const b = data[idx + 2];
+
+          // 1. Skin tone detector (detects instructor face/body)
+          const maxVal = Math.max(r, g, b);
+          const minVal = Math.min(r, g, b);
+          if (
+            r > 80 &&
+            g > 35 &&
+            b > 20 &&
+            r > g &&
+            r > b &&
+            Math.abs(r - g) > 12 &&
+            maxVal - minVal > 15
+          ) {
+            skinPixels++;
+            skinXSum += x;
+          }
+
+          // 2. High-contrast horizontal edge detector (slides, code text, whiteboard equations)
+          if (x > 0) {
+            const prevIdx = idx - 4;
+            const diff =
+              Math.abs(r - data[prevIdx]) +
+              Math.abs(g - data[prevIdx + 1]) +
+              Math.abs(b - data[prevIdx + 2]);
+            if (diff > 75) {
+              edgeTransitions++;
+            }
+          }
+        }
+      }
+
+      const skinRatio = skinPixels / totalPixels;
+      const avgSkinX = skinPixels > 0 ? (skinXSum / skinPixels) / 160 : 0.5;
+      const edgeDensity = edgeTransitions / totalPixels;
+
+      let targetZoom = 1.0;
+      if (skinRatio > 0.035 && avgSkinX >= 0.22 && avgSkinX <= 0.78) {
+        // Instructor is talking directly to camera -> Zoom in to presenter
+        targetZoom = 1.0;
+      } else if (edgeDensity > 0.065 || skinRatio < 0.015) {
+        // Board, code editor, slide presentation or diagram content -> Zoom out to board
+        targetZoom = 0.0;
+      } else {
+        // Balanced intermediate
+        targetZoom = 0.5;
+      }
+
+      // Smooth camera transition (EMA)
+      this.currentZoomFactor = this.currentZoomFactor + (targetZoom - this.currentZoomFactor) * 0.12;
+      return this.currentZoomFactor;
+    } catch {
+      return 1.0;
     }
   }
 
@@ -236,6 +333,9 @@ export class WebCodecsVideoPipeline {
         throw new Error("No video source or video element provided for rendering.");
       }
 
+      // Computer vision scene zoom: zooms into speaker when talking, zooms out to full board for slides/code
+      const zoomFactor = this.detectSceneZoom(frameSource);
+
       const frameCtx: CompositionFrameContext = {
         sourceImage: frameSource,
         sourceWidth: job.sourceWidth,
@@ -243,6 +343,7 @@ export class WebCodecsVideoPipeline {
         cropBox: currentCrop,
         currentRelSec: relSec,
         captionGroups: job.captionGroups,
+        zoomFactor: zoomFactor,
       };
 
       this.compositor.composite(this.ctx, frameCtx);

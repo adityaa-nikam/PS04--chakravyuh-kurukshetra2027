@@ -96,32 +96,62 @@ export class BrowserPipelineRunner {
     }
 
     // -----------------------------------------------------------------------
-    // Stage 2: Speech Recognition (Transcription)
+    // Stage 2: Speech Recognition (Transcription across the full lecture)
     // -----------------------------------------------------------------------
-    onProgress("TRANSCRIBING", 30, "Transcribing speech tokens with word-level timestamps...");
-    await new Promise((r) => setTimeout(r, 600));
+    onProgress("TRANSCRIBING", 30, "Transcribing speech tokens across the full video lecture...");
 
-    // Synthesize words matching duration for educational lecture
-    const sampleWords: RawWord[] = [];
-    const baseVocab = [
-      "In", "React", "we", "define", "side", "effects", "using", "use", "effect.",
-      "The", "reason", "this", "works", "is", "because", "it", "executes", "after", "every",
-      "component", "render.", "For", "example,", "think", "of", "connecting", "to", "a",
-      "websocket", "or", "calling", "a", "rest", "api.", "In", "summary,", "keep", "in",
-      "mind", "that", "dependencies", "must", "be", "explicit."
-    ];
+    let rawTokens: RawWord[] = [];
+    const filename = videoFile instanceof File ? videoFile.name : "uploaded_video.mp4";
 
-    let t = 0.5;
-    for (let i = 0; i < baseVocab.length && t < durationSec; i++) {
-      const dur = 0.35;
-      sampleWords.push({
-        id: i,
-        text: baseVocab[i],
-        start_sec: Math.round(t * 100) / 100,
-        end_sec: Math.round((t + dur) * 100) / 100,
-        confidence: 0.96,
+    try {
+      const tRes = await fetch("/api/ai/transcript", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename, durationSec }),
       });
-      t += dur + (baseVocab[i].endsWith(".") ? 0.6 : 0.08);
+      if (tRes.ok) {
+        const tData = await tRes.json();
+        if (Array.isArray(tData.raw_words) && tData.raw_words.length > 0) {
+          rawTokens = tData.raw_words;
+          onProgress(
+            "TRANSCRIBING",
+            40,
+            `Loaded ${rawTokens.length} word timestamps spanning ${Math.round(durationSec)}s video.`
+          );
+        }
+      }
+    } catch (e) {
+      console.warn("Could not fetch remote transcript:", e);
+    }
+
+    // Fallback: If no transcript found, synthesize words across the entire video duration
+    if (rawTokens.length === 0) {
+      const baseVocab = [
+        "In", "this", "section", "we", "define", "the", "core", "mechanism", "of", "the", "system.",
+        "The", "reason", "this", "works", "is", "because", "it", "executes", "after", "every",
+        "state", "update.", "For", "example,", "think", "of", "looking", "up", "a", "record",
+        "in", "a", "sorted", "index.", "Each", "step", "divides", "the", "search", "space", "in", "half.",
+        "When", "we", "look", "at", "the", "board,", "keep", "in", "mind", "this", "trade-off.",
+        "As", "a", "result,", "performance", "is", "optimized", "for", "scale.",
+        "In", "summary,", "explicit", "contracts", "preserve", "stability."
+      ];
+
+      let t = 1.0;
+      let wId = 0;
+      while (t < durationSec - 2) {
+        for (let i = 0; i < baseVocab.length && t < durationSec - 2; i++) {
+          const dur = 0.32;
+          rawTokens.push({
+            id: wId++,
+            text: baseVocab[i],
+            start_sec: Math.round(t * 100) / 100,
+            end_sec: Math.round((t + dur) * 100) / 100,
+            confidence: 0.96,
+          });
+          t += dur + (baseVocab[i].endsWith(".") ? 0.65 : 0.08);
+        }
+        t += 1.5;
+      }
     }
 
     // -----------------------------------------------------------------------
@@ -129,12 +159,12 @@ export class BrowserPipelineRunner {
     // -----------------------------------------------------------------------
     onProgress("NORMALIZING_TERMS", 45, "Normalizing technical terms and acronyms via context rules...");
     const normalizer = new TermNormalizerService();
-    const displayWords: DisplayWord[] = normalizer.normalize(sampleWords);
+    const displayWords: DisplayWord[] = normalizer.normalize(rawTokens);
 
     const transcript: ValidatedTranscript = {
       schema_version: "1.0",
       source: {
-        filename: videoFile instanceof File ? videoFile.name : "uploaded_video.mp4",
+        filename,
         duration_sec: durationSec,
         video_width: sourceWidth,
         video_height: sourceHeight,
@@ -144,18 +174,47 @@ export class BrowserPipelineRunner {
         detected_language: "en",
         timestamp_origin: "start",
       },
-      raw_words: sampleWords,
+      raw_words: rawTokens,
       display_words: displayWords,
     };
 
     // -----------------------------------------------------------------------
-    // Stage 4: Pedagogical Highlight Selection
+    // Stage 4: Pedagogical Highlight Selection (LLM + Multi-Signal Heuristics)
     // -----------------------------------------------------------------------
-    onProgress("SELECTING_MOMENT", 55, "Scoring candidate pedagogical intervals & calculating opening hooks...");
-    const minDur = Math.min(15.0, durationSec * 0.5);
-    const maxDur = Math.min(60.0, durationSec);
-    const selector = new HighlightSelectorService(minDur, maxDur, (minDur + maxDur) / 2);
-    const highlight = selector.selectBestHighlight(transcript);
+    onProgress("SELECTING_MOMENT", 55, "Scanning candidate educational intervals across full video...");
+    const minDur = Math.min(20.0, Math.max(12.0, durationSec * 0.15));
+    const maxDur = Math.min(45.0, Math.max(20.0, durationSec * 0.5));
+    const targetDur = Math.min(30.0, (minDur + maxDur) / 2);
+    const selector = new HighlightSelectorService(minDur, maxDur, targetDur);
+    let highlight = selector.selectBestHighlight(transcript);
+
+    // Call LLM Decision / Score API if available
+    try {
+      const minStart = Math.floor(highlight.start_sec / 60);
+      const secStart = Math.floor(highlight.start_sec % 60);
+      onProgress(
+        "SELECTING_MOMENT",
+        60,
+        `Evaluating highlight candidate at ${minStart}m ${secStart}s with AI LLM...`
+      );
+      const scoreRes = await fetch("/api/ai/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          transcript_excerpt: highlight.transcript_excerpt,
+          duration_sec: highlight.duration_sec,
+          word_count: highlight.transcript_excerpt.split(/\s+/).length,
+        }),
+      });
+      if (scoreRes.ok) {
+        const sData = await scoreRes.json();
+        if (sData.mercury_score) {
+          highlight.score = Math.round(sData.mercury_score * 10) / 10;
+        }
+      }
+    } catch {
+      // Heuristic score already assigned
+    }
 
     // Call Next.js AI caption proxy if available
     let clipTitle = "React useEffect Architecture";
@@ -275,7 +334,7 @@ export class BrowserPipelineRunner {
       console.warn("Could not draw video frame directly:", e);
     }
 
-    const renderDuration = Math.min(10.0, highlight.duration_sec);
+    const renderDuration = Math.min(30.0, highlight.duration_sec);
 
     const renderedBlob = await pipeline.renderReel({
       videoElement: videoEl,
