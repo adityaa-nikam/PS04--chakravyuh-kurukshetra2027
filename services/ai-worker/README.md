@@ -1,6 +1,11 @@
-# Reel Studio — AI Worker Service (Phases 1, 2, 3, 4, 5, 5.1, 5.2, 5.3 & 6)
+# Reel Studio — AI Worker Service (Legacy Backend)
 
-This service provides the core AI audio-processing, speech recognition, technical terminology normalization, **intelligent highlight selection**, **computer vision intelligent cropping**, **adaptive hybrid video rendering with intelligent screen-content tracking**, and **synchronized captions with active-word karaoke highlighting** pipeline for **PS04 Reel Studio**.
+> [!NOTE]
+> **Browser Pipeline Migration Complete (Zero Server Compute):**
+> As of branch `browser`, the complete reel processing pipeline (audio extraction, transcription, technical term normalization, highlight scoring, 9:16 vertical crop geometry, karaoke captions, and WebCodecs H.264 MP4 rendering) has been ported into the client browser application under `next-app/lib/browser-pipeline/`.
+> This Python FastAPI service is preserved as a legacy/fallback implementation and is no longer required to run the core application.
+
+This service provides the legacy server-side AI audio-processing, speech recognition, technical terminology normalization, **intelligent highlight selection**, **computer vision intelligent cropping**, **adaptive hybrid video rendering with intelligent screen-content tracking**, and **synchronized captions with active-word karaoke highlighting** pipeline for **PS04 Reel Studio**.
 
 ---
 

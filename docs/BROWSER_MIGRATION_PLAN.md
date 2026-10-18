@@ -113,6 +113,23 @@ Browser Tab
 1. Wire `usePipeline` hook into `app/page.tsx`.
 2. Connect completed client-side MP4 `Blob` directly to Supabase TUS upload and Instagram Publisher.
 
-### Phase 6: Decommissioning & Cleanup
-1. Deprecate and remove `services/ai-worker`.
-2. Clean up obsolete server dependencies and update documentation.
+### Phase 6: Decommissioning & Cleanup (Completed)
+1. **Decommissioned Python Worker Requirement:** Client video processing is fully migrated into `next-app/lib/browser-pipeline/` with zero server hops. The Python FastAPI service in `services/ai-worker` is retained only as an optional legacy fallback.
+2. **Standardized Video Deliverable & Playback:**
+   - Fixed blob URL formatting in `next-app/app/page.tsx` (`formatMediaUrl`) ensuring memory object URLs (`blob:...`) are never corrupted with query parameter cachebusters.
+   - Enforced browser-standard muted autoplay (`autoPlay`, `muted={true}`) for mobile phone mockup preview, preventing browser autoplay blocks while preserving full-fidelity audio unmute.
+   - Fixed MP4 download action to handle `blob:` URLs directly.
+   - Hardened `BrowserPipelineRunner.run` with frame seek verification and atmospheric gradient composition fallback.
+
+---
+
+## 4. Migration Verification Checklist
+
+- [x] **Phase 0:** Secure storage path query parameters and establish deterministic fixtures.
+- [x] **Phase 1:** Browser benchmark lab (`/lab`) covering WebCodecs H.264 encoding, ONNX Whisper, and computer vision face tracking.
+- [x] **Phase 2:** TypeScript ports of Term Normalizer, Highlight Selector, 9:16 Crop Geometry, Smoother, Caption Grouping, and Frame Compositor.
+- [x] **Phase 3:** Deterministic local transcription pipeline and WebCodecs 720x1280 30fps H.264 encoding via `mp4-muxer`.
+- [x] **Phase 4:** OpenRouter thin proxy endpoints (`/api/ai/score` and `/api/ai/caption`) with heuristic fallback.
+- [x] **Phase 5:** Main UI integration (`app/page.tsx`) with live stage progress, 9:16 smartphone player preview, and Supabase TUS resumable Instagram publishing.
+- [x] **Phase 6:** All unit test suites pass (`npm run test:browser-pipeline`), zero TypeScript errors (`tsc --noEmit`), and Python worker requirement eliminated.
+
