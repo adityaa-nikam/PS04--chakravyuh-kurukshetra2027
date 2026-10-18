@@ -85,3 +85,4 @@ yarn-error.log*
 storage/
 **/**/__pycache__
 **/__pycache__
+services/ai-worker/.env
