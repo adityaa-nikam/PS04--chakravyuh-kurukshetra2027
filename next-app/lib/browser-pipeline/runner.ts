@@ -84,11 +84,13 @@ export class BrowserPipelineRunner {
     const sourceHeight = videoEl.videoHeight || 720;
     const durationSec = videoEl.duration || 30.0;
 
-    // Extract audio buffer to 16kHz mono Float32Array
+    // Extract audio buffer to 16kHz mono Float32Array and retain rawBuffer for AAC encoding
+    let fullAudioBuffer: AudioBuffer | undefined;
     try {
-      await BrowserAudioExtractor.extract16kHzMono(videoFile, (p, msg) => {
+      const audioResult = await BrowserAudioExtractor.extract16kHzMono(videoFile, (p, msg) => {
         onProgress("EXTRACTING_AUDIO", Math.round(10 + p * 15), msg);
       });
+      fullAudioBuffer = audioResult.rawBuffer;
     } catch (e) {
       console.warn("Audio extraction warning (running video without separate audio track):", e);
     }
@@ -276,12 +278,15 @@ export class BrowserPipelineRunner {
     const renderDuration = Math.min(10.0, highlight.duration_sec);
 
     const renderedBlob = await pipeline.renderReel({
+      videoElement: videoEl,
       videoSource: srcCanvas,
+      startTimeSec: highlight.start_sec,
       sourceWidth,
       sourceHeight,
       durationSec: renderDuration,
       cropTimeline,
       captionGroups: options.subtitlesEnabled !== false ? captionGroups : [],
+      audioBuffer: fullAudioBuffer,
       onProgress: (p, fps) => {
         const renderPct = 75 + Math.round(p * 23);
         onProgress("RENDERING_VIDEO", renderPct, `Encoding frames (${Math.round(p * 100)}% @ ${fps} FPS)...`);

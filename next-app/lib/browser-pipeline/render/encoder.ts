@@ -1,12 +1,13 @@
 /**
  * Browser WebCodecs Video Encoder & MP4 Muxer Pipeline
  * Encodes 720x1280 9:16 vertical H.264 video frames with real-time backpressure management,
- * frame memory reclamation (VideoFrame.close()), and standard MP4 container multiplexing.
+ * dynamic frame-by-frame source seeking, synchronized AAC audio multiplexing, and standard MP4 container output.
  */
 
 import { Muxer, ArrayBufferTarget } from "mp4-muxer";
 import { FrameCompositor, CompositionFrameContext } from "./compositor";
 import { CropBoxPixels, CaptionGroup, CaptionOptions, BrandProfile } from "../schemas";
+import { BrowserAudioExtractor } from "../audio/extractor";
 
 export interface RenderPipelineConfig {
   width?: number; // default 720
@@ -18,12 +19,15 @@ export interface RenderPipelineConfig {
 }
 
 export interface RenderJobInput {
-  videoSource: CanvasImageSource; // e.g. HTMLVideoElement or OffscreenCanvas
+  videoSource?: CanvasImageSource; // e.g. Canvas or pre-rendered frame
+  videoElement?: HTMLVideoElement; // Live video element for dynamic moving frames
+  startTimeSec?: number; // Start timestamp in seconds
   sourceWidth: number;
   sourceHeight: number;
   durationSec: number;
   cropTimeline: Array<{ relSec: number; cropBox: CropBoxPixels }>;
   captionGroups?: CaptionGroup[];
+  audioBuffer?: AudioBuffer; // Decoded full audio buffer to encode into AAC
   onProgress?: (progress: number, fps: number) => void;
 }
 
@@ -57,17 +61,64 @@ export class WebCodecsVideoPipeline {
     }
   }
 
+  private seekVideoTo(video: HTMLVideoElement, targetTime: number): Promise<void> {
+    if (Math.abs(video.currentTime - targetTime) < 0.005) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      let resolved = false;
+      const done = () => {
+        if (!resolved) {
+          resolved = true;
+          video.removeEventListener("seeked", onSeeked);
+          resolve();
+        }
+      };
+      const onSeeked = () => done();
+      video.addEventListener("seeked", onSeeked);
+      video.currentTime = targetTime;
+      // Safeguard timeout so encoding never hangs if a seek stalls
+      setTimeout(done, 120);
+    });
+  }
+
   /**
-   * Encodes a synthetic demonstration reel or video element with compositor,
-   * karaoke captions, and MP4 muxing.
+   * Encodes a video element or canvas with compositor, karaoke captions,
+   * AAC audio track, and MP4 muxing into a playable MP4 Blob.
    */
   public async renderReel(job: RenderJobInput): Promise<Blob> {
     if (typeof VideoEncoder === "undefined") {
       throw new Error("WebCodecs VideoEncoder is not supported in this browser.");
     }
 
+    const videoEl = job.videoElement;
+    const startTimeSec = Math.max(0, job.startTimeSec || 0);
+    const AUDIO_SAMPLE_RATE = 48000;
+    let audioEncoder: AudioEncoder | null = null;
+    let audioConfigured = false;
+    let encoderError: Error | null = null;
+
+    // Check AudioEncoder support if audioBuffer is provided
+    if (typeof AudioEncoder !== "undefined" && job.audioBuffer) {
+      try {
+        const audioConfig: AudioEncoderConfig = {
+          codec: "mp4a.40.2", // AAC-LC
+          numberOfChannels: 1,
+          sampleRate: AUDIO_SAMPLE_RATE,
+          bitrate: 128_000,
+        };
+
+        const isSupported = await AudioEncoder.isConfigSupported(audioConfig);
+        if (isSupported.supported) {
+          audioConfigured = true;
+        }
+      } catch (e) {
+        console.warn("AudioEncoder configuration check warning:", e);
+      }
+    }
+
     const muxerTarget = new ArrayBufferTarget();
-    const muxer = new Muxer({
+    const muxerOptions: any = {
       target: muxerTarget,
       video: {
         codec: "avc",
@@ -75,11 +126,20 @@ export class WebCodecsVideoPipeline {
         height: this.height,
       },
       fastStart: "in-memory",
-    });
+    };
 
-    let encoderError: Error | null = null;
+    if (audioConfigured) {
+      muxerOptions.audio = {
+        codec: "aac",
+        numberOfChannels: 1,
+        sampleRate: AUDIO_SAMPLE_RATE,
+      };
+    }
 
-    const encoder = new VideoEncoder({
+    const muxer = new Muxer(muxerOptions);
+
+    // Initialize VideoEncoder
+    const videoEncoder = new VideoEncoder({
       output: (chunk, meta) => {
         try {
           muxer.addVideoChunk(chunk, meta);
@@ -94,7 +154,7 @@ export class WebCodecsVideoPipeline {
       },
     });
 
-    await encoder.configure({
+    await videoEncoder.configure({
       codec: "avc1.4d002a",
       width: this.width,
       height: this.height,
@@ -103,18 +163,58 @@ export class WebCodecsVideoPipeline {
       avc: { format: "avc" },
     });
 
+    // Initialize AudioEncoder if enabled
+    if (audioConfigured) {
+      audioEncoder = new AudioEncoder({
+        output: (chunk, meta) => {
+          try {
+            muxer.addAudioChunk(chunk, meta);
+          } catch (e: any) {
+            console.error("Muxer addAudioChunk error:", e);
+            encoderError = e;
+          }
+        },
+        error: (e) => {
+          console.error("AudioEncoder error callback:", e);
+          encoderError = e;
+        },
+      });
+
+      await audioEncoder.configure({
+        codec: "mp4a.40.2",
+        numberOfChannels: 1,
+        sampleRate: AUDIO_SAMPLE_RATE,
+        bitrate: 128_000,
+      });
+    }
+
+    // Prepare video element state
+    if (videoEl) {
+      videoEl.muted = true;
+      videoEl.pause();
+    }
+
     const totalFrames = Math.round(job.durationSec * this.fps);
     const frameIntervalUs = Math.round(1_000_000 / this.fps);
     const startTime = performance.now();
 
+    // -------------------------------------------------------------------------
+    // 1. Encode Video Frames (with dynamic seeking)
+    // -------------------------------------------------------------------------
     for (let frameIndex = 0; frameIndex < totalFrames; frameIndex++) {
       if (encoderError) {
         throw encoderError;
       }
 
       const relSec = frameIndex / this.fps;
+      const targetSec = startTimeSec + relSec;
 
-      // Find current crop box from timeline (or interpolate)
+      // Seek video to exact frame timestamp
+      if (videoEl) {
+        await this.seekVideoTo(videoEl, targetSec);
+      }
+
+      // Find current crop box from timeline
       let currentCrop = job.cropTimeline[0]?.cropBox || {
         x: Math.round((job.sourceWidth - (job.sourceHeight * 9) / 16) / 2),
         y: 0,
@@ -122,7 +222,6 @@ export class WebCodecsVideoPipeline {
         height: job.sourceHeight,
       };
 
-      // Find closest keyframe
       for (const kf of job.cropTimeline) {
         if (kf.relSec <= relSec) {
           currentCrop = kf.cropBox;
@@ -131,9 +230,14 @@ export class WebCodecsVideoPipeline {
         }
       }
 
-      // 1. Composite frame
+      // Composite frame with video frame, ambient blur, captions, branding
+      const frameSource = videoEl || job.videoSource;
+      if (!frameSource) {
+        throw new Error("No video source or video element provided for rendering.");
+      }
+
       const frameCtx: CompositionFrameContext = {
-        sourceImage: job.videoSource,
+        sourceImage: frameSource,
         sourceWidth: job.sourceWidth,
         sourceHeight: job.sourceHeight,
         cropBox: currentCrop,
@@ -143,7 +247,7 @@ export class WebCodecsVideoPipeline {
 
       this.compositor.composite(this.ctx, frameCtx);
 
-      // 2. Create VideoFrame from canvas
+      // Create VideoFrame from canvas
       const timestampUs = frameIndex * frameIntervalUs;
       const videoFrame = new VideoFrame(this.canvas as any, {
         timestamp: timestampUs,
@@ -152,13 +256,11 @@ export class WebCodecsVideoPipeline {
 
       // Keyframe every 2 seconds
       const keyFrame = frameIndex % (this.fps * 2) === 0;
-      encoder.encode(videoFrame, { keyFrame });
-
-      // Clean up VideoFrame immediately to avoid memory leaks
+      videoEncoder.encode(videoFrame, { keyFrame });
       videoFrame.close();
 
-      // Backpressure management: wait if encoder queue gets backlogged
-      if (encoder.encodeQueueSize > 4) {
+      // Backpressure management
+      if (videoEncoder.encodeQueueSize > 4) {
         await new Promise((resolve) => setTimeout(resolve, 8));
       }
 
@@ -169,9 +271,54 @@ export class WebCodecsVideoPipeline {
       }
     }
 
-    // Flush encoder and finalize MP4
-    await encoder.flush();
-    encoder.close();
+    // Flush video encoder
+    await videoEncoder.flush();
+    videoEncoder.close();
+
+    // -------------------------------------------------------------------------
+    // 2. Encode Audio Track (AAC-LC @ 48kHz)
+    // -------------------------------------------------------------------------
+    if (audioEncoder && job.audioBuffer) {
+      try {
+        const monoAudio = await BrowserAudioExtractor.extractResampledSegment(
+          job.audioBuffer,
+          startTimeSec,
+          job.durationSec,
+          AUDIO_SAMPLE_RATE
+        );
+
+        const totalSamples = monoAudio.length;
+        const SAMPLES_PER_FRAME = 1024;
+
+        for (let offset = 0; offset < totalSamples; offset += SAMPLES_PER_FRAME) {
+          if (encoderError) break;
+
+          const frameSize = Math.min(SAMPLES_PER_FRAME, totalSamples - offset);
+          const chunkData = new Float32Array(SAMPLES_PER_FRAME);
+          chunkData.set(monoAudio.subarray(offset, offset + frameSize));
+
+          const timestampUs = Math.round((offset / AUDIO_SAMPLE_RATE) * 1_000_000);
+          const audioData = new AudioData({
+            format: "f32-planar",
+            sampleRate: AUDIO_SAMPLE_RATE,
+            numberOfFrames: SAMPLES_PER_FRAME,
+            numberOfChannels: 1,
+            timestamp: timestampUs,
+            data: chunkData,
+          });
+
+          audioEncoder.encode(audioData);
+          audioData.close();
+        }
+
+        await audioEncoder.flush();
+        audioEncoder.close();
+      } catch (aErr) {
+        console.warn("Audio encoding warning (continuing with video only):", aErr);
+      }
+    }
+
+    // Finalize MP4 muxer
     muxer.finalize();
 
     if (encoderError) {
