@@ -11,7 +11,7 @@
   "start_sec": 173.04,
   "end_sec": 213.06,
   "duration_sec": 40.02,
-  "score": 29.2,
+  "score": 30.0,
   "reason": "Coherent standalone explanation",
   "transcript_excerpt": "Jaseki, kopan essential atel saknicale, barda bag chayogi. Koding muoth hai, saari zurvat karni hai. Agar Tume simple ari yus karao. So, 30 memory yusogi. But Jai Agar Tume complex data structure yus karao. Jaseki, pre, maps, yafa gharjana, zha dada memory yusogi. Or jai memory yusogi, space complexity ke lataa. Jase simple ari ka space complexity big oafan. Matlab jitna zha dalimant shange aokna zha damari lagigi. But Jai Agar Tume complex data structure ke bakkurum. Yaf space complexity big oafan square yus oafan. Matlab space complexity can grow exponentially. Nanate ka hai, big oafan karnam sonte hai. Subkit chai ropa darai lagigi. Big oak ik super hiroki tare hai.",
   "score_breakdown": {
@@ -26,7 +26,7 @@
   "word_start_id": 608,
   "word_end_id": 718,
   "selection_method": "mercury_decide_nms",
-  "title": "Jaseki Kopan Essential Atel Saknicale",
-  "caption": "💡 Jaseki Kopan Essential Atel Saknicale\n\nJaseki, kopan essential atel saknicale, barda bag chayogi. Koding muoth hai, saari zurvat karni hai. Agar Tume simple ari yus karao. So, 30...\n\n#Programming #ComputerScience #TechExplainer #CodingShorts",
-  "mercury_score": 0.11920291419948606
+  "title": "Space Complexity Basics",
+  "caption": "Master memory usage: simple arrays vs complex maps. Know your space complexity to write efficient code! #SpaceComplexity #CodingTips #DataStructures",
+  "mercury_score": 0.13296424706933604
 }

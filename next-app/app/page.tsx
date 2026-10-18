@@ -47,9 +47,21 @@ interface CropPlanInfo {
   keyframes_count: number;
 }
 
+function extractYoutubeId(url: string): string | null {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return match && match[2].length === 11 ? match[2] : null;
+}
+
 export default function AIStudioPage() {
-  // Input Selection State
-  const [inputMode, setInputMode] = useState<"path" | "upload" | "ai_prompt">("ai_prompt");
+  // Input Selection State - Supports YouTube stream download, Remotion AI prompt, Local path, or Upload
+  const [inputMode, setInputMode] = useState<"youtube" | "ai_prompt" | "path" | "upload">("youtube");
+  const [youtubeUrl, setYoutubeUrl] = useState("https://www.youtube.com/watch?v=kqtD5dpn9C8");
+  const [youtubeTitle, setYoutubeTitle] = useState("Time and Space Complexity explained in 5 minutes");
+  const [youtubeId, setYoutubeId] = useState("kqtD5dpn9C8");
+  const [downloadQuality, setDownloadQuality] = useState<"360p" | "480p" | "720p" | "1080p">("360p");
+
   const [videoPath, setVideoPath] = useState(
     "D:\\softwares\\Time and Space Complexity explained in literally 5 minutes _ Big O _ Concepts made simple ep -1.mp4.mp4"
   );
@@ -123,21 +135,48 @@ export default function AIStudioPage() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const mode = params.get("mode");
-      const topic = params.get("topic");
+      const topic = params.get("topic") || params.get("title");
+      const urlParam = params.get("url");
+      const idParam = params.get("id");
+      const qualityParam = params.get("quality") as "360p" | "480p" | "720p" | "1080p" | null;
       const autoStart = params.get("autoStart");
 
-      if (mode === "ai_prompt" || mode === "path" || mode === "upload") {
+      if (urlParam || idParam || mode === "youtube") {
+        setInputMode("youtube");
+        const resolvedUrl = urlParam || (idParam ? `https://www.youtube.com/watch?v=${idParam}` : "");
+        if (resolvedUrl) {
+          setYoutubeUrl(resolvedUrl);
+          const detected = extractYoutubeId(resolvedUrl);
+          if (detected) setYoutubeId(detected);
+        } else if (idParam) {
+          setYoutubeId(idParam);
+        }
+        if (topic) {
+          setYoutubeTitle(topic);
+          setAiTopic(topic);
+        }
+      } else if (mode === "ai_prompt" || mode === "path" || mode === "upload") {
         setInputMode(mode);
       }
-      if (topic) {
+
+      if (qualityParam && ["360p", "480p", "720p", "1080p"].includes(qualityParam)) {
+        setDownloadQuality(qualityParam);
+      }
+
+      if (topic && !urlParam && !idParam) {
         setAiTopic(topic);
       }
-      if (autoStart === "true" && topic) {
+
+      if (autoStart === "true") {
         setTimeout(() => {
           const el = document.getElementById("studio-workspace");
           if (el) el.scrollIntoView({ behavior: "smooth" });
-          startRemotionGeneration(topic);
-        }, 500);
+          if (urlParam || idParam || mode === "youtube") {
+            startAIPipeline();
+          } else if (topic) {
+            startRemotionGeneration(topic);
+          }
+        }, 600);
       }
     }
 
@@ -303,6 +342,10 @@ export default function AIStudioPage() {
   // AI Pipeline Runner
   // --------------------------------------------------------------------------
   async function startAIPipeline() {
+    if (inputMode === "youtube" && !youtubeUrl.trim()) {
+      alert("Please provide a valid YouTube video URL or ID.");
+      return;
+    }
     if (inputMode === "path" && !videoPath.trim()) {
       alert("Please provide a valid video file path.");
       return;
@@ -313,18 +356,38 @@ export default function AIStudioPage() {
     }
 
     setPipelineStage("submitting");
-    setPipelineProgress(5);
-    setStageMessage("Initiating job with Python AI Worker...");
+    setPipelineProgress(inputMode === "youtube" ? 3 : 5);
+    setStageMessage(
+      inputMode === "youtube"
+        ? `Connecting to YouTube stream (${downloadQuality})...`
+        : "Initiating job with Python AI Worker..."
+    );
     setErrorMessage("");
     setRenderedVideoUrl(null);
     setHighlightData(null);
     setCropPlanData(null);
     setElapsedSec(null);
+    setRenderedClips([]);
+    setSelectedClipIndex(0);
 
     try {
       let res: Response;
 
-      if (inputMode === "upload" && selectedFile) {
+      if (inputMode === "youtube") {
+        res = await fetch("/api/ai/pipeline", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            youtubeUrl: youtubeUrl.trim(),
+            downloadQuality: downloadQuality,
+            render_video: true,
+            subtitles: subtitlesEnabled,
+            caption_style: captionStyle,
+            composition_mode: compositionMode,
+            maxClips: targetClips,
+          }),
+        });
+      } else if (inputMode === "upload" && selectedFile) {
         const formData = new FormData();
         formData.append("file", selectedFile);
         formData.append("renderVideo", "true");
@@ -360,9 +423,15 @@ export default function AIStudioPage() {
 
       const activeJobId = data.jobId;
       setJobId(activeJobId);
-      setPipelineStage("EXTRACTING_AUDIO");
-      setPipelineProgress(10);
-      setStageMessage(data.message || "Pipeline started. Probing audio...");
+      if (inputMode === "youtube") {
+        setPipelineStage("DOWNLOADING");
+        setPipelineProgress(5);
+        setStageMessage(data.message || `Downloading YouTube stream in ${downloadQuality}...`);
+      } else {
+        setPipelineStage("EXTRACTING_AUDIO");
+        setPipelineProgress(10);
+        setStageMessage(data.message || "Pipeline started. Probing audio...");
+      }
 
       // Start status polling
       startStatusPolling(activeJobId);
@@ -702,24 +771,47 @@ export default function AIStudioPage() {
               id="hero-command-input"
               type="text"
               value={aiTopic}
-              onChange={(e) => setAiTopic(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !isRunning && aiTopic.trim()) {
-                  startRemotionGeneration();
+              onChange={(e) => {
+                const val = e.target.value;
+                setAiTopic(val);
+                if (val.includes("youtube.com") || val.includes("youtu.be")) {
+                  setInputMode("youtube");
+                  setYoutubeUrl(val);
+                  const id = extractYoutubeId(val);
+                  if (id) setYoutubeId(id);
                 }
               }}
-              placeholder="Type your lecture topic, YouTube URL, or prompt..."
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !isRunning) {
+                  if (inputMode === "youtube" || aiTopic.includes("youtube.com") || aiTopic.includes("youtu.be")) {
+                    startAIPipeline();
+                  } else if (aiTopic.trim()) {
+                    startRemotionGeneration();
+                  }
+                }
+              }}
+              placeholder="Paste YouTube URL, or type lecture topic for AI reel..."
               className="w-full bg-transparent text-sm sm:text-base text-white placeholder-violet-200/50 outline-none font-normal"
             />
           </div>
           <div className="flex items-center gap-3 shrink-0">
             <button
               type="button"
-              onClick={startRemotionGeneration}
+              onClick={() => {
+                if (inputMode === "youtube" || aiTopic.includes("youtube.com") || aiTopic.includes("youtu.be")) {
+                  startAIPipeline();
+                } else {
+                  startRemotionGeneration();
+                }
+              }}
               disabled={isRunning || !aiTopic.trim()}
               className="bg-white text-zinc-950 hover:bg-zinc-100 disabled:opacity-40 font-semibold text-xs sm:text-sm px-6 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
             >
-              {isRunning ? "Generating..." : "Generate Reel"}
+              {isRunning
+                ? "Processing..."
+                : inputMode === "youtube"
+                ? `Ingest YT (${downloadQuality})`
+                : "Generate Reel"}
             </button>
           </div>
         </div>
@@ -773,18 +865,36 @@ export default function AIStudioPage() {
                   STEP 01
                 </span>
                 <h2 className="text-sm font-bold text-zinc-950 tracking-tight">
-                  {inputMode === "ai_prompt"
+                  {inputMode === "youtube"
+                    ? "Download & Convert YouTube Lecture to 9:16 Shorts"
+                    : inputMode === "ai_prompt"
                     ? "Generate Reel by Command (Remotion)"
-                    : "Select Lecture Source Video"}
+                    : inputMode === "path"
+                    ? "Select Local Source Video Path"
+                    : "Upload Source Video File"}
                 </h2>
               </div>
 
               {/* Mode Toggle Tabs */}
-              <div className="flex rounded-xl bg-zinc-100/90 border border-zinc-200/80 p-1 text-xs self-start sm:self-auto">
+              <div className="flex rounded-xl bg-zinc-100/90 border border-zinc-200/80 p-1 text-xs self-start sm:self-auto flex-wrap gap-1">
+                <button
+                  type="button"
+                  onClick={() => setInputMode("youtube")}
+                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                    inputMode === "youtube"
+                      ? "bg-white text-zinc-950 font-semibold shadow-xs"
+                      : "text-zinc-500 hover:text-zinc-900"
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5 text-red-600" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                  </svg>
+                  <span>YouTube Stream</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => setInputMode("ai_prompt")}
-                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
                     inputMode === "ai_prompt"
                       ? "bg-white text-zinc-950 font-semibold shadow-xs"
                       : "text-zinc-500 hover:text-zinc-900"
@@ -798,7 +908,7 @@ export default function AIStudioPage() {
                 <button
                   type="button"
                   onClick={() => setInputMode("path")}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                     inputMode === "path"
                       ? "bg-white text-zinc-950 font-semibold shadow-xs"
                       : "text-zinc-500 hover:text-zinc-900"
@@ -809,7 +919,7 @@ export default function AIStudioPage() {
                 <button
                   type="button"
                   onClick={() => setInputMode("upload")}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                     inputMode === "upload"
                       ? "bg-white text-zinc-950 font-semibold shadow-xs"
                       : "text-zinc-500 hover:text-zinc-900"
@@ -820,7 +930,208 @@ export default function AIStudioPage() {
               </div>
             </div>
 
-            {inputMode === "ai_prompt" ? (
+            {inputMode === "youtube" ? (
+              <div className="flex flex-col gap-4">
+                {/* YouTube Video URL Input */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-zinc-700 flex items-center gap-1.5">
+                      <svg className="w-4 h-4 text-red-600" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                      </svg>
+                      <span>YouTube Lecture or Video URL</span>
+                    </label>
+                    <span className="text-[11px] text-zinc-500 font-mono">
+                      yt-dlp stream pipeline
+                    </span>
+                  </div>
+                  <div className="relative flex items-center">
+                    <input
+                      type="text"
+                      value={youtubeUrl}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setYoutubeUrl(val);
+                        const id = extractYoutubeId(val);
+                        if (id) setYoutubeId(id);
+                      }}
+                      disabled={isRunning}
+                      placeholder="e.g. https://www.youtube.com/watch?v=kqtD5dpn9C8"
+                      className="w-full bg-white border border-zinc-200/90 rounded-xl pl-4 pr-24 py-3 text-sm font-mono text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/15 shadow-xs transition-all disabled:opacity-50"
+                    />
+                    <div className="absolute right-2 flex items-center gap-1.5">
+                      {youtubeUrl && !isRunning && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setYoutubeUrl("");
+                            setYoutubeId("");
+                            setYoutubeTitle("");
+                          }}
+                          className="px-2 py-1 text-xs text-zinc-400 hover:text-zinc-600 rounded cursor-pointer"
+                          title="Clear URL"
+                        >
+                          ✕
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const clip = await navigator.clipboard.readText();
+                            if (clip) {
+                              setYoutubeUrl(clip);
+                              const id = extractYoutubeId(clip);
+                              if (id) setYoutubeId(id);
+                            }
+                          } catch {
+                            // clipboard permissions error fallback
+                          }
+                        }}
+                        disabled={isRunning}
+                        className="px-2.5 py-1 text-xs font-medium rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 transition-colors cursor-pointer"
+                      >
+                        Paste
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Detected Video Card */}
+                {youtubeId && (
+                  <div className="p-3.5 rounded-2xl bg-zinc-50/90 border border-zinc-200 flex items-center gap-3.5">
+                    <div className="relative w-28 h-16 rounded-xl overflow-hidden bg-black shrink-0 border border-zinc-200">
+                      <img
+                        src={`https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`}
+                        alt="Video thumbnail"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-1">
+                        <span className="text-[9px] font-mono text-white/90 bg-red-600/90 px-1 py-0.2 rounded font-bold">
+                          YouTube
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold border border-emerald-200">
+                          Ready to Ingest
+                        </span>
+                        <a
+                          href={youtubeUrl || `https://www.youtube.com/watch?v=${youtubeId}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[11px] text-violet-600 hover:underline flex items-center gap-0.5 font-medium"
+                        >
+                          <span>Open in YT</span>
+                          <span>↗</span>
+                        </a>
+                      </div>
+                      <p className="text-xs font-semibold text-zinc-900 truncate mt-1">
+                        {youtubeTitle || "YouTube Lecture Stream detected"}
+                      </p>
+                      <p className="text-[11px] font-mono text-zinc-500">
+                        ID: {youtubeId}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Download Quality Preset Selector */}
+                <div className="flex flex-col gap-2 pt-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-zinc-700 flex items-center gap-1.5">
+                      <span>Download Quality Preset</span>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-violet-100 text-violet-700 font-bold">
+                        yt-dlp stream
+                      </span>
+                    </label>
+                    <span className="text-[11px] text-zinc-500">
+                      360p recommended for speed & lighter GPU/CPU
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { key: "360p", label: "360p", desc: "Fastest / Lightweight", isDefault: true },
+                      { key: "480p", label: "480p", desc: "Standard Definition", isDefault: false },
+                      { key: "720p", label: "720p", desc: "HD Quality", isDefault: false },
+                      { key: "1080p", label: "1080p", desc: "Full HD 1080p", isDefault: false },
+                    ].map((opt) => {
+                      const isSelected = downloadQuality === opt.key;
+                      return (
+                        <button
+                          key={opt.key}
+                          type="button"
+                          onClick={() => setDownloadQuality(opt.key as any)}
+                          disabled={isRunning}
+                          className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-1 cursor-pointer disabled:opacity-50 ${
+                            isSelected
+                              ? "bg-violet-50/90 border-violet-500 ring-2 ring-violet-500/20 shadow-xs"
+                              : "bg-white hover:bg-zinc-50 border-zinc-200 text-zinc-600"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className={`text-xs font-bold ${isSelected ? "text-violet-900" : "text-zinc-900"}`}>
+                              {opt.label}
+                            </span>
+                            {opt.isDefault && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                Default
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-zinc-500 leading-tight">
+                            {opt.desc}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="flex items-center gap-1.5 flex-wrap text-xs text-zinc-600 pt-0.5">
+                  <span className="text-zinc-400 text-[11px] uppercase font-mono mr-1">Lecture Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setYoutubeUrl("https://www.youtube.com/watch?v=kqtD5dpn9C8");
+                      setYoutubeId("kqtD5dpn9C8");
+                      setYoutubeTitle("Time & Space Complexity Explained in 5 Mins");
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200/80 border border-zinc-200 text-zinc-700 hover:text-zinc-950 font-medium transition-colors cursor-pointer"
+                  >
+                    Time & Space Complexity (5m)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setYoutubeUrl("https://www.youtube.com/watch?v=RGOj5yH7evk");
+                      setYoutubeId("RGOj5yH7evk");
+                      setYoutubeTitle("Git and GitHub for Beginners - Crash Course");
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200/80 border border-zinc-200 text-zinc-700 hover:text-zinc-950 font-medium transition-colors cursor-pointer"
+                  >
+                    Git Crash Course
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setYoutubeUrl("https://www.youtube.com/watch?v=g2o22C3CRfU");
+                      setYoutubeId("g2o22C3CRfU");
+                      setYoutubeTitle("Big-O Notation in 100 Seconds");
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200/80 border border-zinc-200 text-zinc-700 hover:text-zinc-950 font-medium transition-colors cursor-pointer"
+                  >
+                    Big-O in 100s
+                  </button>
+                </div>
+              </div>
+            ) : inputMode === "ai_prompt" ? (
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-zinc-700">
@@ -1087,6 +1398,8 @@ export default function AIStudioPage() {
                     </svg>
                     {inputMode === "ai_prompt"
                       ? `Rendering Remotion Reel (${pipelineProgress}%)...`
+                      : inputMode === "youtube"
+                      ? `Processing YouTube Pipeline (${pipelineProgress}%)...`
                       : `Processing AI Pipeline (${pipelineProgress}%)...`}
                   </>
                 ) : (
@@ -1096,6 +1409,8 @@ export default function AIStudioPage() {
                     </svg>
                     {inputMode === "ai_prompt"
                       ? "Generate Vertical 9:16 Reel by Command"
+                      : inputMode === "youtube"
+                      ? `Download YouTube Video & Generate 9:16 Shorts (${downloadQuality})`
                       : "Generate AI Vertical Reel (Highlight + 9:16 Crop + Captions)"}
                   </>
                 )}
@@ -1142,7 +1457,11 @@ export default function AIStudioPage() {
             </div>
 
             {/* Pipeline Stage Pills */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs pt-1">
+            <div className={`grid gap-1.5 text-xs pt-1 ${
+              inputMode === "ai_prompt"
+                ? "grid-cols-2 sm:grid-cols-5"
+                : "grid-cols-2 sm:grid-cols-4 md:grid-cols-7"
+            }`}>
               {(inputMode === "ai_prompt"
                 ? [
                     { key: "REMOTION_SCRIPT", label: "1. Script Gen" },
@@ -1153,11 +1472,12 @@ export default function AIStudioPage() {
                   ]
                 : [
                     { key: "DOWNLOADING", label: "0. YT Stream" },
-                    { key: "EXTRACTING_AUDIO", label: "1. Audio Extract" },
-                    { key: "TRANSCRIBING", label: "2. GPU Whisper" },
-                    { key: "SELECTING_MOMENT", label: "3. Best Highlight" },
-                    { key: "PLANNING_CROPS", label: "4. CV 9:16 Crop" },
-                    { key: "RENDERING_VIDEO", label: "5. FFmpeg Reel" },
+                    { key: "INGESTING", label: "1. Ingest" },
+                    { key: "EXTRACTING_AUDIO", label: "2. Audio" },
+                    { key: "TRANSCRIBING", label: "3. Whisper" },
+                    { key: "SELECTING_MOMENT", label: "4. Highlight" },
+                    { key: "PLANNING_CROPS", label: "5. 9:16 Crop" },
+                    { key: "RENDERING_VIDEO", label: "6. Render" },
                   ]
               ).map((st, idx) => {
                 const remotionStepIdx =
@@ -1173,6 +1493,18 @@ export default function AIStudioPage() {
                     ? 5
                     : -1;
 
+                const VIDEO_STAGES_SEQUENCE = [
+                  "DOWNLOADING",
+                  "INGESTING",
+                  "EXTRACTING_AUDIO",
+                  "TRANSCRIBING",
+                  "NORMALIZING_TERMS",
+                  "SELECTING_MOMENT",
+                  "PLANNING_CROPS",
+                  "RENDERING_VIDEO",
+                  "COMPLETED",
+                ];
+
                 const isCurrent =
                   inputMode === "ai_prompt"
                     ? (idx === 0 && pipelineStage === "REMOTION_SCRIPT") ||
@@ -1180,25 +1512,21 @@ export default function AIStudioPage() {
                       (idx === 2 && pipelineStage === "REMOTION_BUNDLE") ||
                       (idx === 3 && pipelineStage === "REMOTION_BUNDLE") ||
                       (idx === 4 && pipelineStage === "REMOTION_RENDER")
-                    : pipelineStage === st.key || (st.key === "DOWNLOADING" && pipelineStage === "INGESTING");
+                    : pipelineStage === st.key || (st.key === "DOWNLOADING" && pipelineStage === "submitting");
+
+                const currentPos = VIDEO_STAGES_SEQUENCE.indexOf(pipelineStage);
+                const pillPos = VIDEO_STAGES_SEQUENCE.indexOf(st.key);
 
                 const isDone =
                   pipelineStage === "COMPLETED" ||
                   (inputMode === "ai_prompt"
                     ? remotionStepIdx > idx
-                    : (pipelineStage === "RENDERING_VIDEO" && st.key !== "RENDERING_VIDEO") ||
-                      (pipelineStage === "PLANNING_CROPS" &&
-                        ["DOWNLOADING", "INGESTING", "EXTRACTING_AUDIO", "TRANSCRIBING", "SELECTING_MOMENT"].includes(st.key)) ||
-                      (pipelineStage === "SELECTING_MOMENT" &&
-                        ["DOWNLOADING", "INGESTING", "EXTRACTING_AUDIO", "TRANSCRIBING"].includes(st.key)) ||
-                      (pipelineStage === "TRANSCRIBING" && ["DOWNLOADING", "INGESTING", "EXTRACTING_AUDIO"].includes(st.key)) ||
-                      (pipelineStage === "EXTRACTING_AUDIO" && ["DOWNLOADING", "INGESTING"].includes(st.key)) ||
-                      (pipelineStage === "INGESTING" && st.key === "DOWNLOADING"));
+                    : currentPos > pillPos && currentPos !== -1 && pillPos !== -1);
 
                 return (
                   <div
                     key={`${st.label}-${idx}`}
-                    className={`px-2.5 py-2 rounded-xl border text-center transition-all ${
+                    className={`px-2 py-2 rounded-xl border text-center transition-all ${
                       isDone
                         ? "bg-emerald-50 border-emerald-200 text-emerald-700 font-semibold shadow-2xs"
                         : isCurrent
@@ -1211,6 +1539,23 @@ export default function AIStudioPage() {
                 );
               })}
             </div>
+
+            {/* Error Alert with Retry button */}
+            {pipelineStage === "FAILED" && errorMessage && (
+              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-rose-600 font-bold text-sm">⚠️</span>
+                  <span>{errorMessage}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={inputMode === "ai_prompt" ? () => startRemotionGeneration() : startAIPipeline}
+                  className="px-3 py-1.5 rounded-lg bg-rose-600 text-white font-semibold text-xs hover:bg-rose-700 transition-colors shrink-0 cursor-pointer"
+                >
+                  Retry Pipeline
+                </button>
+              </div>
+            )}
 
             {/* Highlight Summary Card if extracted or generated */}
             {highlightData && (

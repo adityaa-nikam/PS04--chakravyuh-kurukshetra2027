@@ -156,7 +156,8 @@
 
       getAstraStudioUrl(function (baseUrl) {
         const cleanBase = baseUrl.replace(/\/+$/, "");
-        const importUrl = new URL(`${cleanBase}/import`);
+        const importUrl = new URL(`${cleanBase}/`);
+        importUrl.searchParams.set("mode", "youtube");
         importUrl.searchParams.set("url", canonicalUrl);
         importUrl.searchParams.set("id", currentVideoId);
         importUrl.searchParams.set("title", title);

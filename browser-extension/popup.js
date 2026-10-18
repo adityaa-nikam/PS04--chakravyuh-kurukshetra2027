@@ -102,7 +102,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     chrome.storage.sync.get({ astraUrl: DEFAULT_URL }, (data) => {
       const baseUrl = (data.astraUrl || DEFAULT_URL).replace(/\/+$/, "");
-      const target = new URL(`${baseUrl}/import`);
+      const target = new URL(`${baseUrl}/`);
+      target.searchParams.set("mode", "youtube");
       target.searchParams.set("url", currentVideoUrl || `https://www.youtube.com/watch?v=${currentVideoId}`);
       target.searchParams.set("id", currentVideoId);
       target.searchParams.set("title", currentVideoTitle);
