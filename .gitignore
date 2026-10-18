@@ -1,15 +1,25 @@
-# Video, Audio, and Binary Media
+# =============================================================================
+# Video, Audio, Subtitles & Binary Media
+# =============================================================================
 *.mp4
 *.mkv
 *.mov
 *.avi
 *.webm
+*.m4v
 *.wav
 *.mp3
 *.aac
 *.flac
+*.m4a
+*.ogg
+*.ass
+*.srt
+*.vtt
 
-# Local Runtime Storage (intermediate data, models, frames, rendered videos)
+# =============================================================================
+# Storage & Runtime AI Pipeline Data
+# =============================================================================
 storage/raw/*
 !storage/raw/.gitkeep
 storage/audio/*
@@ -28,12 +38,62 @@ storage/rendered/*
 !storage/rendered/.gitkeep
 storage/jobs/*
 !storage/jobs/.gitkeep
+storage/subtitles/*
+!storage/subtitles/.gitkeep
 storage/test_samples/*
 !storage/test_samples/.gitkeep
 !storage/test_samples/README.md
 
-# Python
+# Worker storage & inspection frames
+services/ai-worker/storage/*
+!services/ai-worker/storage/.gitkeep
+services/ai-worker/storage/**/
+
+# =============================================================================
+# Next.js & Frontend Artifacts
+# =============================================================================
+next-app/public/videos/*
+!next-app/public/videos/.gitkeep
+next-app/public/videos/**/
+next-app/public/brand/*.mp4
+next-app/node_modules/
+next-app/.next/
+next-app/out/
+next-app/build/
+next-app/.vercel/
+*.tsbuildinfo
+next-app/next-env.d.ts
+
+# =============================================================================
+# Artifacts, Temp & Cached Requests
+# =============================================================================
+artifacts/
+**/artifacts/
+next-app/artifacts/
+services/ai-worker/artifacts/
+scratch/
+**/scratch/
+
+# =============================================================================
+# Machine Learning Weights, Piper Voices & Speech Engines
+# =============================================================================
+*.onnx
+*.onnx.json
+*.pt
+*.pth
+*.bin
+voices/
+**/voices/
+piper/
+**/piper/
+.venv-tts/
+**/.venv-tts/
+
+# =============================================================================
+# Python, Virtual Envs & Caches
+# =============================================================================
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *$py.class
 *.so
@@ -41,6 +101,7 @@ __pycache__/
 env/
 venv/
 .venv/
+**/.venv/
 ENV/
 build/
 develop-eggs/
@@ -61,28 +122,23 @@ wheels/
 .coverage
 htmlcov/
 
-# Node & Next.js
-next-app/node_modules/
-next-app/.next/
-next-app/out/
-next-app/build/
-next-app/.vercel/
-*.tsbuildinfo
-next-app/next-env.d.ts
-
-# Environments & OS
+# =============================================================================
+# Environment Secrets & Credentials
+# =============================================================================
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# =============================================================================
+# Operating System & Logs
+# =============================================================================
 .DS_Store
 Thumbs.db
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-storage/
-**/**/__pycache__
-**/__pycache__
-services/ai-worker/.env
+.pnpm-debug.log*
