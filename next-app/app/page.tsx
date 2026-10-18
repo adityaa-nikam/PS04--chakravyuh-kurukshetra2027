@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as tus from "tus-js-client";
 import { PipelineRenderedClip } from "@/lib/pipeline/client";
+import { BrowserPipelineRunner } from "@/lib/browser-pipeline/runner";
 
 type StageStep =
   | "idle"
@@ -388,19 +389,52 @@ export default function AIStudioPage() {
           }),
         });
       } else if (inputMode === "upload" && selectedFile) {
-        const formData = new FormData();
-        formData.append("file", selectedFile);
-        formData.append("renderVideo", "true");
-        formData.append("subtitles", subtitlesEnabled ? "true" : "false");
-        formData.append("captionStyle", captionStyle);
-        formData.append("compositionMode", compositionMode);
-        formData.append("maxClips", targetClips.toString());
+        setPipelineStage("EXTRACTING_AUDIO");
+        setPipelineProgress(10);
+        setStageMessage("Initiating Client-Side Browser Engine (Zero Server Compute)...");
 
-        setStageMessage("Uploading video to workspace storage...");
-        res = await fetch("/api/ai/pipeline", {
-          method: "POST",
-          body: formData,
+        const result = await BrowserPipelineRunner.run(
+          selectedFile,
+          {
+            subtitlesEnabled,
+            captionStyle,
+            compositionMode,
+            brandName: "Astra Reel",
+            targetClips,
+          },
+          (stage, progressPct, msg) => {
+            setPipelineStage(stage as StageStep);
+            setPipelineProgress(progressPct);
+            setStageMessage(msg);
+          }
+        );
+
+        setJobId(result.jobId);
+        setRenderedVideoUrl(`${result.videoUrl}&t=${Date.now()}`);
+        setRenderedClips(result.renderedClips);
+        setSelectedClipIndex(0);
+        setElapsedSec(result.elapsedSec);
+
+        setHighlightData({
+          clip_id: result.renderedClips[0].clip_id,
+          start_time_sec: result.highlight.start_sec,
+          end_time_sec: result.highlight.end_sec,
+          duration_sec: result.highlight.duration_sec,
+          pedagogical_score: result.highlight.score,
+          topic_summary: result.renderedClips[0].title || "Educational Highlight",
+          boundary_reasoning: result.highlight.reason,
         });
+
+        setCropPlanData({
+          clip_id: result.renderedClips[0].clip_id,
+          aspect_ratio: "9:16 (Vertical Full HD)",
+          keyframes_count: Math.round(result.highlight.duration_sec * 30),
+        });
+
+        if (result.renderedClips[0].caption) {
+          setCustomCaption(result.renderedClips[0].caption);
+        }
+        return;
       } else {
         res = await fetch("/api/ai/pipeline", {
           method: "POST",

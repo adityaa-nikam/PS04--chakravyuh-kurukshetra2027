@@ -36,20 +36,36 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // Security check: restrict targetPath strictly to storage/ or next-app/public/ directories
+    const workspaceRoot = path.resolve(process.cwd(), "..");
+    const allowedStorageRoot = path.resolve(workspaceRoot, "storage");
+    const allowedPublicRoot = path.resolve(process.cwd(), "public");
+
     // Normalize path
     let resolvedPath = path.resolve(targetPath);
 
     // If relative to next-app, check parent workspace storage
     if (!fs.existsSync(resolvedPath)) {
-      const altWorkspace = path.resolve(process.cwd(), "..", "storage", "rendered", path.basename(targetPath));
+      const altWorkspace = path.resolve(workspaceRoot, "storage", "rendered", path.basename(targetPath));
       if (fs.existsSync(altWorkspace)) {
         resolvedPath = altWorkspace;
       } else {
         return NextResponse.json(
-          { error: `Rendered video file not found on disk at: ${resolvedPath}` },
+          { error: "Rendered video file not found on disk." },
           { status: 404 }
         );
       }
+    }
+
+    const normalizedResolved = path.normalize(resolvedPath);
+    const isWithinStorage = normalizedResolved.startsWith(allowedStorageRoot);
+    const isWithinPublic = normalizedResolved.startsWith(allowedPublicRoot);
+
+    if (!isWithinStorage && !isWithinPublic) {
+      return NextResponse.json(
+        { error: "Access denied. Target path outside permitted storage directories." },
+        { status: 403 }
+      );
     }
 
     const stat = fs.statSync(resolvedPath);

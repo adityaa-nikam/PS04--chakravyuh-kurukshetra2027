@@ -1,0 +1,181 @@
+export interface TechnicalTermItem {
+  id: string;
+  canonical: string;
+  spoken_variants: string[];
+  category?: string;
+  context_required?: string[];
+  requires_review_if_ambiguous?: boolean;
+  description?: string;
+}
+
+export const TECHNICAL_TERMS_VOCABULARY: { version: string; terms: TechnicalTermItem[] } = {
+  version: "1.1.0",
+  terms: [
+    {
+      id: "react_use_effect",
+      canonical: "useEffect",
+      spoken_variants: ["use effect", "use-effect", "useffect", "you's effect"],
+      category: "frontend",
+      context_required: ["react", "hook", "hooks", "component", "components", "state", "render", "rendering", "dom", "props", "mount", "unmount", "lifecycle", "dependency", "dependencies"],
+      requires_review_if_ambiguous: true,
+      description: "React lifecycle and side-effect hook"
+    },
+    {
+      id: "react_use_state",
+      canonical: "useState",
+      spoken_variants: ["use state", "use-state", "usestate"],
+      category: "frontend",
+      context_required: ["react", "hook", "hooks", "component", "state", "render", "props"],
+      requires_review_if_ambiguous: true,
+      description: "React state hook"
+    },
+    {
+      id: "react_use_callback",
+      canonical: "useCallback",
+      spoken_variants: ["use callback", "use-callback"],
+      category: "frontend",
+      context_required: ["react", "hook", "hooks", "component", "memo", "function"],
+      requires_review_if_ambiguous: true,
+      description: "React memoized callback hook"
+    },
+    {
+      id: "react_use_memo",
+      canonical: "useMemo",
+      spoken_variants: ["use memo", "use-memo"],
+      category: "frontend",
+      context_required: ["react", "hook", "hooks", "component", "compute", "calculation"],
+      requires_review_if_ambiguous: true,
+      description: "React memoized value hook"
+    },
+    {
+      id: "react_use_ref",
+      canonical: "useRef",
+      spoken_variants: ["use ref", "use-ref"],
+      category: "frontend",
+      context_required: ["react", "hook", "hooks", "component", "dom", "reference"],
+      requires_review_if_ambiguous: true,
+      description: "React mutable reference hook"
+    },
+    {
+      id: "framework_react",
+      canonical: "React",
+      spoken_variants: ["react js", "react-js", "react.js"],
+      category: "frontend",
+      description: "React user interface library"
+    },
+    {
+      id: "spring_autowired",
+      canonical: "@Autowired",
+      spoken_variants: ["at autowired", "at auto wired", "@ autowired", "at auto-wired", "autowired", "auto wired"],
+      category: "spring",
+      context_required: ["spring", "java", "bean", "beans", "dependency", "injection", "ioc", "service", "repository", "controller"],
+      requires_review_if_ambiguous: false,
+      description: "Spring dependency injection annotation"
+    },
+    {
+      id: "k8s_kubectl",
+      canonical: "kubectl",
+      spoken_variants: ["cube ctl", "cube control", "cube cuddle", "kube ctl", "kube control", "kube cuddle", "kubectl"],
+      category: "devops",
+      description: "Kubernetes command-line tool"
+    },
+    {
+      id: "k8s_kubernetes",
+      canonical: "Kubernetes",
+      spoken_variants: ["coobernetes", "k8s", "k eight s", "k-8-s", "kubernetes"],
+      category: "devops",
+      description: "Container orchestration system"
+    },
+    {
+      id: "python_fastapi",
+      canonical: "FastAPI",
+      spoken_variants: ["fast api", "fast-api", "fastapi"],
+      category: "backend",
+      description: "Modern Python async web framework"
+    },
+    {
+      id: "db_postgresql",
+      canonical: "PostgreSQL",
+      spoken_variants: ["post gres", "postgres", "post gre sql", "post-gres-q-l", "postgresql"],
+      category: "database",
+      description: "Open-source relational database"
+    },
+    {
+      id: "lang_typescript",
+      canonical: "TypeScript",
+      spoken_variants: ["type script", "type-script", "typescript"],
+      category: "language",
+      description: "Typed superset of JavaScript"
+    },
+    {
+      id: "lang_javascript",
+      canonical: "JavaScript",
+      spoken_variants: ["java script", "java-script", "javascript"],
+      category: "language",
+      description: "Web programming language"
+    },
+    {
+      id: "lang_python",
+      canonical: "Python",
+      spoken_variants: ["python three", "python 3", "py-thon"],
+      category: "language",
+      description: "Python programming language"
+    },
+    {
+      id: "devops_docker",
+      canonical: "Docker",
+      spoken_variants: ["dock er", "docker container", "docker image"],
+      category: "devops",
+      description: "Container platform"
+    },
+    {
+      id: "api_rest_api",
+      canonical: "REST API",
+      spoken_variants: ["rest api", "rest-api", "restful api", "rest a p i"],
+      category: "backend",
+      description: "Representational State Transfer API"
+    },
+    {
+      id: "ai_rag",
+      canonical: "RAG",
+      spoken_variants: ["r a g", "rag system", "rag pipeline", "retrieval augmented generation"],
+      category: "ai",
+      description: "Retrieval-Augmented Generation"
+    },
+    {
+      id: "ai_pytorch",
+      canonical: "PyTorch",
+      spoken_variants: ["pie torch", "py torch", "pytorch"],
+      category: "ai",
+      description: "Deep learning framework"
+    },
+    {
+      id: "ai_opencv",
+      canonical: "OpenCV",
+      spoken_variants: ["open cv", "open-cv", "opencv"],
+      category: "ai",
+      description: "Computer vision library"
+    },
+    {
+      id: "db_redis",
+      canonical: "Redis",
+      spoken_variants: ["red is", "read is", "red-is"],
+      category: "database",
+      description: "In-memory data store"
+    },
+    {
+      id: "db_mongodb",
+      canonical: "MongoDB",
+      spoken_variants: ["mongo db", "mongo-db", "mongodb"],
+      category: "database",
+      description: "NoSQL document database"
+    },
+    {
+      id: "nextjs",
+      canonical: "Next.js",
+      spoken_variants: ["next js", "next-js", "next.js", "nextjs"],
+      category: "frontend",
+      description: "React production framework"
+    }
+  ]
+};
