@@ -235,12 +235,43 @@ export class BrowserPipelineRunner {
       },
     });
 
+    // Wait for video element to have decoded frame data
+    try {
+      videoEl.currentTime = Math.max(0, highlight.start_sec);
+      await new Promise<void>((resolve) => {
+        if (videoEl.readyState >= 2) return resolve();
+        const onSeeked = () => {
+          videoEl.removeEventListener("seeked", onSeeked);
+          resolve();
+        };
+        videoEl.addEventListener("seeked", onSeeked);
+        setTimeout(resolve, 1500);
+      });
+    } catch (e) {
+      console.warn("Video seek error:", e);
+    }
+
     // Create a source canvas playing the video
     const srcCanvas = document.createElement("canvas");
     srcCanvas.width = sourceWidth;
     srcCanvas.height = sourceHeight;
     const sCtx = srcCanvas.getContext("2d")!;
-    sCtx.drawImage(videoEl, 0, 0, sourceWidth, sourceHeight);
+
+    // Base atmospheric gradient fill
+    const sGrad = sCtx.createLinearGradient(0, 0, sourceWidth, sourceHeight);
+    sGrad.addColorStop(0, "#090d16");
+    sGrad.addColorStop(0.5, "#1e1b4b");
+    sGrad.addColorStop(1, "#0f172a");
+    sCtx.fillStyle = sGrad;
+    sCtx.fillRect(0, 0, sourceWidth, sourceHeight);
+
+    try {
+      if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
+        sCtx.drawImage(videoEl, 0, 0, sourceWidth, sourceHeight);
+      }
+    } catch (e) {
+      console.warn("Could not draw video frame directly:", e);
+    }
 
     const renderDuration = Math.min(10.0, highlight.duration_sec);
 

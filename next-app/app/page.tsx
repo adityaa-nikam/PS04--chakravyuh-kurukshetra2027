@@ -55,6 +55,12 @@ function extractYoutubeId(url: string): string | null {
   return match && match[2].length === 11 ? match[2] : null;
 }
 
+function formatMediaUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  if (url.startsWith("blob:") || url.startsWith("data:")) return url;
+  return `${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`;
+}
+
 export default function AIStudioPage() {
   // Input Selection State - Supports YouTube stream download, Remotion AI prompt, Local path, or Upload
   const [inputMode, setInputMode] = useState<"youtube" | "ai_prompt" | "path" | "upload">("youtube");
@@ -101,11 +107,28 @@ export default function AIStudioPage() {
 
   // Video player custom controls
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-  const [isVideoMuted, setIsVideoMuted] = useState(false);
+  const [isVideoMuted, setIsVideoMuted] = useState(true);
 
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const pollingInstagram = useRef(false);
+
+  // Auto-play preview when a new vertical reel is loaded
+  useEffect(() => {
+    if (renderedVideoUrl && videoRef.current) {
+      videoRef.current.muted = true;
+      setIsVideoMuted(true);
+      videoRef.current
+        .play()
+        .then(() => setIsVideoPlaying(true))
+        .catch((err) => {
+          console.warn("Autoplay preview standby:", err);
+          setIsVideoPlaying(false);
+        });
+    } else {
+      setIsVideoPlaying(false);
+    }
+  }, [renderedVideoUrl]);
 
   const toggleVideoPlayback = () => {
     if (!videoRef.current) return;
@@ -113,7 +136,17 @@ export default function AIStudioPage() {
       videoRef.current
         .play()
         .then(() => setIsVideoPlaying(true))
-        .catch(() => {});
+        .catch((err) => {
+          console.warn("Unmuted playback blocked or failed, retrying muted:", err);
+          if (videoRef.current) {
+            videoRef.current.muted = true;
+            setIsVideoMuted(true);
+            videoRef.current
+              .play()
+              .then(() => setIsVideoPlaying(true))
+              .catch((e2) => console.error("Video playback retry error:", e2));
+          }
+        });
     } else {
       videoRef.current.pause();
       setIsVideoPlaying(false);
@@ -126,10 +159,6 @@ export default function AIStudioPage() {
     videoRef.current.muted = !videoRef.current.muted;
     setIsVideoMuted(videoRef.current.muted);
   };
-
-  useEffect(() => {
-    setIsVideoPlaying(false);
-  }, [renderedVideoUrl]);
 
   // Clean up polling timer on unmount & read URL query parameters
   useEffect(() => {
@@ -410,7 +439,7 @@ export default function AIStudioPage() {
         );
 
         setJobId(result.jobId);
-        setRenderedVideoUrl(`${result.videoUrl}&t=${Date.now()}`);
+        setRenderedVideoUrl(result.videoUrl);
         setRenderedClips(result.renderedClips);
         setSelectedClipIndex(0);
         setElapsedSec(result.elapsedSec);
@@ -510,13 +539,13 @@ export default function AIStudioPage() {
             setSelectedClipIndex(0);
             const first = job.rendered_clips[0];
             const vUrl = first.video_url || `/api/ai/video?filename=${encodeURIComponent(first.download_filename || `${activeJobId}_reel_01.mp4`)}`;
-            setRenderedVideoUrl(`${vUrl}&t=${Date.now()}`);
+            setRenderedVideoUrl(formatMediaUrl(vUrl));
             if (first.caption) {
               setCustomCaption(first.caption);
             }
           } else {
             // Set streaming video URL
-            setRenderedVideoUrl(`/api/ai/video?jobId=${encodeURIComponent(activeJobId)}&t=${Date.now()}`);
+            setRenderedVideoUrl(formatMediaUrl(`/api/ai/video?jobId=${encodeURIComponent(activeJobId)}`));
           }
         } else if (job.status === "FAILED") {
           if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
@@ -534,7 +563,7 @@ export default function AIStudioPage() {
     if (!clip) return;
     const vUrl = clip.video_url || (clip.rendered_video_path ? `/api/ai/video?path=${encodeURIComponent(clip.rendered_video_path)}` : null);
     if (vUrl) {
-      setRenderedVideoUrl(`${vUrl}&t=${Date.now()}`);
+      setRenderedVideoUrl(formatMediaUrl(vUrl));
     }
     if (clip.caption) {
       setCustomCaption(clip.caption);
@@ -555,7 +584,9 @@ export default function AIStudioPage() {
       ? clip.video_url
       : `/api/ai/video?path=${encodeURIComponent(clip.rendered_video_path || "")}`;
     const dlName = clip.download_filename || `${clip.clip_id}.mp4`;
-    const downloadUrl = `${rawUrl}${rawUrl.includes("?") ? "&" : "?"}download=true&downloadName=${encodeURIComponent(dlName)}`;
+    const downloadUrl = rawUrl.startsWith("blob:")
+      ? rawUrl
+      : `${rawUrl}${rawUrl.includes("?") ? "&" : "?"}download=true&downloadName=${encodeURIComponent(dlName)}`;
     const a = document.createElement("a");
     a.href = downloadUrl;
     a.download = dlName;
@@ -1790,10 +1821,13 @@ export default function AIStudioPage() {
                     {renderedVideoUrl ? (
                       <div className="relative w-full h-full group/video flex items-center justify-center">
                         <video
+                          key={renderedVideoUrl}
                           ref={videoRef}
                           src={renderedVideoUrl}
                           playsInline
                           loop
+                          autoPlay
+                          preload="auto"
                           muted={isVideoMuted}
                           onPlay={() => setIsVideoPlaying(true)}
                           onPause={() => setIsVideoPlaying(false)}
@@ -1925,8 +1959,11 @@ export default function AIStudioPage() {
                     if (renderedClips.length > 0 && renderedClips[selectedClipIndex]) {
                       handleDownloadClip(renderedClips[selectedClipIndex]);
                     } else if (renderedVideoUrl) {
+                      const dlUrl = renderedVideoUrl.startsWith("blob:")
+                        ? renderedVideoUrl
+                        : `${renderedVideoUrl}${renderedVideoUrl.includes("?") ? "&" : "?"}download=true`;
                       const a = document.createElement("a");
-                      a.href = `${renderedVideoUrl}&download=true`;
+                      a.href = dlUrl;
                       a.download = `${jobId || "reel"}.mp4`;
                       document.body.appendChild(a);
                       a.click();
