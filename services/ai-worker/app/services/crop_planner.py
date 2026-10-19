@@ -190,21 +190,42 @@ class FaceDetector:
             return []
 
         try:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            h, w = frame.shape[:2]
+            scale = 1.0
+            if w > 640:
+                scale = 640.0 / float(w)
+                small_frame = cv2.resize(frame, (640, int(round(h * scale))), interpolation=cv2.INTER_LINEAR)
+            else:
+                small_frame = frame
+
+            gray = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
+            min_size = max(24, int(round(30 * scale)))
             faces = self.cascade.detectMultiScale(
                 gray,
                 scaleFactor=1.1,
                 minNeighbors=5,
-                minSize=(30, 30),
+                minSize=(min_size, min_size),
                 flags=cv2.CASCADE_SCALE_IMAGE
             )
             if len(faces) == 0:
                 return []
             valid_faces = []
-            for (x, y, w, h) in faces:
+            inv_scale = 1.0 / scale
+            for (sx, sy, sw, sh) in faces:
+                x = int(round(sx * inv_scale)) if scale != 1.0 else int(sx)
+                y = int(round(sy * inv_scale)) if scale != 1.0 else int(sy)
+                w_box = int(round(sw * inv_scale)) if scale != 1.0 else int(sw)
+                h_box = int(round(sh * inv_scale)) if scale != 1.0 else int(sh)
+
+                # Clamp bounding box within source frame boundaries
+                x = max(0, min(w - 1, x))
+                y = max(0, min(h - 1, y))
+                w_box = max(1, min(w - x, w_box))
+                h_box = max(1, min(h - y, h_box))
+
                 # If color frame, verify that face box is not a synthetic colored graphic (e.g. blue UI box)
-                if frame.ndim == 3 and w > 0 and h > 0:
-                    roi = frame[max(0, y):min(frame.shape[0], y + h), max(0, x):min(frame.shape[1], x + w)]
+                if frame.ndim == 3 and w_box > 0 and h_box > 0:
+                    roi = frame[y:y + h_box, x:x + w_box]
                     if roi.size > 0:
                         m_b, m_g, m_r = np.mean(roi, axis=(0, 1))
                         if m_b > m_r + 30.0:  # Blue-dominant non-skin element
@@ -213,7 +234,7 @@ class FaceDetector:
                             skin_pct = (np.count_nonzero(skin_mask) / float(roi.shape[0] * roi.shape[1])) * 100.0
                             if skin_pct < 5.0:
                                 continue
-                valid_faces.append((int(x), int(y), int(w), int(h)))
+                valid_faces.append((int(x), int(y), int(w_box), int(h_box)))
             return valid_faces
         except Exception as e:
             logger.debug("Error during face detection: %s", e)
@@ -320,8 +341,14 @@ class SceneChangeDetector:
     def is_scene_change(self, frame: np.ndarray) -> bool:
         """Computes histogram correlation with previous frame. Returns True if transition detected."""
         try:
+            h, w = frame.shape[:2]
+            if w > 160:
+                thumb = cv2.resize(frame, (160, max(1, int(round(h * 160.0 / w)))), interpolation=cv2.INTER_NEAREST)
+            else:
+                thumb = frame
+
             # 3-channel BGR histogram (16 bins per channel) capturing color and brightness
-            hist = cv2.calcHist([frame], [0, 1, 2], None, [16, 16, 16], [0, 256, 0, 256, 0, 256])
+            hist = cv2.calcHist([thumb], [0, 1, 2], None, [16, 16, 16], [0, 256, 0, 256, 0, 256])
             cv2.normalize(hist, hist, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
 
             if self.prev_hist is None:

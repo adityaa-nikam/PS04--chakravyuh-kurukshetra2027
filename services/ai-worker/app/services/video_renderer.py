@@ -1237,7 +1237,12 @@ class VideoRendererService:
                     # 1. Frame-to-frame cut detection
                     is_cut_frame = False
                     if frame is not None and frame.size > 0:
-                        hist_curr = cv2.calcHist([frame], [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256])
+                        h_f, w_f = frame.shape[:2]
+                        if w_f > 160:
+                            thumb = cv2.resize(frame, (160, max(1, int(round(h_f * 160.0 / w_f)))), interpolation=cv2.INTER_NEAREST)
+                        else:
+                            thumb = frame
+                        hist_curr = cv2.calcHist([thumb], [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256])
                         cv2.normalize(hist_curr, hist_curr, 0, 1, cv2.NORM_MINMAX)
                         if hist_prev is not None:
                             sim = float(cv2.compareHist(hist_prev, hist_curr, cv2.HISTCMP_CORREL))

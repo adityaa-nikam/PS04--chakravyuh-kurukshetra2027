@@ -61,7 +61,7 @@ export function prepareRender(input: unknown, options: RenderOptions = {}, speci
   }
   const visuals = storyboard.scenes.map(scene => overrides[scene.id] ?? adaptVisualScene(scene, storyboard.title));
   visuals.forEach((visual, i) => assertVisualDomain(storyboard.scenes[i], storyboard.title, visual));
-  return { storyboard, visuals, settings, frames, durationInFrames: from, fallbackSceneIndexes, explicitVisualSceneIds: Object.keys(overrides), narration: undefined as undefined | { engine: "piper"; voice: string; seconds: number[] } };
+  return { storyboard, visuals, settings, frames, durationInFrames: from, fallbackSceneIndexes, explicitVisualSceneIds: Object.keys(overrides), narration: undefined as undefined | { engine: "piper" | "elevenlabs" | "edge" | string; voice: string; seconds: number[] } };
 }
 export type RenderPlan = ReturnType<typeof prepareRender>;
 export type RenderScene = Storyboard["scenes"][number];

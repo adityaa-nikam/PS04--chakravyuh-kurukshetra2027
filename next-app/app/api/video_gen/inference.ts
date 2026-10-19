@@ -22,8 +22,17 @@ async function openRouterJson<T extends z.ZodType>(schema: T, input: unknown, sy
   const timeoutMs = inferenceLimit("OPENROUTER_TIMEOUT_MS", 180000, 1000, 600000);
   const outputLimit = inferenceLimit(stage === "visual" ? "OPENROUTER_VISUAL_MAX_TOKENS" : "OPENROUTER_SCRIPT_MAX_TOKENS", maxTokens, 256, 8192);
   const format = z.toJSONSchema(schema, { io: "input" }), user = JSON.stringify(input);
-  const body = JSON.stringify({ model, stream: false, temperature: 0, max_tokens: outputLimit, reasoning: { enabled: false }, provider: { require_parameters: true }, response_format: { type: "json_schema", json_schema: { name: "explainer_output", strict: true, schema: format } }, messages: [{ role: "system", content: system }, { role: "user", content: user }] });
-  const maxAttempts = 3;
+  const isReasoning = model.includes("nemotron") || model.includes("r1") || model.includes("reasoner");
+  const body = JSON.stringify({
+    model,
+    stream: false,
+    temperature: 0,
+    max_tokens: outputLimit,
+    ...(isReasoning ? { reasoning: { enabled: false }, provider: { require_parameters: true } } : {}),
+    response_format: { type: "json_schema", json_schema: { name: "explainer_output", strict: true, schema: format } },
+    messages: [{ role: "system", content: system }, { role: "user", content: user }]
+  });
+  const maxAttempts = 2;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const started = Date.now(), timeout = AbortSignal.timeout(timeoutMs);
     const event: InferenceDiagnostic = { provider: "openrouter", stage, sceneId: context.sceneId, planningAttempt: context.planningAttempt, model, attempt, queueMs, inputBytes: Buffer.byteLength(system + user), schemaBytes: Buffer.byteLength(JSON.stringify(format)), estimatedInputTokens: Math.ceil(Buffer.byteLength(system + user) / 4), outputLimit, timeoutMs, elapsedMs: 0, status: "started" };

@@ -65,7 +65,22 @@ export async function POST(request: Request) {
   }
 
   const targetAudience = input.targetAudience || input.audience || "Beginners";
-  const durationSeconds = input.durationSeconds ?? input.duration ?? 45;
+  let durationSeconds = input.durationSeconds ?? input.duration ?? 45;
+
+  // Extract explicit duration requirement if the user stated one in their prompt command
+  // e.g. "video should be of 30 to 40 seconds", "video of 30 to 40 sec", "duration: 35s", "30-40 sec video"
+  const promptDurationMatch =
+    topic.match(/(?:video\s+(?:(?:should|shoud|must|needs to)\s+be\s+)?(?:of\s+)?|duration\s*(?:of|:)?\s*|generate\s+video\s+of\s*)(\d+)(?:\s*(?:to|-)\s*(\d+))?\s*(?:s|sec|seconds?)?/i) ||
+    topic.match(/(\d+)(?:\s*(?:to|-)\s*(\d+))?\s*(?:s|sec|seconds?)\s*(?:video|reel|clip)?/i);
+  if (promptDurationMatch) {
+    const minVal = parseInt(promptDurationMatch[1], 10);
+    const maxVal = promptDurationMatch[2] ? parseInt(promptDurationMatch[2], 10) : minVal;
+    if (!isNaN(minVal) && minVal >= 15 && minVal <= 120) {
+      durationSeconds = Math.round((minVal + maxVal) / 2);
+      console.info(`[video_gen] Honoring prompt duration request: ${durationSeconds}s (from "${promptDurationMatch[0]}")`);
+    }
+  }
+
   const shouldRender = input.render !== false && input.mode !== "script";
 
   // Mode 1: Script only
@@ -94,9 +109,9 @@ export async function POST(request: Request) {
     console.info(`[video_gen] starting full pipeline for "${topic}" -> ${outputVideoPath}`);
 
     const result = await explain({
-      prompt: topic,
-      audience: targetAudience,
-      duration: durationSeconds,
+      prompt: input.resume ? undefined : topic,
+      audience: input.resume ? undefined : targetAudience,
+      duration: input.resume ? undefined : durationSeconds,
       output: outputVideoPath,
       visualActions: input.visualActions ?? true,
       approveOverrun: input.approveOverrun ?? true,
@@ -110,6 +125,10 @@ export async function POST(request: Request) {
       mkdirSync(publicDir, { recursive: true });
       const publicVideo = path.join(publicDir, "final.mp4");
       copyFileSync(result.output, publicVideo);
+      const diagSource = path.join(path.dirname(result.output), "narration-diagnostic.json");
+      if (existsSync(diagSource)) {
+        copyFileSync(diagSource, path.join(publicDir, "narration-diagnostic.json"));
+      }
       publicUrl = `/videos/${folderName}/final.mp4`;
     } catch (copyErr) {
       console.warn("[video_gen] Warning: could not copy to public/ directory:", copyErr);

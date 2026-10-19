@@ -4,6 +4,7 @@ import type { RenderPlan } from "../render-plan";
 import { assertVisualDomain } from "../visual-plan";
 import { FitText } from "./FitText";
 import { visualComponents } from "./Visuals";
+import { KaraokeCaptions } from "./KaraokeCaptions";
 
 // Theme generator to give each video topic a unique, modern visual identity
 export function getVisualTheme(title: string, index: number) {
@@ -245,12 +246,14 @@ export function SceneFrame({ plan, index, frame }: { plan: RenderPlan; index: nu
             minHeight: 0,
             display: "grid",
             gridTemplateColumns: portrait ? "minmax(0, 1fr)" : "minmax(0, 0.39fr) minmax(0, 0.61fr)",
-            gridTemplateRows: portrait ? `${180 * scale}px minmax(0, 1fr) ${64 * scale}px ${48 * scale}px` : "1fr 84px 64px",
+            gridTemplateRows: portrait
+              ? `${120 * scale}px minmax(0, 1fr) ${64 * scale}px ${54 * scale}px ${44 * scale}px`
+              : "1fr 64px 84px 64px",
             columnGap: pad,
-            rowGap: 16 * scale,
+            rowGap: 14 * scale,
             alignItems: "center",
-            paddingTop: 20 * scale,
-            paddingBottom: 20 * scale,
+            paddingTop: 16 * scale,
+            paddingBottom: 16 * scale,
           }}
         >
           {/* Scene Headline */}
@@ -260,19 +263,41 @@ export function SceneFrame({ plan, index, frame }: { plan: RenderPlan; index: nu
               sceneId={scene.id}
               role="heading"
               scale={scale}
-              preferredSize={(portrait ? 54 : 40) * scale}
-              minimumSize={Math.max(24, (portrait ? 40 : 30) * scale)}
+              preferredSize={(portrait ? 50 : 38) * scale}
+              minimumSize={Math.max(22, (portrait ? 36 : 28) * scale)}
               color="#F8FAFC"
             />
           </div>
 
           {/* Central Interactive Animation Stage */}
-          <div style={{ width: stageWidth, height: stageHeight, justifySelf: "center", gridColumn: portrait ? 1 : 2, gridRow: portrait ? 2 : "1 / 4" }}>
+          <div style={{ width: stageWidth, height: stageHeight, justifySelf: "center", gridColumn: portrait ? 1 : 2, gridRow: portrait ? 2 : "1 / 5" }}>
             <Component visual={visual} frame={frame} fps={fps} scale={stageScale} durationInFrames={allocation.durationInFrames} />
           </div>
 
+          {/* Synchronized Word-Level Active Karaoke Captions */}
+          <div
+            style={{
+              width: "100%",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              gridColumn: 1,
+              gridRow: portrait ? 3 : 2,
+              zIndex: 10,
+            }}
+          >
+            <KaraokeCaptions
+              narration={scene.narration}
+              frame={frame}
+              fps={fps}
+              durationInFrames={allocation.durationInFrames}
+              scale={scale}
+              highlightColor={theme.highlight || "#FACC15"}
+            />
+          </div>
+
           {/* Topic Labels / Sub-points */}
-          <div style={{ display: "flex", gap: 14 * scale, height: "100%", gridColumn: 1 }}>
+          <div style={{ display: "flex", gap: 14 * scale, height: "100%", gridColumn: 1, gridRow: portrait ? 4 : 3 }}>
             {visual.labels.map((label, i) => (
               <div
                 key={i}
@@ -306,6 +331,7 @@ export function SceneFrame({ plan, index, frame }: { plan: RenderPlan; index: nu
               position: "relative",
               height: "100%",
               gridColumn: 1,
+              gridRow: portrait ? 5 : 4,
               background: "rgba(255, 255, 255, 0.03)",
               border: "1px solid rgba(255, 255, 255, 0.08)",
               borderRadius: 10 * scale,

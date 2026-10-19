@@ -16,7 +16,9 @@ const encodeRemotion: VideoEncoder = async (plan, output, directory, browser) =>
   const audio = await prepareLocalNarration(plan, directory);
   // Remotion encodes the visual track; FFmpeg attaches complete scene speech
   // before publishOutput can expose the final MP4.
-  const visualOutput = audio ? path.join(directory, "silent.mp4") : output;
+  // Using .mkv for the intermediate visual track avoids Remotion's fragile multi-pass
+  // fast-start temp stitching on Windows while preserving lossless stream copying in muxLocalNarration.
+  const visualOutput = audio ? path.join(directory, "silent.mkv") : output;
   const job = path.join(directory, "render-job.json");
   writeFileSync(job, JSON.stringify({ plan, output: visualOutput, directory, browser, entryPoint }), { mode: 0o600 });
   await runRenderWorker([job]);
@@ -36,6 +38,25 @@ export async function renderStoryboard(input: unknown, options: RenderOptions = 
     await encoder(plan, temporaryVideo, directory, browser);
     const elapsedSeconds = (Date.now() - started) / 1000;
     publishOutput(paths, temporaryVideo, { originalStoryboard: input, ...plan, elapsedSeconds, output: paths.video, provenance });
+
+    // Safe diagnostic manifest for voiceover quality and provenance audit (no credentials/tokens stored)
+    if (plan.narration) {
+      const diagPath = path.join(path.dirname(paths.video), "narration-diagnostic.json");
+      writeFileSync(diagPath, JSON.stringify({
+        provider: plan.narration.engine,
+        modelId: (plan.narration as any).modelId || (plan.narration.engine === "elevenlabs" ? "eleven_v4" : "local"),
+        voiceId: plan.narration.voice,
+        settings: (plan.narration as any).settings || {},
+        scriptHash: (plan.narration as any).scriptHash || "",
+        sceneDurations: plan.narration.seconds,
+        totalDurationSeconds: plan.durationInFrames / plan.settings.fps,
+        fps: plan.settings.fps,
+        totalFrames: plan.durationInFrames,
+        renderedAt: new Date().toISOString(),
+        videoArtifact: paths.video,
+        metadataArtifact: paths.metadata,
+      }, null, 2));
+    }
     return { output: paths.video, metadata: paths.metadata, elapsedSeconds, frames: plan.durationInFrames, durationSeconds: plan.durationInFrames / plan.settings.fps, width: plan.settings.width, height: plan.settings.height, fps: plan.settings.fps, warnings: plan.storyboard.warnings, scenes: plan.frames };
   } catch (error) {
     throw new Error(`RENDER_FAILED: ${error instanceof Error ? error.message : "Unknown error"}. Final output was not published. Check the browser/layout and retry.`, { cause: error });

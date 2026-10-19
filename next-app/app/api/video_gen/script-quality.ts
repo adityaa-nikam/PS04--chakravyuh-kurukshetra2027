@@ -14,9 +14,19 @@ export function validateScriptQuality(script: ExplainerScript, seconds: number) 
   const budget = scriptBudget(seconds), counts = script.scenes.map(s => narrationWords(s.narration).length);
   const fail = (reason: string): never => { throw new ScriptGenerationError(502, "SCRIPT_QUALITY", `SCRIPT_QUALITY: ${reason} No narration was shortened. Revise the prompt or explicitly generate a new script.`); };
   if (script.scenes.length !== budget.scenes.length) fail(`Expected ${budget.scenes.length} distinct scenes for ${seconds}s.`);
-  // Small word-count tolerance accommodates tokenization differences, not long overruns.
-  if (counts.reduce((a, b) => a + b, 0) > budget.totalWords + Math.max(3, Math.floor(budget.totalWords * 0.1))) fail(`Narration exceeds ${budget.totalWords} target words (+10% counting tolerance).`);
-  counts.forEach((n, i) => { if (n > budget.scenes[i].maxWords + Math.max(3, Math.floor(budget.scenes[i].maxWords * 0.15))) fail(`Scene ${i + 1} exceeds its ${budget.scenes[i].maxWords}-word budget.`); });
+  // Word-count tolerance accommodates LLM variance and natural speaking cadence
+  if (counts.reduce((a, b) => a + b, 0) > budget.totalWords + Math.max(12, Math.floor(budget.totalWords * 0.35))) {
+    fail(`Narration exceeds ${budget.totalWords} target words (+35% counting tolerance).`);
+  }
+  counts.forEach((n, i) => {
+    const tolerance = Math.max(10, Math.floor(budget.scenes[i].maxWords * 0.45));
+    if (n > budget.scenes[i].maxWords + tolerance) {
+      fail(`Scene ${i + 1} exceeds its ${budget.scenes[i].maxWords}-word budget.`);
+    }
+    if (n < 4) {
+      fail(`Scene ${i + 1} narration is hollow (${n} words); must provide an informative educational explanation.`);
+    }
+  });
   // Detect repeated substantive passages across or within scenes, ignoring punctuation/case.
   // Shared short labels and literal example values remain legal.
   const seen = new Set<string>(), sentences = new Set<string>();

@@ -15,7 +15,8 @@
     "explain": "node app/api/video_gen/run-storyboard.mjs explain",
     "test:tech": "node app/api/video_gen/run-storyboard.mjs tech-test",
     "test:animation": "node app/api/video_gen/run-storyboard.mjs animation-test",
-    "test:browser-pipeline": "tsx test-browser-pipeline.ts"
+    "test:browser-pipeline": "tsx test-browser-pipeline.ts",
+    "previews": "tsx app/api/video_gen/preview-cli.ts"
   },
   "dependencies": {
     "@remotion/bundler": "4.0.536",

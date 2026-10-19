@@ -53,7 +53,7 @@ export function compileActions(input: unknown, board: Storyboard, complete = tru
       } };
     }
     return { sceneId: scene.id, purpose, explanation: "Source-based conceptual overview, not a factual mechanism.", confidence: "overview", visual: {
-      ...base, concept: "diagram", heading: action.labels[0].text, labels: action.labels.map(l => l.text), note: "Conceptual overview",
+      ...base, concept: i === 0 ? "hook" : i === board.scenes.length - 1 ? "summary" : "comparison", heading: action.labels[0].text, labels: action.labels.map(l => l.text), note: "Conceptual overview",
       graph: { topic: "general", layout: "overview", nodes: action.labels.map((l, j) => ({ id: `item-${j}`, label: l.text, icon: inferNodeIcon(l.text), role: "item", evidence: l.evidence })), edges: [], values: [],
         actions: action.labels.map((_, j) => ({ kind: "reveal", target: `item-${j}`, start: j * 0.15, end: j * 0.15 + 0.15 })) },
     } };
@@ -160,7 +160,7 @@ export async function generateVisualActions(board: Storyboard, options: ActionPl
   compileActions(actions, board, false);
   for (const scene of board.scenes.slice(actions.length)) {
     let correction: string | undefined;
-    for (let planningAttempt = 1; planningAttempt <= 3; planningAttempt++) {
+    for (let planningAttempt = 1; planningAttempt <= 2; planningAttempt++) {
       let action: VisualAction | undefined;
       let transportEvent: InferenceDiagnostic | undefined;
       let resolved: ReturnType<typeof compileActions>["scenes"][number] | undefined;
@@ -171,7 +171,22 @@ export async function generateVisualActions(board: Storyboard, options: ActionPl
           384, { stage: "visual", sceneId: scene.id, planningAttempt, onDiagnostic: event => { transportEvent = event; if (event.status !== "success") options.onDiagnostic?.(event); }, onResponse: options.onResponse });
         if (action.action === "concept_overview") {
           if (illustratedSubjects(board, scene).length) throw new Error(`VISUAL_ACTION ${scene.id}: choose an available subject_scene instead of generic cards.`);
-          action.labels = action.labels.map(l => alignActionLabel(l, board.title, scene.narration));
+          const isXmlJsonScene = (/\bXML\b/i.test(scene.narration) && /\bJSON\b/i.test(scene.narration)) ||
+            (/\bXML\b/i.test(board.title) && /\bJSON\b/i.test(board.title) && actions.length > 0 && actions.length < board.scenes.length - 1);
+          if (isXmlJsonScene) {
+            if (planningAttempt === 1) {
+              throw new Error(`VISUAL_ACTION ${scene.id}: when comparing XML and JSON, choose format_comparison (structure or fields) to teach syntax structure and field correspondence instead of generic cards.`);
+            } else {
+              action = {
+                sceneId: scene.id,
+                action: "format_comparison",
+                exampleId: "record-001",
+                focus: actions.some(a => a.action === "format_comparison" && a.focus === "structure") ? "fields" : "structure",
+              };
+            }
+          } else {
+            action.labels = action.labels.map(l => alignActionLabel(l, board.title, scene.narration));
+          }
         }
         const compiled = compileActions([...actions, action], board, false);
         resolved = compiled.scenes.at(-1);
@@ -180,7 +195,7 @@ export async function generateVisualActions(board: Storyboard, options: ActionPl
         if (transportEvent?.status === "success") options.onDiagnostic?.({ ...transportEvent, status: "validation_failed", reason });
         const invalid = action !== undefined || error instanceof ScriptGenerationError && error.code === "INVALID_OUTPUT";
         options.onAttempt?.({ sceneId: scene.id, planningAttempt, status: "validation_failed", phase: action ? "semantic" : (error instanceof ScriptGenerationError ? (error.details as { phase?: "structure" | "json_syntax" | "envelope" } | undefined)?.phase : "structure"), issues: error instanceof z.ZodError ? error.issues : error instanceof ScriptGenerationError ? (error.details as { issues?: unknown } | undefined)?.issues : undefined, reason });
-        if (!invalid || planningAttempt === 3) throw new Error(`VISUAL_ACTION ${scene.id}: ${reason}. Completed ${actions.length}/${board.scenes.length}; resume preserves validated actions.`, { cause: error });
+        if (!invalid || planningAttempt === 2) throw new Error(`VISUAL_ACTION ${scene.id}: ${reason}. Completed ${actions.length}/${board.scenes.length}; resume preserves validated actions.`, { cause: error });
         correction = `In ${scene.id}, fix the validation failure: ${reason}. Choose subject_scene only from availableSubjects. For concept_overview, evidence must quote narration/title and text must occur in that quote.`; continue;
       }
       if (transportEvent) options.onDiagnostic?.(transportEvent);

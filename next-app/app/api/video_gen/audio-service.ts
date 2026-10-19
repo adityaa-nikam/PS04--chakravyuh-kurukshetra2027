@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 
 export interface AudioDescriptionOptions {
@@ -21,54 +21,54 @@ export async function generateNarrationAudio(
     throw new Error("Narration text is empty.");
   }
 
-  // Method 1: Edge-TTS (High quality neural voice, fast, free)
+  // Method 1: ElevenLabs Natural Female TTS (Primary when configured)
   try {
-    await new Promise<void>((resolve, reject) => {
-      const proc = spawn("python", [
-        "-m",
-        "edge_tts",
-        "--voice",
-        voice,
-        "--text",
-        cleanText,
-        "--write-media",
-        outputPath,
-      ]);
-      proc.on("close", (code) => {
-        if (code === 0 && existsSync(outputPath)) {
-          resolve();
-        } else {
-          reject(new Error(`edge-tts exited with code ${code}`));
-        }
-      });
-      proc.on("error", reject);
-    });
-    return outputPath;
+    const { isElevenLabsConfigured, generateSpeechWithElevenLabs } = await import("./elevenlabs-service");
+    if (isElevenLabsConfigured()) {
+      await generateSpeechWithElevenLabs(cleanText, outputPath, options.voice ? { voiceId: options.voice } : undefined);
+      return outputPath;
+    }
+  } catch (elevenErr) {
+    console.warn("[audio-service] ElevenLabs synthesis failed, falling back:", elevenErr);
+  }
+
+  // Method 2: Edge-TTS (High quality neural voice, fast, free)
+  try {
+    const pythonBin = existsSync("C:\\Program Files\\Python313\\python.exe")
+      ? "C:\\Program Files\\Python313\\python.exe"
+      : (process.env.PYTHON_PATH || "python");
+    const result = spawnSync(pythonBin, [
+      "-m",
+      "edge_tts",
+      "--voice",
+      voice,
+      "--text",
+      cleanText,
+      "--write-media",
+      outputPath,
+    ], { stdio: "ignore" });
+    if (result.status === 0 && existsSync(outputPath)) {
+      return outputPath;
+    }
   } catch (edgeErr) {
     console.warn("[audio-service] edge-tts error, attempting SAPI fallback:", edgeErr);
   }
 
-  // Method 2: Windows Native SAPI Speech (100% offline fallback)
+  // Method 3: Windows Native SAPI Speech (100% offline fallback)
   try {
     const escapedText = cleanText.replace(/["'`$]/g, " ");
     const sanitizedPath = outputPath.replace(/\\/g, "/");
     const script = `Add-Type -AssemblyName System.Speech; $s = New-Object System.Speech.Synthesis.SpeechSynthesizer; $s.SetOutputToWaveFile('${sanitizedPath}'); $s.Speak('${escapedText}'); $s.Dispose();`;
-    await new Promise<void>((resolve, reject) => {
-      const ps = spawn("powershell", ["-NoProfile", "-Command", script]);
-      ps.on("close", (code) => {
-        if (code === 0 && existsSync(outputPath)) {
-          resolve();
-        } else {
-          reject(new Error(`PowerShell SAPI exited with code ${code}`));
-        }
-      });
-      ps.on("error", reject);
-    });
-    return outputPath;
+    const result = spawnSync("powershell", ["-NoProfile", "-Command", script], { stdio: "ignore" });
+    if (result.status === 0 && existsSync(outputPath)) {
+      return outputPath;
+    }
   } catch (sapiErr) {
     console.error("[audio-service] SAPI fallback failed:", sapiErr);
     throw new Error(`Failed to generate audio description: ${sapiErr}`);
   }
+
+  throw new Error("Failed to generate audio narration with available engines.");
 }
 
 /**

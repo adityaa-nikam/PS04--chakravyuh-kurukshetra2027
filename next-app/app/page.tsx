@@ -109,6 +109,16 @@ export default function AIStudioPage() {
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [isVideoMuted, setIsVideoMuted] = useState(true);
 
+  // Fullscreen Preview State
+  const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
+  const [isFullscreenPlaying, setIsFullscreenPlaying] = useState(true);
+  const [isFullscreenMuted, setIsFullscreenMuted] = useState(false);
+  const [fullscreenCurrentTime, setFullscreenCurrentTime] = useState(0);
+  const [fullscreenDuration, setFullscreenDuration] = useState(0);
+  const fullscreenVideoRef = useRef<HTMLVideoElement>(null);
+  const fullscreenContainerRef = useRef<HTMLDivElement>(null);
+  const [isBrowserFullscreen, setIsBrowserFullscreen] = useState(false);
+
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const pollingInstagram = useRef(false);
@@ -159,6 +169,131 @@ export default function AIStudioPage() {
     videoRef.current.muted = !videoRef.current.muted;
     setIsVideoMuted(videoRef.current.muted);
   };
+
+  const openFullscreen = () => {
+    if (!renderedVideoUrl) return;
+    const currentTime = videoRef.current ? videoRef.current.currentTime : 0;
+    if (videoRef.current) {
+      videoRef.current.pause();
+      setIsVideoPlaying(false);
+    }
+    setFullscreenCurrentTime(currentTime);
+    setIsFullscreenPlaying(true);
+    setIsFullscreenMuted(isVideoMuted);
+    setIsFullscreenOpen(true);
+  };
+
+  const closeFullscreen = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+    const currentTime = fullscreenVideoRef.current ? fullscreenVideoRef.current.currentTime : fullscreenCurrentTime;
+    setIsFullscreenOpen(false);
+    if (videoRef.current) {
+      videoRef.current.currentTime = currentTime;
+      videoRef.current.play().then(() => setIsVideoPlaying(true)).catch(() => {});
+    }
+  };
+
+  const toggleFullscreenPlayback = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!fullscreenVideoRef.current) return;
+    if (fullscreenVideoRef.current.paused) {
+      fullscreenVideoRef.current.play().then(() => setIsFullscreenPlaying(true)).catch(() => {});
+    } else {
+      fullscreenVideoRef.current.pause();
+      setIsFullscreenPlaying(false);
+    }
+  };
+
+  const toggleFullscreenMute = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!fullscreenVideoRef.current) return;
+    fullscreenVideoRef.current.muted = !fullscreenVideoRef.current.muted;
+    setIsFullscreenMuted(fullscreenVideoRef.current.muted);
+  };
+
+  const toggleTrueBrowserFullscreen = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!document.fullscreenElement) {
+      if (fullscreenContainerRef.current?.requestFullscreen) {
+        fullscreenContainerRef.current.requestFullscreen().catch(() => {});
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+  };
+
+  const seekFullscreen = (seconds: number) => {
+    if (!fullscreenVideoRef.current) return;
+    const target = Math.max(0, Math.min(fullscreenDuration || 30, seconds));
+    fullscreenVideoRef.current.currentTime = target;
+    setFullscreenCurrentTime(target);
+  };
+
+  const formatVideoTime = (secs: number) => {
+    if (!Number.isFinite(secs) || secs < 0) return "0:00";
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
+  // Sync fullscreen change events
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsBrowserFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener("fullscreenchange", handleFsChange);
+    return () => document.removeEventListener("fullscreenchange", handleFsChange);
+  }, []);
+
+  // Keyboard controls for fullscreen viewer
+  useEffect(() => {
+    if (!isFullscreenOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (!document.fullscreenElement) {
+          closeFullscreen();
+        }
+      } else if (e.key === " " || e.key === "k" || e.key === "K") {
+        e.preventDefault();
+        toggleFullscreenPlayback();
+      } else if (e.key === "m" || e.key === "M") {
+        e.preventDefault();
+        toggleFullscreenMute();
+      } else if (e.key === "f" || e.key === "F") {
+        e.preventDefault();
+        toggleTrueBrowserFullscreen();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        seekFullscreen(fullscreenCurrentTime - 5);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        seekFullscreen(fullscreenCurrentTime + 5);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isFullscreenOpen, fullscreenCurrentTime, fullscreenDuration]);
+
+  // Initial playback sync when fullscreen modal mounts
+  useEffect(() => {
+    if (isFullscreenOpen && fullscreenVideoRef.current) {
+      fullscreenVideoRef.current.currentTime = fullscreenCurrentTime;
+      fullscreenVideoRef.current.muted = isFullscreenMuted;
+      fullscreenVideoRef.current.play()
+        .then(() => setIsFullscreenPlaying(true))
+        .catch(() => {
+          if (fullscreenVideoRef.current) {
+            fullscreenVideoRef.current.muted = true;
+            setIsFullscreenMuted(true);
+            fullscreenVideoRef.current.play().then(() => setIsFullscreenPlaying(true)).catch(() => {});
+          }
+        });
+    }
+  }, [isFullscreenOpen]);
 
   // Clean up polling timer on unmount & read URL query parameters
   useEffect(() => {
@@ -272,6 +407,18 @@ export default function AIStudioPage() {
       }
     }, 1000);
 
+    let durationToSend = aiDuration;
+    const promptDurationMatch =
+      topicToUse.match(/(?:video\s+(?:(?:should|shoud|must|needs to)\s+be\s+)?(?:of\s+)?|duration\s*(?:of|:)?\s*|generate\s+video\s+of\s*)(\d+)(?:\s*(?:to|-)\s*(\d+))?\s*(?:s|sec|seconds?)?/i) ||
+      topicToUse.match(/(\d+)(?:\s*(?:to|-)\s*(\d+))?\s*(?:s|sec|seconds?)\s*(?:video|reel|clip)?/i);
+    if (promptDurationMatch) {
+      const minVal = parseInt(promptDurationMatch[1], 10);
+      const maxVal = promptDurationMatch[2] ? parseInt(promptDurationMatch[2], 10) : minVal;
+      if (!isNaN(minVal) && minVal >= 15 && minVal <= 120) {
+        durationToSend = Math.round((minVal + maxVal) / 2);
+      }
+    }
+
     try {
       const res = await fetch("/api/video_gen", {
         method: "POST",
@@ -279,7 +426,7 @@ export default function AIStudioPage() {
         body: JSON.stringify({
           topic: topicToUse,
           targetAudience: aiAudience,
-          durationSeconds: aiDuration,
+          durationSeconds: durationToSend,
           render: true,
           visualActions: true,
         }),
@@ -1305,8 +1452,9 @@ export default function AIStudioPage() {
                 </label>
                 <div className="relative">
                   <input
+                    key="text-input-local-video-path"
                     type="text"
-                    value={videoPath}
+                    value={videoPath ?? ""}
                     onChange={(e) => setVideoPath(e.target.value)}
                     disabled={isRunning}
                     placeholder="e.g. D:\softwares\lecture.mp4"
@@ -1344,6 +1492,7 @@ export default function AIStudioPage() {
                 </label>
                 <div className="border-2 border-dashed border-zinc-300 hover:border-violet-500 rounded-2xl p-6 text-center cursor-pointer transition-colors bg-zinc-50/60">
                   <input
+                    key="file-input-video-upload"
                     type="file"
                     accept="video/*"
                     onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
@@ -1667,11 +1816,26 @@ export default function AIStudioPage() {
                 </span>
                 <h2 className="text-sm font-bold text-zinc-950 tracking-tight">9:16 Reel Preview</h2>
               </div>
-              {elapsedSec && (
-                <span className="text-xs font-mono text-emerald-700 bg-emerald-100/90 px-2.5 py-0.5 rounded-full border border-emerald-300 font-bold">
-                  Ready in {elapsedSec}s
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {renderedVideoUrl && (
+                  <button
+                    type="button"
+                    onClick={openFullscreen}
+                    className="px-2.5 py-1 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white flex items-center gap-1.5 transition-all text-xs font-semibold shadow-xs hover:shadow-md hover:scale-105 active:scale-95"
+                    title="Watch Full Screen Preview"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                    </svg>
+                    <span>Full Screen</span>
+                  </button>
+                )}
+                {elapsedSec && (
+                  <span className="text-xs font-mono text-emerald-700 bg-emerald-100/90 px-2.5 py-0.5 rounded-full border border-emerald-300 font-bold">
+                    Ready in {elapsedSec}s
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Multi-Clip Options Deck (Mercury Decide Topic Selection) */}
@@ -1833,6 +1997,7 @@ export default function AIStudioPage() {
                           onPause={() => setIsVideoPlaying(false)}
                           onEnded={() => setIsVideoPlaying(false)}
                           onClick={toggleVideoPlayback}
+                          onDoubleClick={openFullscreen}
                           className="w-full h-full object-cover cursor-pointer"
                         />
 
@@ -1866,24 +2031,39 @@ export default function AIStudioPage() {
                           </div>
                         )}
 
-                        {/* Top-Right Quick Audio Mute/Unmute Pill */}
-                        <button
-                          type="button"
-                          onClick={toggleVideoMute}
-                          className="absolute top-12 right-3.5 z-35 p-2 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white transition-all hover:scale-105 active:scale-95 shadow-md"
-                          title={isVideoMuted ? "Unmute Audio" : "Mute Audio"}
-                        >
-                          {isVideoMuted ? (
+                        {/* Top Controls Overlay on Phone Chassis: Fullscreen (Left) and Mute/Unmute (Right) */}
+                        <div className="absolute top-12 inset-x-3.5 z-35 flex items-center justify-between pointer-events-auto">
+                          {/* Full Screen Watch Button */}
+                          <button
+                            type="button"
+                            onClick={openFullscreen}
+                            className="p-2 rounded-full bg-black/60 hover:bg-black/85 backdrop-blur-md border border-white/20 text-white transition-all hover:scale-110 active:scale-95 shadow-md group/fs"
+                            title="Watch Full Screen (Double-click or press F)"
+                          >
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                             </svg>
-                          ) : (
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                            </svg>
-                          )}
-                        </button>
+                          </button>
+
+                          {/* Quick Audio Mute/Unmute Pill */}
+                          <button
+                            type="button"
+                            onClick={toggleVideoMute}
+                            className="p-2 rounded-full bg-black/60 hover:bg-black/85 backdrop-blur-md border border-white/20 text-white transition-all hover:scale-110 active:scale-95 shadow-md"
+                            title={isVideoMuted ? "Unmute Audio" : "Mute Audio"}
+                          >
+                            {isVideoMuted ? (
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                              </svg>
+                            ) : (
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
 
                         {/* Bottom Overlay Bar on Hover when playing */}
                         {isVideoPlaying && (
@@ -1947,34 +2127,47 @@ export default function AIStudioPage() {
             </div>
 
             {renderedVideoUrl && (
-              <div className="w-full flex items-center justify-between mt-3 text-xs">
-                <span className="text-zinc-400 font-mono text-[11px]">
+              <div className="w-full flex items-center justify-between mt-3 text-xs gap-2">
+                <span className="text-zinc-400 font-mono text-[11px] truncate">
                   {renderedClips.length > 0
                     ? `Active: Option #${selectedClipIndex + 1} (${renderedClips[selectedClipIndex]?.title || "Clip"})`
                     : "Active 9:16 Reel"}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (renderedClips.length > 0 && renderedClips[selectedClipIndex]) {
-                      handleDownloadClip(renderedClips[selectedClipIndex]);
-                    } else if (renderedVideoUrl) {
-                      const dlUrl = renderedVideoUrl.startsWith("blob:")
-                        ? renderedVideoUrl
-                        : `${renderedVideoUrl}${renderedVideoUrl.includes("?") ? "&" : "?"}download=true`;
-                      const a = document.createElement("a");
-                      a.href = dlUrl;
-                      a.download = `${jobId || "reel"}.mp4`;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                    }
-                  }}
-                  className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-cyan-500/40 text-cyan-300 hover:text-white flex items-center gap-1.5 transition-all text-xs font-medium"
-                >
-                  <span>⬇</span>
-                  <span>Download Active MP4</span>
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={openFullscreen}
+                    className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white flex items-center gap-1.5 transition-all text-xs font-semibold shadow-md shadow-violet-500/20 active:scale-95"
+                    title="Watch Full Screen"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                    </svg>
+                    <span>Full Screen</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (renderedClips.length > 0 && renderedClips[selectedClipIndex]) {
+                        handleDownloadClip(renderedClips[selectedClipIndex]);
+                      } else if (renderedVideoUrl) {
+                        const dlUrl = renderedVideoUrl.startsWith("blob:")
+                          ? renderedVideoUrl
+                          : `${renderedVideoUrl}${renderedVideoUrl.includes("?") ? "&" : "?"}download=true`;
+                        const a = document.createElement("a");
+                        a.href = dlUrl;
+                        a.download = `${jobId || "reel"}.mp4`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-cyan-500/40 text-cyan-300 hover:text-white flex items-center gap-1.5 transition-all text-xs font-medium"
+                  >
+                    <span>⬇</span>
+                    <span>Download MP4</span>
+                  </button>
+                </div>
               </div>
             )}
 
@@ -1986,7 +2179,7 @@ export default function AIStudioPage() {
               </label>
 
               <textarea
-                value={customCaption}
+                value={customCaption ?? ""}
                 onChange={(e) => setCustomCaption(e.target.value)}
                 rows={3}
                 placeholder="Write your reel caption and hashtags here..."
@@ -2013,9 +2206,19 @@ export default function AIStudioPage() {
                     </div>
                   )}
                   {instagramMediaId && (
-                    <p className="text-[11px] font-mono mt-1 text-emerald-700 font-bold">
-                      Instagram Media ID: {instagramMediaId}
-                    </p>
+                    <div className="mt-2 pt-2 border-t border-emerald-200/80 flex items-center justify-between">
+                      <p className="text-[11px] font-mono text-emerald-800 font-bold">
+                        Media ID: {instagramMediaId}
+                      </p>
+                      <a
+                        href="https://www.instagram.com/"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-bold text-violet-700 hover:text-violet-900 underline flex items-center gap-1"
+                      >
+                        View on Instagram ↗
+                      </a>
+                    </div>
                   )}
                 </div>
               )}
@@ -2169,6 +2372,284 @@ export default function AIStudioPage() {
           </div>
         </div>
       </footer>
+
+      {/* Cinematic Fullscreen Theatre Overlay */}
+      {isFullscreenOpen && renderedVideoUrl && (
+        <div
+          ref={fullscreenContainerRef}
+          className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-2xl flex flex-col items-center justify-between p-3 sm:p-5 select-none animate-in fade-in duration-200"
+          onClick={closeFullscreen}
+        >
+          {/* Top Glassmorphic Navigation Bar */}
+          <div
+            className="w-full max-w-5xl flex items-center justify-between gap-3 px-4 py-2.5 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 text-white shadow-xl z-50 shrink-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-violet-400 animate-pulse shadow-[0_0_8px_rgba(167,139,250,0.8)]" />
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs sm:text-sm font-bold tracking-tight text-white truncate max-w-[280px] sm:max-w-md">
+                    {renderedClips.length > 0 && renderedClips[selectedClipIndex]?.title
+                      ? renderedClips[selectedClipIndex].title
+                      : aiTopic || "9:16 Vertical Reel"}
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-violet-500/25 border border-violet-400/40 text-violet-300 font-semibold uppercase shrink-0">
+                    9:16 Theatre
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="hidden lg:flex items-center gap-1.5 text-[11px] text-zinc-300 font-mono bg-black/40 px-3 py-1 rounded-lg border border-white/10">
+                <span>Space: Play/Pause</span>
+                <span>•</span>
+                <span>M: Mute</span>
+                <span>•</span>
+                <span>F: True Fullscreen</span>
+                <span>•</span>
+                <span>Esc: Exit</span>
+              </div>
+
+              {/* True Browser Fullscreen Toggle */}
+              <button
+                type="button"
+                onClick={toggleTrueBrowserFullscreen}
+                className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white flex items-center gap-1.5 text-xs font-medium transition-all hover:scale-105 active:scale-95"
+                title={isBrowserFullscreen ? "Exit Browser Fullscreen (F)" : "Enter Browser Fullscreen (F)"}
+              >
+                {isBrowserFullscreen ? (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                  </svg>
+                )}
+                <span className="hidden sm:inline">{isBrowserFullscreen ? "Exit Full" : "Expand"}</span>
+              </button>
+
+              {/* Download Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (renderedClips.length > 0 && renderedClips[selectedClipIndex]) {
+                    handleDownloadClip(renderedClips[selectedClipIndex]);
+                  } else if (renderedVideoUrl) {
+                    const dlUrl = renderedVideoUrl.startsWith("blob:")
+                      ? renderedVideoUrl
+                      : `${renderedVideoUrl}${renderedVideoUrl.includes("?") ? "&" : "?"}download=true`;
+                    const a = document.createElement("a");
+                    a.href = dlUrl;
+                    a.download = `${jobId || "reel"}.mp4`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                  }
+                }}
+                className="px-2.5 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-200 hover:text-white flex items-center gap-1.5 text-xs font-semibold transition-all hover:scale-105 active:scale-95"
+                title="Download Active Video MP4"
+              >
+                <span>⬇</span>
+                <span className="hidden sm:inline">Download</span>
+              </button>
+
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={closeFullscreen}
+                className="p-1.5 rounded-xl bg-white/10 hover:bg-rose-500/40 border border-white/20 text-white transition-all hover:scale-105 active:scale-95"
+                title="Close Fullscreen (Esc)"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Center 9:16 Theatre Frame */}
+          <div
+            className="relative my-auto h-[78vh] sm:h-[82vh] max-h-[880px] aspect-[9/16] rounded-3xl bg-black border border-white/20 shadow-[0_0_80px_rgba(139,92,246,0.35),0_30px_70px_rgba(0,0,0,0.85)] overflow-hidden group/modalvideo flex items-center justify-center cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFullscreenPlayback();
+            }}
+          >
+            <video
+              ref={fullscreenVideoRef}
+              src={renderedVideoUrl}
+              playsInline
+              loop
+              autoPlay
+              muted={isFullscreenMuted}
+              onTimeUpdate={() => {
+                if (fullscreenVideoRef.current) {
+                  setFullscreenCurrentTime(fullscreenVideoRef.current.currentTime);
+                }
+              }}
+              onLoadedMetadata={() => {
+                if (fullscreenVideoRef.current) {
+                  setFullscreenDuration(fullscreenVideoRef.current.duration);
+                }
+              }}
+              onPlay={() => setIsFullscreenPlaying(true)}
+              onPause={() => setIsFullscreenPlaying(false)}
+              className="w-full h-full object-cover"
+            />
+
+            {/* Floating Center Play Button on Pause */}
+            {!isFullscreenPlaying && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/45 backdrop-blur-[2px] transition-all z-20">
+                <div className="w-20 h-20 rounded-full bg-white/25 backdrop-blur-xl border-2 border-white/90 shadow-[0_15px_35px_rgba(0,0,0,0.6),0_0_35px_rgba(139,92,246,0.7)] flex items-center justify-center hover:scale-110 active:scale-95 transition-all">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-violet-600 via-purple-600 to-indigo-500 flex items-center justify-center shadow-inner">
+                    <svg className="w-7 h-7 text-white ml-1 fill-current" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                </div>
+                <span className="mt-3 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/20 text-xs font-bold text-white tracking-wider uppercase">
+                  Click to Play
+                </span>
+              </div>
+            )}
+
+            {/* Quick Mute Pill in Top-Right of Fullscreen Frame */}
+            <button
+              type="button"
+              onClick={toggleFullscreenMute}
+              className="absolute top-4 right-4 z-30 p-2.5 rounded-full bg-black/60 hover:bg-black/85 backdrop-blur-md border border-white/20 text-white transition-all hover:scale-110 active:scale-95 shadow-lg"
+              title={isFullscreenMuted ? "Unmute Audio (M)" : "Mute Audio (M)"}
+            >
+              {isFullscreenMuted ? (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+              )}
+            </button>
+
+            {/* Floating Bottom HUD Controls Bar */}
+            <div
+              className="absolute bottom-4 inset-x-3.5 z-30 p-3 rounded-2xl bg-black/75 hover:bg-black/90 backdrop-blur-xl border border-white/20 text-white flex flex-col gap-2 transition-all shadow-2xl opacity-90 group-hover/modalvideo:opacity-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Interactive Progress Scrubber */}
+              <div
+                className="relative w-full h-2 rounded-full bg-white/20 hover:h-2.5 transition-all cursor-pointer group/scrub"
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const clickRatio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                  seekFullscreen(clickRatio * (fullscreenDuration || 30));
+                }}
+              >
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-400 relative"
+                  style={{
+                    width: `${fullscreenDuration > 0 ? (fullscreenCurrentTime / fullscreenDuration) * 100 : 0}%`,
+                  }}
+                >
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white shadow-md border-2 border-violet-600 scale-0 group-hover/scrub:scale-100 transition-transform" />
+                </div>
+              </div>
+
+              {/* Control Buttons & Timestamp */}
+              <div className="flex items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={toggleFullscreenPlayback}
+                    className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all hover:scale-105 active:scale-95"
+                    title={isFullscreenPlaying ? "Pause (Space)" : "Play (Space)"}
+                  >
+                    {isFullscreenPlaying ? (
+                      <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    )}
+                  </button>
+
+                  {/* Rewind 5s */}
+                  <button
+                    type="button"
+                    onClick={() => seekFullscreen(fullscreenCurrentTime - 5)}
+                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-zinc-300 hover:text-white transition-all text-[11px] font-mono flex items-center gap-0.5"
+                    title="Rewind 5 seconds (←)"
+                  >
+                    <span>↺</span>
+                    <span>5s</span>
+                  </button>
+
+                  {/* Forward 5s */}
+                  <button
+                    type="button"
+                    onClick={() => seekFullscreen(fullscreenCurrentTime + 5)}
+                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-zinc-300 hover:text-white transition-all text-[11px] font-mono flex items-center gap-0.5"
+                    title="Forward 5 seconds (→)"
+                  >
+                    <span>5s</span>
+                    <span>↻</span>
+                  </button>
+
+                  {/* Time Display */}
+                  <span className="text-[11px] font-mono text-zinc-300 pl-1">
+                    {formatVideoTime(fullscreenCurrentTime)} / {formatVideoTime(fullscreenDuration)}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {/* Audio Mute/Unmute */}
+                  <button
+                    type="button"
+                    onClick={toggleFullscreenMute}
+                    className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5"
+                    title={isFullscreenMuted ? "Unmute (M)" : "Mute (M)"}
+                  >
+                    {isFullscreenMuted ? (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                      </svg>
+                    )}
+                    <span className="text-[10px] font-mono hidden sm:inline">{isFullscreenMuted ? "Muted" : "Audio"}</span>
+                  </button>
+
+                  {/* True Browser Fullscreen */}
+                  <button
+                    type="button"
+                    onClick={toggleTrueBrowserFullscreen}
+                    className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all hover:scale-105 active:scale-95"
+                    title="Toggle Browser Fullscreen (F)"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Footer Tip */}
+          <div className="w-full text-center text-xs text-zinc-400 font-mono py-1 shrink-0">
+            <span>Press <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-sans text-[11px] border border-white/20">Esc</kbd> or click outside to exit Full Screen</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
