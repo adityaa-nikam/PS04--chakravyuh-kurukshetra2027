@@ -1,15 +1,18 @@
 import React from "react";
 import type { VisualScene } from "../visual-plan";
+import type { ConceptualMetaphorData } from "../enhanced-schema";
 import { FitText } from "./FitText";
 
 export function ConceptOpenerVisual({
   visual,
+  data,
   frame,
   fps,
   scale,
   title,
 }: {
-  visual: VisualScene;
+  visual?: VisualScene;
+  data?: ConceptualMetaphorData;
   frame: number;
   fps: number;
   scale: number;
@@ -23,7 +26,7 @@ export function ConceptOpenerVisual({
   const isXmlJson = /xml|json/i.test(title);
   const isAlgo = /algorithm|binary search|sort/i.test(title);
   const isArch = /mcp|model context protocol|protocol|architecture|pipeline|client.*server|agent/i.test(
-    title + " " + visual.heading + " " + (visual.labels || []).join(" ")
+    title + " " + (visual?.heading || "") + " " + ((visual?.labels || []).join(" "))
   );
   const isAi = /ai|rag|model|llm|langchain/i.test(title);
 
@@ -149,7 +152,7 @@ export function ConceptOpenerVisual({
               textTransform: "uppercase",
             }}
           >
-            {isXmlJson ? "DATA ARCHITECTURE" : isAlgo ? "ALGORITHMS & STRUCTURES" : isArch ? "SYSTEM ARCHITECTURE & PROTOCOL" : "CONCEPT BREAKDOWN"}
+            {data ? data.analogyDomain.toUpperCase() : (isXmlJson ? "DATA ARCHITECTURE" : isAlgo ? "ALGORITHMS & STRUCTURES" : isArch ? "SYSTEM ARCHITECTURE & PROTOCOL" : "CONCEPT BREAKDOWN")}
           </span>
         </div>
 
@@ -330,7 +333,7 @@ export function ConceptOpenerVisual({
             fontWeight: 500,
           }}
         >
-          {visual.note || "A complete visual breakdown of core concepts, architecture, and tradeoffs."}
+          {visual?.note || "A complete visual breakdown of core concepts, architecture, and tradeoffs."}
         </div>
       </div>
     </div>

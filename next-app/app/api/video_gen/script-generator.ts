@@ -51,45 +51,31 @@ export async function generateExplainerScript(input: unknown, options: { live?: 
       },
     };
 
-    let lastError: unknown;
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        const attemptPrompt = attempt === 1 
-          ? systemPrompt 
-          : systemPrompt + `\n\nCRITICAL FIX FROM PREVIOUS ATTEMPT: ${lastError instanceof Error ? lastError.message : String(lastError)}. You MUST provide at least 12-20 words for Scene 1 and substantive, complete sentences for all scenes to meet the requested ${request.data.durationSeconds}-second duration.`;
+    script = await generateJson(outputSchema, inputPayload, systemPrompt, Math.min(2048, 384 + budget.totalWords * 5), { stage: "script", onDiagnostic: options.onDiagnostic });
 
-        script = await generateJson(outputSchema, inputPayload, attemptPrompt, Math.min(2048, 384 + budget.totalWords * 5), { stage: "script", onDiagnostic: options.onDiagnostic });
-
-        // Cleanly fit slightly wordy scenes at natural sentence boundaries without chopping mid-thought
-        for (let i = 0; i < script.scenes.length; i++) {
-          const targetMax = budget.scenes[i]?.maxWords ?? 25;
-          const words = narrationWords(script.scenes[i].narration);
-          const maxThreshold = targetMax + Math.max(10, Math.floor(targetMax * 0.45));
-          if (words.length > maxThreshold && words.length <= targetMax * 2) {
-            const sentences = script.scenes[i].narration.match(/[^.!?]+[.!?]+/g);
-            if (sentences && sentences.length > 1) {
-              let fitted = "";
-              for (const s of sentences) {
-                const next = (fitted + " " + s).trim();
-                if (narrationWords(next).length <= maxThreshold) fitted = next;
-                else break;
-              }
-              if (fitted.length > 0) {
-                console.info(`[video_gen] Fitted scene ${i + 1} at sentence boundary (${narrationWords(fitted).length} words).`);
-                script.scenes[i].narration = fitted;
-              }
-            }
+    // Cleanly fit slightly wordy scenes at natural sentence boundaries without chopping mid-thought
+    for (let i = 0; i < script.scenes.length; i++) {
+      const targetMax = budget.scenes[i]?.maxWords ?? 25;
+      const words = narrationWords(script.scenes[i].narration);
+      const maxThreshold = targetMax + Math.max(10, Math.floor(targetMax * 0.45));
+      if (words.length > maxThreshold && words.length <= targetMax * 2) {
+        const sentences = script.scenes[i].narration.match(/[^.!?]+[.!?]+/g);
+        if (sentences && sentences.length > 1) {
+          let fitted = "";
+          for (const s of sentences) {
+            const next = (fitted + " " + s).trim();
+            if (narrationWords(next).length <= maxThreshold) fitted = next;
+            else break;
+          }
+          if (fitted.length > 0) {
+            console.info(`[video_gen] Fitted scene ${i + 1} at sentence boundary (${narrationWords(fitted).length} words).`);
+            script.scenes[i].narration = fitted;
           }
         }
-
-        quality = validateScriptQuality(script, request.data.durationSeconds);
-        break;
-      } catch (attemptErr) {
-        lastError = attemptErr;
-        if (attempt === 2) throw attemptErr;
-        console.warn(`[video_gen] Script attempt ${attempt} validation failed (${attemptErr instanceof Error ? attemptErr.message : String(attemptErr)}). Retrying with corrective prompt...`);
       }
     }
+
+    quality = validateScriptQuality(script, request.data.durationSeconds);
   } catch (error) {
     console.error("[video_gen] script_validation_failed", { stage: "script", reason: "SCRIPT_QUALITY", detail: error instanceof Error ? error.message : String(error), elapsedMs: Date.now() - started });
     throw error;

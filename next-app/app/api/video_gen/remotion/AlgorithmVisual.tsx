@@ -1,15 +1,18 @@
 import React from "react";
 import type { VisualScene } from "../visual-plan";
+import type { AlgorithmDemoData } from "../enhanced-schema";
 import { FitText } from "./FitText";
 
-// Deterministic algorithm array visualization (Binary Search demonstration)
+// Deterministic algorithm array visualization (Binary Search or any algorithmic array demonstration)
 export function AlgorithmVisual({
   visual,
+  data,
   frame,
   scale,
   durationInFrames = 180,
 }: {
-  visual: VisualScene;
+  visual?: VisualScene;
+  data?: AlgorithmDemoData;
   frame: number;
   fps: number;
   scale: number;
@@ -17,8 +20,9 @@ export function AlgorithmVisual({
 }) {
   const progress = Math.max(0, Math.min(1, frame / Math.max(1, durationInFrames - 1)));
 
-  // Array dataset for binary search demonstration
-  const array = [2, 5, 8, 12, 16, 23, 38, 56, 72, 91];
+  // Array dataset: dynamic from data prop if provided, else fallback to classic binary search demo
+  const rawArray = data ? data.arrayElements.map(e => Number(e.value) || e.value) : [2, 5, 8, 12, 16, 23, 38, 56, 72, 91];
+  const array = rawArray;
   const target = 23;
   const targetIndex = 5;
 
@@ -128,7 +132,7 @@ export function AlgorithmVisual({
           }}
         >
           <span style={{ color: cyan, fontSize: 13 * scale, fontWeight: 700, letterSpacing: 1 }}>
-            BINARY SEARCH
+            {data ? data.algorithmName.toUpperCase() : "BINARY SEARCH"}
           </span>
           <span
             style={{
@@ -140,7 +144,7 @@ export function AlgorithmVisual({
               fontWeight: 800,
             }}
           >
-            O(log n)
+            {data ? data.complexityBadge : "O(log n)"}
           </span>
         </div>
 

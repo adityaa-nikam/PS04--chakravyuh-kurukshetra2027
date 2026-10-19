@@ -10,6 +10,7 @@ import { ConceptOpenerVisual } from "./ConceptOpenerVisual";
 import { TakeawayVisual } from "./TakeawayVisual";
 import { ConceptComparisonVisual } from "./ConceptComparisonVisual";
 import { ArchitectureFlowVisual } from "./ArchitectureFlowVisual";
+import { UniversalSceneVisual } from "./UniversalSceneVisual";
 
 const cyan = "#63e4ec", gold = "#ffcc66", emerald = "#10B981";
 
@@ -227,6 +228,20 @@ export function GraphVisual({
           );
         })}
       </div>
+    );
+  }
+
+  // 2b. Enhanced Universal AI Storyboard Visuals (when enhanced planner is enabled)
+  if (visual.enhancedVisual) {
+    return (
+      <UniversalSceneVisual
+        enhancedVisual={visual.enhancedVisual}
+        legacyVisual={visual}
+        frame={frame}
+        fps={fps}
+        scale={scale}
+        durationInFrames={durationInFrames}
+      />
     );
   }
 

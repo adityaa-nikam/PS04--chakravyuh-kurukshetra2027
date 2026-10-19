@@ -1,9 +1,11 @@
 import React from "react";
 import type { VisualScene } from "../visual-plan";
+import type { ArchitectureFlowData } from "../enhanced-schema";
 import { TechSymbol, techSymbolIcons } from "./TechSymbols";
 
 interface ArchitectureFlowProps {
-  visual: VisualScene;
+  visual?: VisualScene;
+  data?: ArchitectureFlowData;
   frame: number;
   fps: number;
   scale: number;
@@ -12,12 +14,13 @@ interface ArchitectureFlowProps {
 
 export function ArchitectureFlowVisual({
   visual,
+  data,
   frame,
   fps,
   scale,
   durationInFrames = 180,
 }: ArchitectureFlowProps) {
-  if (visual.renderer !== "graph") return null;
+  if (visual && visual.renderer !== "graph") return null;
 
   const t = frame / fps;
   const progress = Math.min(1, Math.max(0, frame / durationInFrames));
@@ -31,9 +34,8 @@ export function ArchitectureFlowVisual({
   const packetForward = (frame * 3.5) % 240;
   const packetReturn = (240 - ((frame * 3.2) % 240));
 
-  const isMcp = /mcp|model context protocol|context protocol/i.test(
-    visual.heading + " " + visual.labels.join(" ") + " " + visual.note
-  );
+  const visualText = visual ? (visual.heading + " " + visual.labels.join(" ") + " " + visual.note) : (data?.systemName || "");
+  const isMcp = /mcp|model context protocol|context protocol/i.test(visualText);
 
   const cyan = "#38BDF8";
   const purple = "#A855F7";
@@ -95,7 +97,7 @@ export function ArchitectureFlowVisual({
                 letterSpacing: `${0.5 * scale}px`,
               }}
             >
-              {isMcp ? "AI Host / Client" : "Client Application"}
+              {data ? data.caller.name : (isMcp ? "AI Host / Client" : "Client Application")}
             </div>
             <div
               style={{
@@ -106,7 +108,7 @@ export function ArchitectureFlowVisual({
                 textTransform: "uppercase",
               }}
             >
-              {isMcp ? "Claude Desktop • IDE Agent • LLM App" : "Frontend / Consumer"}
+              {data ? data.caller.role : (isMcp ? "Claude Desktop • IDE Agent • LLM App" : "Frontend / Consumer")}
             </div>
           </div>
         </div>
@@ -122,7 +124,7 @@ export function ArchitectureFlowVisual({
             color: "#E2E8F0",
           }}
         >
-          ● CONTEXT AWARE
+          {data ? data.caller.badge : "● CONTEXT AWARE"}
         </div>
       </div>
 
@@ -167,7 +169,7 @@ export function ArchitectureFlowVisual({
                 textTransform: "uppercase",
               }}
             >
-              {isMcp ? "MCP Standardized Protocol Layer" : "API Protocol & Data Bus"}
+              {data ? data.protocol.name.toUpperCase() : (isMcp ? "MCP Standardized Protocol Layer" : "API Protocol & Data Bus")}
             </span>
           </div>
           <span
@@ -182,7 +184,7 @@ export function ArchitectureFlowVisual({
               fontFamily: "monospace",
             }}
           >
-            {isMcp ? "JSON-RPC 2.0 (stdio / SSE)" : "REST / WebSocket"}
+            {data ? data.protocol.transport : (isMcp ? "JSON-RPC 2.0 (stdio / SSE)" : "REST / WebSocket")}
           </span>
         </div>
 
@@ -209,7 +211,7 @@ export function ArchitectureFlowVisual({
                 fontFamily: "monospace",
               }}
             >
-              REQUEST: tools/call & prompts/get
+              {data ? data.protocol.requestLabel : "REQUEST: tools/call & prompts/get"}
             </div>
             {/* Animated Packet */}
             <div
@@ -248,7 +250,7 @@ export function ArchitectureFlowVisual({
                 fontFamily: "monospace",
               }}
             >
-              RESPONSE: Tool Results & Context Data
+              {data ? data.protocol.responseLabel : "RESPONSE: Tool Results & Context Data"}
             </div>
             {/* Animated Return Packet */}
             <div
@@ -301,7 +303,7 @@ export function ArchitectureFlowVisual({
                 color: "#F8FAFC",
               }}
             >
-              {isMcp ? "Connected MCP Tool Servers" : "Backend Microservices & Stores"}
+              {data ? `${data.systemName} Components & Services` : (isMcp ? "Connected MCP Tool Servers" : "Backend Microservices & Stores")}
             </span>
           </div>
           <span
@@ -317,12 +319,20 @@ export function ArchitectureFlowVisual({
 
         {/* Server & Tool Badges Grid */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: `${8 * scale}px` }}>
-          {[
-            { icon: "📁", label: "Filesystem", desc: "Read & edit code", color: cyan },
-            { icon: "🗄️", label: "Database / SQL", desc: "Query data stores", color: purple },
-            { icon: "🐙", label: "GitHub API", desc: "PRs & Git workflow", color: gold },
-            { icon: "🔍", label: "Web / Tools", desc: "Search & Fetch docs", color: emerald },
-          ].map((server, i) => (
+          {(data
+            ? data.services.map((s, i) => ({
+                icon: s.icon || "🔌",
+                label: s.name,
+                desc: s.desc,
+                color: [cyan, purple, gold, emerald][i % 4],
+              }))
+            : [
+                { icon: "📁", label: "Filesystem", desc: "Read & edit code", color: cyan },
+                { icon: "🗄️", label: "Database / SQL", desc: "Query data stores", color: purple },
+                { icon: "🐙", label: "GitHub API", desc: "PRs & Git workflow", color: gold },
+                { icon: "🔍", label: "Web / Tools", desc: "Search & Fetch docs", color: emerald },
+              ]
+          ).map((server, i) => (
             <div
               key={i}
               style={{

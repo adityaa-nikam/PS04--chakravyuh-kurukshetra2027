@@ -12,6 +12,8 @@ export function selectVisualConcept(type: string) {
   return Object.hasOwn(visualRegistry, type)
     ? visualRegistry[type as keyof typeof visualRegistry] : "diagram";
 }
+import { enhancedSceneVisualSchema } from "./enhanced-schema";
+
 const visualBaseSchema = z.strictObject({
   sceneId: z.string().regex(/^scene-\d{3}$/),
   concept: z.enum(["hook", "process", "diagram", "comparison", "summary"]),
@@ -19,6 +21,7 @@ const visualBaseSchema = z.strictObject({
   heading: z.string().min(1).max(64),
   labels: z.array(z.string().min(1).max(28)).min(1).max(3),
   note: z.string().min(1).max(64),
+  enhancedVisual: enhancedSceneVisualSchema.optional(),
 });
 export const graphVisualSceneSchema = visualBaseSchema.extend({ renderer: z.literal("graph"), mode: z.literal("overview"), graph: graphSchema });
 export const visualSceneSchema = z.discriminatedUnion("renderer", [

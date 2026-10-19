@@ -1,14 +1,17 @@
 import React from "react";
 import type { VisualScene } from "../visual-plan";
+import type { TypographyDefinitionData } from "../enhanced-schema";
 
 export function TakeawayVisual({
   visual,
+  data,
   frame,
   fps,
   scale,
   title,
 }: {
-  visual: VisualScene;
+  visual?: VisualScene;
+  data?: TypographyDefinitionData;
   frame: number;
   fps: number;
   scale: number;
@@ -18,7 +21,7 @@ export function TakeawayVisual({
   const isXmlJson = /xml|json/i.test(title);
   const isAlgo = /algorithm|binary search|sort/i.test(title);
   const isMcpOrArch = /mcp|model context protocol|protocol|architecture/i.test(
-    title + " " + visual.heading + " " + visual.labels.join(" ")
+    title + " " + (visual?.heading || "") + " " + (visual?.labels || []).join(" ")
   );
 
   const cyan = "#38BDF8";
@@ -27,12 +30,17 @@ export function TakeawayVisual({
 
   // Topic specific takeaways
   let takeaways = [
-    { title: "Core Mechanism", desc: visual.labels[0] || "Foundational architecture and principles." },
-    { title: "Key Advantage", desc: visual.labels[1] || "High efficiency and deterministic operation." },
-    { title: "Primary Application", desc: visual.labels[2] || "Widely adopted industry standard." },
+    { title: "Core Mechanism", desc: visual?.labels[0] || "Foundational architecture and principles." },
+    { title: "Key Advantage", desc: visual?.labels[1] || "High efficiency and deterministic operation." },
+    { title: "Primary Application", desc: visual?.labels[2] || "Widely adopted industry standard." },
   ];
 
-  if (isXmlJson) {
+  if (data) {
+    takeaways = data.pillars.map(p => ({
+      title: p.title,
+      desc: p.detail,
+    }));
+  } else if (isXmlJson) {
     takeaways = [
       {
         title: "JSON: Web APIs & Apps",
@@ -109,7 +117,7 @@ export function TakeawayVisual({
         }}
       >
         <span style={{ fontSize: 13 * scale, fontWeight: 800, color: emerald, letterSpacing: 1.5 }}>
-          KEY TAKEAWAY & SUMMARY
+          {data ? data.badge : "KEY TAKEAWAY & SUMMARY"}
         </span>
       </div>
 
@@ -195,7 +203,7 @@ export function TakeawayVisual({
           fontWeight: 600,
         }}
       >
-        💡 {visual.note || "Mastering the fundamentals enables high-performance software design."}
+        💡 {visual?.note || "Mastering the fundamentals enables high-performance software design."}
       </div>
     </div>
   );

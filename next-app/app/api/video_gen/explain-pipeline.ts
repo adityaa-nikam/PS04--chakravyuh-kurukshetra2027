@@ -13,6 +13,13 @@ import { explainOptionsSchema, type ExplainOptions } from "./explain-options";
 import { renderOptionsSchema, prepareRender } from "./render-plan";
 import { inferenceModel, inferenceProvider } from "./inference";
 import { redactDiagnostics, type InferenceContext, type InferenceDiagnostic } from "./ollama";
+import {
+  isEnhancedPlannerEnabled,
+  planEnhancedStoryboard,
+  validateEnhancedSemanticAccuracy,
+  enhancedPlanToModelVisualPlan,
+} from "./enhanced-planner";
+import type { EnhancedStoryboardPlan } from "./enhanced-schema";
 
 const receiptSchema = z.strictObject({
   version: z.literal(1), request: scriptRequestSchema, script: explainerScriptSchema,
@@ -21,6 +28,7 @@ const receiptSchema = z.strictObject({
   renderOptions: renderOptionsSchema.optional(), visuals: z.string().optional(), browser: z.string().optional(),
   planner: z.enum(["graph", "actions-v1"]).optional(), actionPlan: visualActionsSchema.optional(), completedActions: visualActionsSchema.optional(),
   visualPlan: modelVisualPlanSchema.optional(), completedScenes: z.array(modelVisualSceneSchema).max(8).optional(),
+  enhancedPlan: z.unknown().optional(), enhancedPlanner: z.boolean().optional(),
   inferenceDiagnostics: z.array(z.unknown()).optional(), visualAttempts: z.array(z.unknown()).optional(), planningFailure: z.string().optional(), plannerModel: z.string().optional(), plannedAt: z.string().datetime().optional(),
 });
 type Dependencies = {
@@ -105,43 +113,83 @@ export async function explain(input: ExplainOptions, overrides: Partial<Dependen
         writeFileSync(receiptPath!, JSON.stringify(saved, null, 2));
       },
     };
-    if (actionMode) {
-      let actions: VisualAction[];
-      if (saved.actionPlan) actions = saved.actionPlan;
-      else {
-        if (saved.visualPlan) throw new Error("Missing action plan for cached action visuals; use --replan --inspect.");
-        const result = await generateVisualActions(storyboard, { ...planningOptions, completedActions: saved.completedActions,
-          onAction: completedActions => {
-            saved = { ...saved!, completedActions, output: paths.video, inferenceDiagnostics };
-            writeFileSync(receiptPath!, JSON.stringify(saved, null, 2));
-          } });
-        actions = result.actions;
+    const enhancedEnabled = options.enhancedPlanner ?? (saved as Record<string, unknown>)?.enhancedPlanner ?? isEnhancedPlannerEnabled();
+    if (enhancedEnabled) {
+      let enhancedPlan: EnhancedStoryboardPlan;
+      const existingEnhancedPlan = (saved as Record<string, unknown>)?.enhancedPlan;
+      if (existingEnhancedPlan) {
+        console.info("[explain] reusing_saved_enhanced_plan", { topic: storyboard.title });
+        enhancedPlan = existingEnhancedPlan as EnhancedStoryboardPlan;
+      } else {
+        console.info("[explain] enhancing_storyboard_with_universal_planner", { topic: storyboard.title });
+        enhancedPlan = await planEnhancedStoryboard(storyboard);
       }
-      visualPlan = compileActions(actions, storyboard);
-      if (saved.visualPlan && JSON.stringify(saved.visualPlan) !== JSON.stringify(visualPlan)) throw new Error("Saved action/render plans differ; use --replan --inspect.");
-      saved = { ...saved, actionPlan: actions, completedActions: undefined };
-    } else visualPlan = validateModelVisualPlan(saved.visualPlan ?? await deps.planVisuals(storyboard, planningOptions), storyboard);
-    saved = { ...saved, output: paths.video, renderOptions: { ...renderOptions, approveOverrun: false }, visuals: explicitPath, browser, visualPlan, completedScenes: undefined, planningFailure: undefined, inferenceDiagnostics, plannerProvider: saved.plannerProvider ?? (reusedPlan ? "ollama" : inferenceProvider()), plannerModel: saved.plannerModel ?? (reusedPlan ? saved.model : inferenceModel()), plannedAt: saved.plannedAt ?? new Date().toISOString() };
-    // Only this internal receipt is updated; final deliverables remain exclusive.
-    writeFileSync(receiptPath!, JSON.stringify(saved, null, 2));
+
+      const semanticCheck = validateEnhancedSemanticAccuracy(enhancedPlan);
+      if (semanticCheck.repairsApplied.length > 0) {
+        console.info("[explain] semantic repairs applied to enhanced plan:", semanticCheck.repairsApplied);
+      }
+
+      visualPlan = enhancedPlanToModelVisualPlan(enhancedPlan, storyboard);
+
+      saved = {
+        ...saved!,
+        output: paths.video,
+        renderOptions: { ...renderOptions, approveOverrun: false },
+        visuals: explicitPath,
+        browser,
+        visualPlan,
+        enhancedPlan,
+        enhancedPlanner: true,
+        completedScenes: undefined,
+        planningFailure: undefined,
+        inferenceDiagnostics,
+        plannerProvider: saved!.plannerProvider ?? inferenceProvider(),
+        plannerModel: saved!.plannerModel ?? inferenceModel(),
+        plannedAt: saved!.plannedAt ?? new Date().toISOString(),
+      };
+      writeFileSync(receiptPath!, JSON.stringify(saved, null, 2));
+    } else {
+      if (actionMode) {
+        let actions: VisualAction[];
+        if (saved.actionPlan) actions = saved.actionPlan;
+        else {
+          if (saved.visualPlan) throw new Error("Missing action plan for cached action visuals; use --replan --inspect.");
+          const result = await generateVisualActions(storyboard, { ...planningOptions, completedActions: saved.completedActions,
+            onAction: completedActions => {
+              saved = { ...saved!, completedActions, output: paths.video, inferenceDiagnostics };
+              writeFileSync(receiptPath!, JSON.stringify(saved, null, 2));
+            } });
+          actions = result.actions;
+        }
+        visualPlan = compileActions(actions, storyboard);
+        if (saved.visualPlan && JSON.stringify(saved.visualPlan) !== JSON.stringify(visualPlan)) throw new Error("Saved action/render plans differ; use --replan --inspect.");
+        saved = { ...saved, actionPlan: actions, completedActions: undefined };
+      } else visualPlan = validateModelVisualPlan(saved.visualPlan ?? await deps.planVisuals(storyboard, planningOptions), storyboard);
+
+      saved = { ...saved!, output: paths.video, renderOptions: { ...renderOptions, approveOverrun: false }, visuals: explicitPath, browser, visualPlan, completedScenes: undefined, planningFailure: undefined, inferenceDiagnostics, plannerProvider: saved!.plannerProvider ?? (reusedPlan ? "ollama" : inferenceProvider()), plannerModel: saved!.plannerModel ?? (reusedPlan ? saved!.model : inferenceModel()), plannedAt: saved!.plannedAt ?? new Date().toISOString() };
+      writeFileSync(receiptPath!, JSON.stringify(saved, null, 2));
+    }
+
     const explicit = explicitPath ? z.record(z.string(), z.unknown()).parse(JSON.parse(readFileSync(explicitPath, "utf8"))) : {};
-    const specifications = { ...modelSpecifications(visualPlan), ...explicit };
+    let specifications = { ...modelSpecifications(visualPlan), ...explicit };
+
     const resolved = prepareRender(storyboard, renderOptions, specifications, actionMode ? ACTION_EVIDENCE : undefined);
     if (options.inspect) {
       const inspectionFile = path.join(path.dirname(receiptPath!), "resolved-plan.json");
       const report = { mode: "inspection-only", published: false, output: paths.video, metadata: paths.metadata, requestReceipt: receiptPath, inspectionFile,
-        inferenceDiagnostics, visualActions: saved.actionPlan, exampleCatalog: actionMode ? actionCatalog(storyboard) : undefined, factChecked: false, durationSeconds: resolved.durationInFrames / resolved.settings.fps, modelVisualPlan: visualPlan, ...resolved };
+        inferenceDiagnostics, visualActions: saved!.actionPlan, exampleCatalog: actionMode ? actionCatalog(storyboard) : undefined, factChecked: false, durationSeconds: resolved.durationInFrames / resolved.settings.fps, modelVisualPlan: visualPlan, ...resolved };
       writeFileSync(inspectionFile, JSON.stringify(report, null, 2));
       return report;
     }
     console.info("[explain] rendering", { output: paths.video });
     const result = await deps.render(storyboard, renderOptions, specifications, paths.video,
-      { provider: saved.provider ?? "ollama", plannerProvider: saved.plannerProvider, planner: saved.planner ?? "graph", visualActions: saved.actionPlan, exampleCatalog: actionMode ? actionCatalog(storyboard) : undefined, inferenceDiagnostics, model: saved.model, plannerModel: saved.plannerModel, generatedAt: saved.generatedAt, plannedAt: saved.plannedAt, request, originalScript: script, modelVisualPlan: visualPlan, explicitOverrides: Object.keys(explicit), requestReceipt: receiptPath, factChecked: false }, undefined, browser, actionMode ? ACTION_EVIDENCE : undefined);
-    return { ...result, requestReceipt: receiptPath, planning: reusedPlan ? `saved-${saved.plannerProvider}-plan` : `live-${saved.plannerProvider}`, factChecked: false };
+      { provider: saved!.provider ?? "ollama", plannerProvider: saved!.plannerProvider, planner: saved!.planner ?? "graph", visualActions: saved!.actionPlan, exampleCatalog: actionMode ? actionCatalog(storyboard) : undefined, inferenceDiagnostics, model: saved!.model, plannerModel: saved!.plannerModel, generatedAt: saved!.generatedAt, plannedAt: saved!.plannedAt, request, originalScript: script, modelVisualPlan: visualPlan, explicitOverrides: Object.keys(explicit), requestReceipt: receiptPath, factChecked: false }, undefined, browser, actionMode ? ACTION_EVIDENCE : undefined);
+    return { ...result, requestReceipt: receiptPath, planning: reusedPlan ? `saved-${saved!.plannerProvider}-plan` : `live-${saved!.plannerProvider}`, factChecked: false };
   } catch (error) {
-    saved = { ...saved, inferenceDiagnostics, planningFailure: error instanceof Error ? error.message : "Planning/render failed" };
-    if (!reusedPlan) writeFileSync(receiptPath!, JSON.stringify(saved, null, 2));
-    console.error("[explain] planning_or_render_failure", { receipt: receiptPath, reason: saved.planningFailure });
+    if (saved) saved = { ...saved, inferenceDiagnostics, planningFailure: error instanceof Error ? error.message : "Planning/render failed" };
+    if (!reusedPlan && receiptPath && saved) writeFileSync(receiptPath, JSON.stringify(saved, null, 2));
+    console.error("[explain] planning_or_render_failure", { receipt: receiptPath, reason: saved?.planningFailure });
     throw new Error(`${error instanceof Error ? error.message : "Planning/render failed"}\nSaved request: ${receiptPath}. For an invalid cached plan use --resume with --replan --inspect and a fresh --output; only visual planning will call the configured provider. Otherwise retry --resume with the same approval flag if needed. No generated narration was shortened.`, { cause: error });
   }
 }

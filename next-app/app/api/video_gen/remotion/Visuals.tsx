@@ -3,6 +3,7 @@ import type { VisualScene } from "../visual-plan";
 import { visualMotion } from "../visual-plan";
 import { GraphVisual } from "./GraphVisual";
 import { FitText } from "./FitText";
+import { UniversalSceneVisual } from "./UniversalSceneVisual";
 
 const cyan = "#63e4ec", yellow = "#ffcc66", white = "#edf5f8";
 type Motion = ReturnType<typeof visualMotion>;
@@ -99,7 +100,19 @@ export function BridgeVisual({ visual, frame, fps, scale }: { visual: VisualScen
   </div>;
 }
 
-export function AbstractVisual({ visual, frame, fps, scale }: { visual: VisualScene; frame: number; fps: number; scale: number; durationInFrames?: number }) {
+export function AbstractVisual({ visual, frame, fps, scale, durationInFrames = 180 }: { visual: VisualScene; frame: number; fps: number; scale: number; durationInFrames?: number }) {
+  if (visual.enhancedVisual) {
+    return (
+      <UniversalSceneVisual
+        enhancedVisual={visual.enhancedVisual}
+        legacyVisual={visual}
+        frame={frame}
+        fps={fps}
+        scale={scale}
+        durationInFrames={durationInFrames}
+      />
+    );
+  }
   const m = visualMotion(frame, fps);
   const compare = visual.concept === "comparison";
   const process = visual.concept === "process";

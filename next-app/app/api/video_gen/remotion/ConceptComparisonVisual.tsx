@@ -1,9 +1,11 @@
 import React from "react";
 import type { VisualScene } from "../visual-plan";
+import type { DualComparisonData } from "../enhanced-schema";
 import { TechSymbol, techSymbolIcons } from "./TechSymbols";
 
 interface ConceptComparisonProps {
-  visual: VisualScene;
+  visual?: VisualScene;
+  data?: DualComparisonData;
   frame: number;
   fps: number;
   scale: number;
@@ -12,24 +14,24 @@ interface ConceptComparisonProps {
 
 export function ConceptComparisonVisual({
   visual,
+  data,
   frame,
   fps,
   scale,
   durationInFrames = 180,
 }: ConceptComparisonProps) {
-  if (visual.renderer !== "graph") return null;
-  const nodes = visual.graph.nodes;
-  if (!nodes || nodes.length < 2) return null;
+  if (!data && (!visual || visual.renderer !== "graph" || !visual.graph.nodes || visual.graph.nodes.length < 2)) return null;
+  const nodes = visual?.renderer === "graph" ? visual.graph.nodes : [];
 
-  const nodeA = nodes[0];
-  const nodeB = nodes[1];
+  const nodeA = nodes[0] || { id: "a", label: data?.leftSide.name || "Option A", icon: "item", evidence: "" };
+  const nodeB = nodes[1] || { id: "b", label: data?.rightSide.name || "Option B", icon: "item", evidence: "" };
 
   const fullContext = (
-    visual.heading +
+    (visual?.heading || "") +
     " " +
-    visual.note +
+    (visual?.note || "") +
     " " +
-    visual.labels.join(" ") +
+    (visual?.labels || []).join(" ") +
     " " +
     nodes.map((n) => n.label + " " + (n.evidence || "")).join(" ")
   ).toLowerCase();
@@ -136,7 +138,7 @@ export function ConceptComparisonVisual({
                   letterSpacing: `${0.5 * scale}px`,
                 }}
               >
-                {nodeA.label}
+                {data ? data.leftSide.name : nodeA.label}
               </div>
               <div
                 style={{
@@ -147,7 +149,7 @@ export function ConceptComparisonVisual({
                   textTransform: "uppercase",
                 }}
               >
-                {isDatabase ? "RELATIONAL / STRUCTURED" : isApi ? "REST ARCHITECTURE" : "STANDARD PROTOCOL"}
+                {data ? data.leftSide.badge : (isDatabase ? "RELATIONAL / STRUCTURED" : isApi ? "REST ARCHITECTURE" : "STANDARD PROTOCOL")}
               </div>
             </div>
           </div>
@@ -299,7 +301,7 @@ export function ConceptComparisonVisual({
             opacity: enterVs,
           }}
         >
-          VS
+          {data ? `VS • ${data.contrastCriterion.toUpperCase()}` : "VS"}
         </div>
       </div>
 
@@ -361,7 +363,7 @@ export function ConceptComparisonVisual({
                   letterSpacing: `${0.5 * scale}px`,
                 }}
               >
-                {nodeB.label}
+                {data ? data.rightSide.name : nodeB.label}
               </div>
               <div
                 style={{
@@ -372,7 +374,7 @@ export function ConceptComparisonVisual({
                   textTransform: "uppercase",
                 }}
               >
-                {isDatabase ? "DOCUMENT / FLEXIBLE" : isApi ? "GRAPHQL / FLEXIBLE" : "DATAGRAM PROTOCOL"}
+                {data ? data.rightSide.badge : (isDatabase ? "DOCUMENT / FLEXIBLE" : isApi ? "GRAPHQL / FLEXIBLE" : "DATAGRAM PROTOCOL")}
               </div>
             </div>
           </div>

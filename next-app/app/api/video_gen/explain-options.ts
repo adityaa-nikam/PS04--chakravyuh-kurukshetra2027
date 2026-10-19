@@ -12,6 +12,7 @@ export const explainOptionsSchema = z.strictObject({
   browser: z.string().min(1).optional(),
   approveOverrun: z.boolean().default(false),
   visualActions: z.boolean().optional(),
+  enhancedPlanner: z.boolean().optional(),
   inspect: z.boolean().default(false), replan: z.boolean().default(false),
   width: renderOptionsSchema.shape.width.unwrap().optional(), height: renderOptionsSchema.shape.height.unwrap().optional(), fps: renderOptionsSchema.shape.fps.unwrap().optional(),
 }).superRefine((o, ctx) => {
@@ -24,8 +25,11 @@ export function parseExplainArgs(args: string[]) {
   const options: Record<string, unknown> = {};
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    if (["--approve-overrun", "--inspect", "--replan", "--visual-actions"].includes(arg)) {
-      options[arg === "--approve-overrun" ? "approveOverrun" : arg === "--visual-actions" ? "visualActions" : arg.slice(2)] = true; continue;
+    if (["--approve-overrun", "--inspect", "--replan", "--visual-actions", "--enhanced-planner"].includes(arg)) {
+      options[arg === "--approve-overrun" ? "approveOverrun" : arg === "--visual-actions" ? "visualActions" : arg === "--enhanced-planner" ? "enhancedPlanner" : arg.slice(2)] = true; continue;
+    }
+    if (arg === "--no-enhanced-planner") {
+      options["enhancedPlanner"] = false; continue;
     }
     if (arg.startsWith("--")) {
       const key = arg.slice(2);
