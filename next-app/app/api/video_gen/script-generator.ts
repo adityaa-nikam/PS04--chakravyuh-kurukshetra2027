@@ -26,8 +26,15 @@ export async function generateExplainerScript(input: unknown, options: { live?: 
     "3. No repetitive robotic intros or textbook jargon — explain ideas with intuitive analogies, relatable context, and clear contrast. " +
     "4. Smooth transitions — connect ideas seamlessly between scenes ('Now here's where it gets interesting...', 'Think of it this way...'). " +
     "5. For Scene 1 (the hook), write an engaging question or hook of 12-20 words introducing the core problem. " +
-    `CRITICAL DURATION TARGET: The requested duration is strictly ${request.data.durationSeconds} seconds. Aim for approximately ${budget.totalWords} total spoken words across the ${budget.scenes.length} scenes (at 130 words per minute). ` +
-    `Scene word targets: ${budget.scenes.map((s, idx) => `Scene ${idx + 1} (${s.purpose}): target ~${s.maxWords} words`).join(", ")}. ` +
+    `CRITICAL DURATION AND SCRIPT SUBSTANCE REQUIREMENT: ` +
+    `The user requested a full ${request.data.durationSeconds}-second educational video. ` +
+    `You MUST generate a complete, substantive script containing approximately ${budget.totalWords} total spoken words across all ${budget.scenes.length} scenes (spoken at standard 130 words per minute). ` +
+    `Do NOT write a short or hollow 1-sentence summary! Each scene must have substantial narration: ` +
+    budget.scenes.map((s, idx) => `Scene ${idx + 1} (${s.purpose}): minimum ${Math.max(12, Math.floor(s.maxWords * 0.75))} words, target ~${s.maxWords} words`).join("; ") + ". " +
+    `For Scene 1 (${budget.scenes[0].purpose}), write a compelling 15-22 word hook introducing the core problem or tension. ` +
+    (budget.scenes.length >= 4 
+      ? `For Scene 2, explain the core concepts and principles thoroughly (30-40 words). For Scene 3, walk through a concrete example or side-by-side comparison with literal field values (30-40 words). For Scene ${budget.scenes.length}, provide a clear, memorable architectural takeaway (20-28 words). `
+      : `For Scene 2, provide a deep, thorough explanation with concrete mechanisms and examples (45-55 words). For Scene 3, provide a strong educational summary and rule of thumb (20-28 words). `) +
     "Do NOT write rushed 2-word sentences or hollow summaries. Fully explain the architecture, mechanisms, and concrete examples to satisfy the requested duration. " +
     "Each scene has a distinct purpose: hook, explanation, concrete example, takeaway. Never repeat paragraphs, conclusions, or explanations across scenes. Develop the explanation progressively. Use a concrete example when requested; clearly identify invented illustrative values as examples, never user-provided or measured facts. Aim for the requested duration at 130 spoken words per minute. Use concise plain-language visual directions, not executable code or HTML. Return only the script matching the supplied JSON schema. " +
     (options.visualPlanning ? "The estimatedDurationSeconds field must equal the requested durationSeconds. Your narration is the factual source for a later visual planner: explicitly name all components and directional relationships. For comparisons, explain a small concrete example. If comparing representations of data, state the same literal record (root name, short field names and values) in the narration, and name both formats; reuse it throughout. Distinguish illustrative example values from measured statistics. Do not invent measurements or claim factual verification." : "");
@@ -41,12 +48,12 @@ export async function generateExplainerScript(input: unknown, options: { live?: 
           sceneNumber: idx + 1,
           purpose: s.purpose,
           targetWordCount: s.maxWords,
-          minimumWordCount: Math.max(10, Math.floor(s.maxWords * 0.7)),
+          minimumWordCount: Math.max(12, Math.floor(s.maxWords * 0.75)),
           guideline: idx === 0 
-            ? "MUST write an engaging question or puzzle of at least 12-20 words setting up the topic. Never output a 2-4 word greeting or title."
+            ? "MUST write an engaging question or puzzle of 15-22 words setting up the topic. Never output a 2-4 word greeting or title."
             : idx === budget.scenes.length - 1
-            ? "MUST write a clear, actionable educational takeaway of 15-25 words."
-            : "MUST provide a thorough, informative explanation of 30-45 words detailing mechanisms and components.",
+            ? "MUST write a clear, actionable educational takeaway of 20-28 words."
+            : `MUST provide a thorough, informative explanation of ${Math.max(25, Math.floor(s.maxWords * 0.8))}-${s.maxWords + 5} words detailing mechanisms, components, and examples.`,
         })),
       },
     };
@@ -67,7 +74,7 @@ export async function generateExplainerScript(input: unknown, options: { live?: 
             if (narrationWords(next).length <= maxThreshold) fitted = next;
             else break;
           }
-          if (fitted.length > 0) {
+          if (fitted.length > 0 && narrationWords(fitted).length >= Math.floor(targetMax * 0.7)) {
             console.info(`[video_gen] Fitted scene ${i + 1} at sentence boundary (${narrationWords(fitted).length} words).`);
             script.scenes[i].narration = fitted;
           }

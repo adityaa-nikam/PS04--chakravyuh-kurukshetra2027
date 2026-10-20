@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync, readFileSync } from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 
@@ -54,7 +54,7 @@ export async function generateImageAsset(options: ImageGenerationOptions): Promi
   const provider = getImageProvider();
   const width = options.width || 720;
   const height = options.height || 1280;
-  const timeoutMs = options.timeoutMs || 15000;
+  const timeoutMs = options.timeoutMs || 8000;
 
   try {
     const hash = crypto.createHash("md5").update(options.prompt).digest("hex").slice(0, 16);
@@ -66,9 +66,10 @@ export async function generateImageAsset(options: ImageGenerationOptions): Promi
 
     // Return cached image if already generated
     if (existsSync(localFilePath)) {
+      const cached = readFileSync(localFilePath);
       return {
         success: true,
-        assetPath: publicUrl,
+        assetPath: `data:image/jpeg;base64,${cached.toString("base64")}`,
         provider,
         elapsedMs: Date.now() - started,
         fallbackUsed: false,
@@ -100,7 +101,7 @@ export async function generateImageAsset(options: ImageGenerationOptions): Promi
       writeFileSync(localFilePath, buffer);
       return {
         success: true,
-        assetPath: publicUrl,
+        assetPath: `data:image/jpeg;base64,${buffer.toString("base64")}`,
         provider: "pollinations",
         elapsedMs: Date.now() - started,
         fallbackUsed: false,

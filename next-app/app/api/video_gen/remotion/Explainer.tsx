@@ -291,6 +291,11 @@ export function SceneFrame({ plan, index, frame }: { plan: RenderPlan; index: nu
               frame={frame}
               fps={fps}
               durationInFrames={allocation.durationInFrames}
+              speechDurationInFrames={
+                plan.narration?.seconds?.[index] && Number.isFinite(plan.narration.seconds[index]) && plan.narration.seconds[index] > 0
+                  ? Math.min(allocation.durationInFrames, Math.round(plan.narration.seconds[index] * fps))
+                  : allocation.durationInFrames
+              }
               scale={scale}
               highlightColor={theme.highlight || "#FACC15"}
             />

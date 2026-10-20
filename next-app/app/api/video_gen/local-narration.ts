@@ -33,7 +33,7 @@ export function applyNarrationTiming(
 ) {
   if (seconds.length !== plan.frames.length || seconds.some(n => !Number.isFinite(n) || n <= 0)) throw new Error("LOCAL_TTS: invalid scene audio durations.");
   let from = 0;
-  const frames = plan.frames.map((frame, i) => {
+  let frames = plan.frames.map((frame, i) => {
     // Keep the existing reading time; extend for a complete spoken sentence and
     // a short pause. Never speed up, truncate, or change the script.
     const durationInFrames = Math.max(frame.durationInFrames, Math.ceil((seconds[i] + 0.35) * plan.settings.fps));
@@ -42,6 +42,42 @@ export function applyNarrationTiming(
   if (from > plan.durationInFrames && !plan.settings.approveOverrun) {
     throw new Error("DURATION_APPROVAL_REQUIRED: Spoken audio extends duration beyond allocated frames.");
   }
+
+  // If the total spoken narration + minimal pause is shorter than the user's declared target duration,
+  // distribute the remaining duration gracefully across the scenes as visual breathing room.
+  // This ensures a 60s request renders for 60s and a 45s request renders for 45s, while Remotion and
+  // FFmpeg pad the scene audio cleanly with apad.
+  const targetSeconds = plan.storyboard.durationPolicy.declaredTargetDurationSeconds;
+  const targetFrames = Math.round(targetSeconds * plan.settings.fps);
+  if (from < targetFrames) {
+    const remaining = targetFrames - from;
+    const count = frames.length;
+    const weights = count === 3
+      ? [0.2, 0.45, 0.35]
+      : count === 4
+      ? [0.15, 0.35, 0.3, 0.2]
+      : count === 5
+      ? [0.12, 0.28, 0.28, 0.18, 0.14]
+      : Array(count).fill(1 / count);
+
+    let distributed = 0;
+    const additions = weights.map((w, idx) => {
+      if (idx === count - 1) return remaining - distributed;
+      const add = Math.floor(remaining * w);
+      distributed += add;
+      return add;
+    });
+
+    let newFrom = 0;
+    frames = frames.map((frame, i) => {
+      const durationInFrames = frame.durationInFrames + additions[i];
+      const allocation = { ...frame, from: newFrom, durationInFrames };
+      newFrom += durationInFrames;
+      return allocation;
+    });
+    from = newFrom;
+  }
+
   plan.frames = frames;
   plan.durationInFrames = from;
   plan.narration = {

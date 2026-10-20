@@ -3,7 +3,7 @@ import { WORDS_PER_MINUTE } from "./normalize";
 import { ScriptGenerationError } from "./ollama";
 export const narrationWords = (text: string) => text.match(/[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*/gu) ?? [];
 export function scriptBudget(seconds: number) {
-  const count = seconds <= 60 ? 3 : seconds <= 90 ? 4 : 5;
+  const count = seconds <= 50 ? 3 : seconds <= 75 ? 4 : 5;
   const total = Math.floor(seconds * WORDS_PER_MINUTE / 60);
   const weights = count === 3 ? [0.25, 0.5, 0.25] : count === 4 ? [0.2, 0.3, 0.3, 0.2] : [0.15, 0.25, 0.25, 0.2, 0.15];
   const scenes = weights.map((w, i) => ({ purpose: i === 0 ? "hook" : i === count - 1 ? "takeaway" : i === count - 2 ? "concrete example" : "explanation", maxWords: Math.floor(total * w) }));

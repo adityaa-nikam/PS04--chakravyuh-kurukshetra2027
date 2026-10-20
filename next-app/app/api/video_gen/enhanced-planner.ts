@@ -159,6 +159,10 @@ export function synthesizeDeterministicEnhancedPlan(
   const isGc = /garbage collect|memory leak|mark.*sweep|generational gc/i.test(topicLower);
   const isMath = /math|exponential|euler|logarithm|curve|calculus|growth|physics/i.test(topicLower);
   const isArch = /architecture|protocol|mcp|model context protocol|client.*server|agent|tool/i.test(topicLower);
+  const isBiology = /photo.*synthesis|chloroplast|plant|cell|biology|dna|gene|mitosis|leaf|leaves/i.test(topicLower);
+  const isPhysical = /bridge|vibrat|engine|turbine|aerodynamic|rocket|telescope/i.test(topicLower);
+  const isHardware = /cpu|chip|silicon|transistor|hardware|motherboard|cache line/i.test(topicLower);
+  const isVisualDepiction = /visual|diagram|depict|illustrat|picture/i.test(topicLower);
 
   const scenes: EnhancedScenePlan[] = board.scenes.map((s, idx) => {
     const isFirst = idx === 0;
@@ -202,6 +206,33 @@ export function synthesizeDeterministicEnhancedPlan(
             { title: "Production Standard", detail: "Industry-standard reliable design pattern." },
             { title: "Operational Impact", detail: "Optimal trade-off between performance & simplicity." },
           ],
+        },
+      };
+    }
+
+    // High-fidelity AI generated illustrative asset for physical, biological, or visual subjects
+    if (imageAssetsEnabled && (isBiology || isPhysical || isHardware || (isVisualDepiction && !isComparison && !isBinarySearch && !isSort && !isStack && !isNeural && !isArch))) {
+      return {
+        sceneId,
+        sceneIndex,
+        purpose: "explanation",
+        educationalGoal: `Visually depict ${board.title} with high-fidelity realistic illustrative imagery.`,
+        visualArchetype: "illustrative_asset",
+        visual: {
+          kind: "illustrative_asset",
+          prompt: `detailed scientific 3D illustration of ${board.title}, high quality educational depiction, 4k digital art, dramatic tech lighting, portrait 9:16 vertical`,
+          overlayHeadline: board.title.slice(0, 40),
+          overlayDetail: s.narration.slice(0, 100),
+          fallbackVisual: {
+            kind: "typography_definition",
+            badge: "VISUAL OVERVIEW",
+            mainTerm: board.title.slice(0, 32),
+            pronouncement: s.narration.slice(0, 100),
+            pillars: [
+              { title: "Physical Mechanism", detail: "Real-world operational dynamics and behavior." },
+              { title: "Key Observation", detail: "Empirical structural interactions and flows." },
+            ],
+          },
         },
       };
     }

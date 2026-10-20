@@ -29,7 +29,13 @@ try {
   const [input, browser] = process.argv.slice(2);
   const { openBrowser, selectComposition, renderMedia } = await import("@remotion/renderer");
   if (input === "--check-browser") {
-    const instance = await openBrowser("chrome", { browserExecutable: browser, chromeMode: "chrome-for-testing" });
+    const instance = await openBrowser("chrome", {
+      browserExecutable: browser,
+      chromeMode: "chrome-for-testing",
+      chromiumOptions: {
+        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+      },
+    });
     await instance.close({ silent: true });
     console.log("Browser launch and shutdown succeeded.");
   } else {
@@ -38,7 +44,13 @@ try {
     const { bundle } = await import("@remotion/bundler");
     const serveUrl = await bundle({ entryPoint: job.entryPoint, outDir: path.join(job.directory, "bundle"), webpackOverride: config => ({ ...config, cache: false }) });
     const inputProps = { plan: job.plan };
-    const instance = await openBrowser("chrome", { browserExecutable: job.browser, chromeMode: "chrome-for-testing" });
+    const instance = await openBrowser("chrome", {
+      browserExecutable: job.browser,
+      chromeMode: "chrome-for-testing",
+      chromiumOptions: {
+        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+      },
+    });
     try {
       const compPort = await getAvailablePort(8600);
       const composition = await selectComposition({

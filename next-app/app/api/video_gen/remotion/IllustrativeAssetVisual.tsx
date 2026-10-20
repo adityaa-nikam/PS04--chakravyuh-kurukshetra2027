@@ -28,9 +28,88 @@ export function IllustrativeAssetVisual({
   const zoom = 1 + progress * 0.08;
   const panY = progress * -12;
 
-  // If no image asset was generated or available, render fallback visual
+  // If no image asset was generated or available, render rich deterministic fallback
   if (!data.assetPath) {
     const fb = data.fallbackVisual;
+    if (fb && fb.kind === "typography_definition") {
+      return (
+        <div
+          data-visual="illustrative-fallback"
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            padding: `${22 * scale}px`,
+            background: "linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.95))",
+            borderRadius: `${14 * scale}px`,
+            border: `1.5px solid ${purple}`,
+            boxShadow: `0 0 24px ${purple}22`,
+          }}
+        >
+          <div
+            style={{
+              display: "inline-block",
+              alignSelf: "flex-start",
+              background: "rgba(168, 85, 247, 0.2)",
+              border: `1px solid ${purple}`,
+              color: "#C084FC",
+              fontSize: `${11 * scale}px`,
+              fontWeight: 800,
+              padding: `${4 * scale}px ${10 * scale}px`,
+              borderRadius: "999px",
+              letterSpacing: "1px",
+              marginBottom: `${14 * scale}px`,
+            }}
+          >
+            {fb.badge || "CORE CONCEPT"}
+          </div>
+          <div
+            style={{
+              fontSize: `${22 * scale}px`,
+              fontWeight: 900,
+              color: "#F8FAFC",
+              marginBottom: `${8 * scale}px`,
+              lineHeight: 1.2,
+            }}
+          >
+            {fb.mainTerm}
+          </div>
+          <div
+            style={{
+              fontSize: `${13 * scale}px`,
+              color: "#CBD5E1",
+              marginBottom: `${18 * scale}px`,
+              lineHeight: 1.5,
+            }}
+          >
+            {fb.pronouncement}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: `${10 * scale}px` }}>
+            {fb.pillars?.map((p, idx) => (
+              <div
+                key={idx}
+                style={{
+                  background: "rgba(255, 255, 255, 0.05)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  borderRadius: `${8 * scale}px`,
+                  padding: `${10 * scale}px ${12 * scale}px`,
+                }}
+              >
+                <div style={{ fontSize: `${12 * scale}px`, fontWeight: 700, color: cyan, marginBottom: `${2 * scale}px` }}>
+                  {p.title}
+                </div>
+                <div style={{ fontSize: `${11 * scale}px`, color: "#94A3B8", lineHeight: 1.4 }}>
+                  {p.detail}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div
         data-visual="illustrative-fallback"
@@ -48,7 +127,7 @@ export function IllustrativeAssetVisual({
           border: `1.5px solid ${purple}`,
         }}
       >
-        <div style={{ fontSize: `${42 * scale}px`, marginBottom: `${12 * scale}px` }}>💡</div>
+        <div style={{ fontSize: `${42 * scale}px`, marginBottom: `${12 * scale}px` }}>⚡</div>
         <div style={{ fontSize: `${20 * scale}px`, fontWeight: 800, color: "#F8FAFC", marginBottom: `${6 * scale}px` }}>
           {data.overlayHeadline}
         </div>

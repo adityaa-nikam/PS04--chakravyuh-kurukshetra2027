@@ -34,9 +34,7 @@ export async function generateNarrationAudio(
 
   // Method 2: Edge-TTS (High quality neural voice, fast, free)
   try {
-    const pythonBin = existsSync("C:\\Program Files\\Python313\\python.exe")
-      ? "C:\\Program Files\\Python313\\python.exe"
-      : (process.env.PYTHON_PATH || "python");
+    const pythonBin = process.env.PYTHON_PATH || "python";
     const result = spawnSync(pythonBin, [
       "-m",
       "edge_tts",

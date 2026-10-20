@@ -409,8 +409,8 @@ export default function AIStudioPage() {
 
     let durationToSend = aiDuration;
     const promptDurationMatch =
-      topicToUse.match(/(?:video\s+(?:(?:should|shoud|must|needs to)\s+be\s+)?(?:of\s+)?|duration\s*(?:of|:)?\s*|generate\s+video\s+of\s*)(\d+)(?:\s*(?:to|-)\s*(\d+))?\s*(?:s|sec|seconds?)?/i) ||
-      topicToUse.match(/(\d+)(?:\s*(?:to|-)\s*(\d+))?\s*(?:s|sec|seconds?)\s*(?:video|reel|clip)?/i);
+      topicToUse.match(/(?:(?:video|reel|clip)\s+(?:(?:should|shoud|must|needs to)\s+be\s+)?(?:of\s+)?|duration\s*(?:of|:)?\s*|generate\s+(?:a\s+)?video\s+of\s*)(\d+)(?:\s*(?:to|-)\s*(\d+))?\s*(?:s|sec|seconds?)\b/i) ||
+      topicToUse.match(/\b(\d+)(?:\s*(?:to|-)\s*(\d+))?\s*(?:s|sec|seconds?)\s+(?:long\s+)?(?:video|reel|clip)\b/i);
     if (promptDurationMatch) {
       const minVal = parseInt(promptDurationMatch[1], 10);
       const maxVal = promptDurationMatch[2] ? parseInt(promptDurationMatch[2], 10) : minVal;
@@ -1066,9 +1066,9 @@ export default function AIStudioPage() {
       </section>
 
       {/* Main Grid Content - Peeking into Hero bottom (Hostinger Showcase style) */}
-      <main id="studio-workspace" className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 -mt-4 sm:-mt-8 relative z-20 pb-16 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <main id="studio-workspace" className={`flex-1 max-w-7xl ${renderedClips.length > 0 ? "xl:max-w-[1400px]" : ""} w-full mx-auto px-4 sm:px-6 -mt-4 sm:-mt-8 relative z-20 pb-16 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start`}>
         {/* Left Column: Input, Pipeline Controls & Live Status */}
-        <div className="lg:col-span-7 flex flex-col gap-6">
+        <div className={`flex flex-col gap-6 ${renderedClips.length > 0 ? "lg:col-span-6 xl:col-span-6" : "lg:col-span-7"}`}>
           {/* Card 1: Video Input & Creation Controls */}
           <div className="p-6 sm:p-7 rounded-3xl bg-white/95 backdrop-blur-2xl border border-white text-zinc-900 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.4)] relative overflow-hidden flex flex-col gap-5 transition-all">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-200/80">
@@ -1634,15 +1634,15 @@ export default function AIStudioPage() {
 
           {/* Card 2: Live Pipeline Progress Tracker */}
           <div className="p-6 sm:p-7 rounded-3xl bg-white/95 backdrop-blur-2xl border border-white text-zinc-900 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.4)] flex flex-col gap-4 transition-all">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-200/80">
-              <div className="flex items-center gap-2.5">
-                <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-200/80 gap-2">
+              <div className="flex items-center gap-2.5 shrink-0">
+                <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200 shrink-0">
                   STEP 02
                 </span>
-                <h2 className="text-sm font-bold text-zinc-950 tracking-tight">Live Pipeline Tracker</h2>
+                <h2 className="text-sm font-bold text-zinc-950 tracking-tight whitespace-nowrap">Live Pipeline Tracker</h2>
               </div>
               {jobId && (
-                <span className="font-mono text-xs px-2.5 py-1 rounded-lg bg-zinc-100 border border-zinc-200 text-violet-700 font-semibold select-all">
+                <span className="font-mono text-xs px-2.5 py-1 rounded-lg bg-zinc-100 border border-zinc-200 text-violet-700 font-semibold select-all truncate max-w-[180px] sm:max-w-xs shrink-0" title={jobId}>
                   {jobId}
                 </span>
               )}
@@ -1671,11 +1671,7 @@ export default function AIStudioPage() {
             </div>
 
             {/* Pipeline Stage Pills */}
-            <div className={`grid gap-1.5 text-xs pt-1 ${
-              inputMode === "ai_prompt"
-                ? "grid-cols-2 sm:grid-cols-5"
-                : "grid-cols-2 sm:grid-cols-4 md:grid-cols-7"
-            }`}>
+            <div className="flex flex-wrap gap-2 pt-1 text-xs">
               {(inputMode === "ai_prompt"
                 ? [
                     { key: "REMOTION_SCRIPT", label: "1. Script Gen" },
@@ -1740,15 +1736,27 @@ export default function AIStudioPage() {
                 return (
                   <div
                     key={`${st.label}-${idx}`}
-                    className={`px-2 py-2 rounded-xl border text-center transition-all ${
+                    className={`flex-1 min-w-[105px] sm:min-w-[115px] px-3 py-2 rounded-xl border text-[11px] sm:text-xs whitespace-nowrap flex items-center justify-center gap-1.5 transition-all select-none shadow-2xs ${
                       isDone
-                        ? "bg-emerald-50 border-emerald-200 text-emerald-700 font-semibold shadow-2xs"
+                        ? "bg-emerald-50/90 border-emerald-300 text-emerald-800 font-semibold"
                         : isCurrent
-                        ? "bg-violet-100 border-violet-400 text-violet-900 font-bold ring-2 ring-violet-500/20 shadow-xs animate-pulse"
+                        ? "bg-violet-100 border-violet-400 text-violet-950 font-bold ring-2 ring-violet-500/20 shadow-xs"
                         : "bg-zinc-100/80 border-zinc-200 text-zinc-500 font-medium"
                     }`}
                   >
-                    {st.label}
+                    {isDone ? (
+                      <svg className="w-3.5 h-3.5 text-emerald-600 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    ) : isCurrent ? (
+                      <span className="relative flex h-2 w-2 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-600"></span>
+                      </span>
+                    ) : (
+                      <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 shrink-0" />
+                    )}
+                    <span>{st.label}</span>
                   </div>
                 );
               })}
@@ -1807,7 +1815,7 @@ export default function AIStudioPage() {
         </div>
 
         {/* Right Column: 9:16 Video Preview & Instagram Publishing */}
-        <div className="lg:col-span-5 flex flex-col gap-6">
+        <div className={`flex flex-col gap-6 ${renderedClips.length > 0 ? "lg:col-span-6 xl:col-span-6" : "lg:col-span-5"}`}>
           <div className="p-6 sm:p-7 rounded-3xl bg-white/95 backdrop-blur-2xl border border-white text-zinc-900 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.4)] flex flex-col items-center transition-all">
             <div className="w-full flex items-center justify-between mb-4 pb-3 border-b border-zinc-200/80">
               <div className="flex items-center gap-2.5">
@@ -1838,91 +1846,12 @@ export default function AIStudioPage() {
               </div>
             </div>
 
-            {/* Multi-Clip Options Deck (Mercury Decide Topic Selection) */}
-            {renderedClips.length > 0 && (
-              <div className="w-full mb-5 p-3.5 rounded-xl bg-[#030d22]/90 border border-cyan-500/30 shadow-lg shadow-cyan-950/20">
-                <div className="flex items-center justify-between mb-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-cyan-300">
-                      Mercury Decide Options ({renderedClips.length} Generated)
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-zinc-400">
-                    Select 1 for Instagram, download any
-                  </span>
-                </div>
-
-                <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1">
-                  {renderedClips.map((clip, idx) => {
-                    const isSelected = selectedClipIndex === idx;
-                    return (
-                      <div
-                        key={clip.clip_id || idx}
-                        onClick={() => handleSelectClip(idx)}
-                        className={`p-2.5 rounded-lg border transition-all cursor-pointer flex flex-col gap-1.5 ${
-                          isSelected
-                            ? "bg-cyan-950/50 border-cyan-400 ring-1 ring-cyan-400/40"
-                            : "bg-black/40 border-white/10 hover:border-white/20 hover:bg-white/[0.03]"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase shrink-0 ${
-                              isSelected ? "bg-cyan-400 text-black" : "bg-white/10 text-zinc-300"
-                            }`}>
-                              Option #{idx + 1}
-                            </span>
-                            <span className="text-xs font-medium text-white truncate">
-                              {clip.title}
-                            </span>
-                          </div>
-
-                          <span className="text-[10px] font-mono text-cyan-300 shrink-0 bg-cyan-950 px-1.5 py-0.5 rounded border border-cyan-500/30">
-                            ⭐ {clip.pedagogical_score.toFixed(0)}%
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between text-[11px] text-zinc-400 pt-1 border-t border-white/5 font-mono">
-                          <div className="flex items-center gap-2.5">
-                            <span>⏱ {clip.duration_sec.toFixed(1)}s</span>
-                            <span>
-                              {Math.floor(clip.start_time_sec / 60)}:{Math.floor(clip.start_time_sec % 60).toString().padStart(2, "0")} &rarr; {Math.floor(clip.end_time_sec / 60)}:{Math.floor(clip.end_time_sec % 60).toString().padStart(2, "0")}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              type="button"
-                              onClick={() => handleSelectClip(idx)}
-                              className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors ${
-                                isSelected
-                                  ? "bg-cyan-400 text-black font-bold"
-                                  : "bg-white/10 text-zinc-200 hover:bg-cyan-500/20 hover:text-cyan-300"
-                              }`}
-                            >
-                              {isSelected ? "Active" : "Select"}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDownloadClip(clip)}
-                              title="Download this clip MP4"
-                              className="px-2 py-0.5 rounded text-[10px] bg-white/5 border border-white/10 text-zinc-300 hover:bg-white/10 hover:text-white flex items-center gap-1"
-                            >
-                              <span>⬇</span>
-                              <span>Download</span>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* 3D Realistic Smartphone Mockup Chassis */}
-            <div className="relative group/phone select-none my-2">
+            {/* Main Stage: Smartphone Mockup on Left + Mercury Decide Options on Right */}
+            <div className={`w-full flex flex-col ${renderedClips.length > 0 ? "xl:flex-row items-center xl:items-start justify-center gap-8 my-2" : "items-center my-2"}`}>
+              {/* Left Column: Phone Chassis + Actions */}
+              <div className="flex flex-col items-center shrink-0 max-w-full">
+                {/* 3D Realistic Smartphone Mockup Chassis */}
+                <div className="relative group/phone select-none my-2">
               {/* Outer Physical Hardware Buttons - Left (Action Button + Volume Rockers) */}
               <div className="absolute -left-[3px] top-20 w-[3px] h-6 bg-gradient-to-r from-zinc-600 via-zinc-500 to-zinc-700 rounded-l-sm shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] z-10" />
               <div className="absolute -left-[3px] top-32 w-[3px] h-11 bg-gradient-to-r from-zinc-600 via-zinc-500 to-zinc-700 rounded-l-sm shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] z-10" />
@@ -2126,50 +2055,146 @@ export default function AIStudioPage() {
               </div>
             </div>
 
-            {renderedVideoUrl && (
-              <div className="w-full flex items-center justify-between mt-3 text-xs gap-2">
-                <span className="text-zinc-400 font-mono text-[11px] truncate">
-                  {renderedClips.length > 0
-                    ? `Active: Option #${selectedClipIndex + 1} (${renderedClips[selectedClipIndex]?.title || "Clip"})`
-                    : "Active 9:16 Reel"}
-                </span>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={openFullscreen}
-                    className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white flex items-center gap-1.5 transition-all text-xs font-semibold shadow-md shadow-violet-500/20 active:scale-95"
-                    title="Watch Full Screen"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                    </svg>
-                    <span>Full Screen</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (renderedClips.length > 0 && renderedClips[selectedClipIndex]) {
-                        handleDownloadClip(renderedClips[selectedClipIndex]);
-                      } else if (renderedVideoUrl) {
-                        const dlUrl = renderedVideoUrl.startsWith("blob:")
-                          ? renderedVideoUrl
-                          : `${renderedVideoUrl}${renderedVideoUrl.includes("?") ? "&" : "?"}download=true`;
-                        const a = document.createElement("a");
-                        a.href = dlUrl;
-                        a.download = `${jobId || "reel"}.mp4`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                      }
-                    }}
-                    className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-cyan-500/40 text-cyan-300 hover:text-white flex items-center gap-1.5 transition-all text-xs font-medium"
-                  >
-                    <span>⬇</span>
-                    <span>Download MP4</span>
-                  </button>
-                </div>
+                {renderedVideoUrl && (
+                  <div className="w-full flex items-center justify-between mt-3 text-xs gap-2.5 max-w-[295px] sm:max-w-[320px]">
+                    <span className="text-zinc-500 font-mono text-[11px] truncate">
+                      {renderedClips.length > 0
+                        ? `Option #${selectedClipIndex + 1}`
+                        : "Active 9:16 Reel"}
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={openFullscreen}
+                        className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white flex items-center gap-1.5 transition-all text-xs font-semibold shadow-md shadow-violet-500/20 active:scale-95 cursor-pointer"
+                        title="Watch Full Screen"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                        </svg>
+                        <span>Full Screen</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (renderedClips.length > 0 && renderedClips[selectedClipIndex]) {
+                            handleDownloadClip(renderedClips[selectedClipIndex]);
+                          } else if (renderedVideoUrl) {
+                            const dlUrl = renderedVideoUrl.startsWith("blob:")
+                              ? renderedVideoUrl
+                              : `${renderedVideoUrl}${renderedVideoUrl.includes("?") ? "&" : "?"}download=true`;
+                            const a = document.createElement("a");
+                            a.href = dlUrl;
+                            a.download = `${jobId || "reel"}.mp4`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                          }
+                        }}
+                        className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white flex items-center gap-1.5 transition-all text-xs font-bold shadow-md shadow-emerald-600/30 hover:scale-105 active:scale-95 cursor-pointer border border-emerald-400/30"
+                        title="Download MP4 Video"
+                      >
+                        <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        <span>Download MP4</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+
+              {/* Right Column: Multi-Clip Options Deck (Compact & Theme-Matching) */}
+              {renderedClips.length > 0 && (
+                <div className="w-full xl:w-[270px] 2xl:w-[295px] shrink-0 flex flex-col gap-2.5 self-stretch mt-3 xl:mt-1">
+                  <div className="p-3.5 rounded-2xl bg-zinc-50/95 border border-zinc-200/90 shadow-xs flex flex-col">
+                    <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-zinc-200/80">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-violet-600 animate-pulse shadow-[0_0_6px_rgba(139,92,246,0.6)]" />
+                        <span className="text-[11px] font-bold tracking-tight text-zinc-900 uppercase font-mono">
+                          Topic Variants
+                        </span>
+                      </div>
+                      <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200">
+                        {renderedClips.length} clips
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      {renderedClips.map((clip, idx) => {
+                        const isSelected = selectedClipIndex === idx;
+                        return (
+                          <div
+                            key={clip.clip_id || idx}
+                            onClick={() => handleSelectClip(idx)}
+                            className={`p-2.5 rounded-xl border transition-all cursor-pointer flex flex-col gap-1.5 ${
+                              isSelected
+                                ? "bg-violet-50/90 border-violet-500 ring-2 ring-violet-500/20 shadow-xs"
+                                : "bg-white hover:bg-zinc-100/60 border-zinc-200/90 text-zinc-700"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-1.5">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span
+                                  className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold uppercase shrink-0 ${
+                                    isSelected
+                                      ? "bg-violet-600 text-white"
+                                      : "bg-zinc-100 text-zinc-600 border border-zinc-200"
+                                  }`}
+                                >
+                                  #{idx + 1}
+                                </span>
+                                <span
+                                  className={`text-[11px] font-semibold truncate ${
+                                    isSelected ? "text-violet-950 font-bold" : "text-zinc-800"
+                                  }`}
+                                  title={clip.title}
+                                >
+                                  {clip.title}
+                                </span>
+                              </div>
+
+                              <span className="text-[9px] font-mono font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/70 shrink-0">
+                                ⭐ {clip.pedagogical_score.toFixed(0)}%
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between text-[10px] text-zinc-500 pt-1.5 border-t border-zinc-100 font-mono">
+                              <span className="truncate">
+                                ⏱ {clip.duration_sec.toFixed(0)}s ({Math.floor(clip.start_time_sec / 60)}:{Math.floor(clip.start_time_sec % 60).toString().padStart(2, "0")})
+                              </span>
+
+                              <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSelectClip(idx)}
+                                  className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-all cursor-pointer ${
+                                    isSelected
+                                      ? "bg-violet-600 text-white font-bold shadow-2xs"
+                                      : "bg-zinc-100 hover:bg-violet-100 hover:text-violet-700 text-zinc-600 border border-zinc-200/80"
+                                  }`}
+                                >
+                                  {isSelected ? "Active" : "Play"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownloadClip(clip)}
+                                  title="Download this clip MP4"
+                                  className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-0.5 transition-all shadow-2xs cursor-pointer"
+                                >
+                                  <span>⬇</span>
+                                  <span>MP4</span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Instagram Publish Section */}
             <div className="w-full mt-6 pt-5 border-t border-zinc-200/80 flex flex-col gap-3">

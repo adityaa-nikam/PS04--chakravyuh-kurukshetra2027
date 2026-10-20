@@ -17,6 +17,7 @@ interface VideoGenRequestPayload {
   approveOverrun?: boolean;
   output?: string;
   resume?: string;
+  enhancedPlanner?: boolean;
 }
 
 function resolveAppRoot(): string {
@@ -67,11 +68,11 @@ export async function POST(request: Request) {
   const targetAudience = input.targetAudience || input.audience || "Beginners";
   let durationSeconds = input.durationSeconds ?? input.duration ?? 45;
 
-  // Extract explicit duration requirement if the user stated one in their prompt command
-  // e.g. "video should be of 30 to 40 seconds", "video of 30 to 40 sec", "duration: 35s", "30-40 sec video"
+  // Extract explicit duration requirement ONLY if the user stated an explicit duration command in their prompt
+  // e.g. "video should be 30 to 40 seconds", "duration: 45s", "generate 30 sec reel"
   const promptDurationMatch =
-    topic.match(/(?:video\s+(?:(?:should|shoud|must|needs to)\s+be\s+)?(?:of\s+)?|duration\s*(?:of|:)?\s*|generate\s+video\s+of\s*)(\d+)(?:\s*(?:to|-)\s*(\d+))?\s*(?:s|sec|seconds?)?/i) ||
-    topic.match(/(\d+)(?:\s*(?:to|-)\s*(\d+))?\s*(?:s|sec|seconds?)\s*(?:video|reel|clip)?/i);
+    topic.match(/(?:(?:video|reel|clip)\s+(?:(?:should|shoud|must|needs to)\s+be\s+)?(?:of\s+)?|duration\s*(?:of|:)?\s*|generate\s+(?:a\s+)?video\s+of\s*)(\d+)(?:\s*(?:to|-)\s*(\d+))?\s*(?:s|sec|seconds?)\b/i) ||
+    topic.match(/\b(\d+)(?:\s*(?:to|-)\s*(\d+))?\s*(?:s|sec|seconds?)\s+(?:long\s+)?(?:video|reel|clip)\b/i);
   if (promptDurationMatch) {
     const minVal = parseInt(promptDurationMatch[1], 10);
     const maxVal = promptDurationMatch[2] ? parseInt(promptDurationMatch[2], 10) : minVal;
@@ -116,6 +117,7 @@ export async function POST(request: Request) {
       visualActions: input.visualActions ?? true,
       approveOverrun: input.approveOverrun ?? true,
       resume: input.resume,
+      enhancedPlanner: input.enhancedPlanner ?? true,
     });
 
     // Make video accessible via /videos/<folderName>/final.mp4
